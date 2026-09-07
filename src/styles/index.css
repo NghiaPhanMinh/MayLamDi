@@ -107,12 +107,25 @@
 }
 
 html, body {
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html:has(.app-content),
+body:has(.app-content) {
   height: 100%;
   overflow: hidden;
 }
 
 html:has(.marketing-shell),
-body:has(.marketing-shell) {
+body:has(.marketing-shell),
+html:has(.guest-project-shell),
+body:has(.guest-project-shell),
+html:has(.guided-flow),
+body:has(.guided-flow),
+html:has(.profile-gate-shell),
+body:has(.profile-gate-shell) {
   height: auto;
   overflow-y: auto;
   overflow-x: hidden;

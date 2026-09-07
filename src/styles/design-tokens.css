@@ -4103,7 +4103,10 @@ body:has(.marketing-about-transition-scene) {
 }
 
 .guest-project-shell {
-  min-height: 100svh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0 0 var(--mld-space-8);
   background: var(--color-page);
   color: var(--mld-text);
