@@ -4131,6 +4131,13 @@ body:has(.marketing-about-transition-scene) {
   text-decoration: none;
 }
 
+.guest-project-header .brand-logo {
+  width: 48px;
+  max-width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+
 .guest-project-header > span {
   font-weight: 800;
 }
