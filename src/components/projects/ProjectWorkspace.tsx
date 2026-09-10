@@ -12,7 +12,7 @@ import { BattleScene } from "../game/BattleScene";
 import { AIPlanningAssistant, type AiTaskSuggestion } from "./AIPlanningAssistant";
 import { AllocationWorkbench } from "./AllocationWorkbench";
 import { BattleTaskBoard, type BattleTaskSummary } from "./BattleTaskBoard";
-import { DailyEvidenceFeed } from "./DailyEvidenceFeed";
+import { TeamMessengerChat } from "./TeamMessengerChat";
 import { ProjectTeamMembers } from "./ProjectTeamMembers";
 import { TaskEvidencePanel } from "./TaskEvidencePanel";
 import { TaskTradePanel } from "./TaskTradePanel";
@@ -1016,7 +1016,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <MessageSquare size={22} strokeWidth={2.5} />
                 <h3 className="rpg-modern-title" style={{ margin: 0, fontSize: "1.25rem" }}>
-                  Team Chat &amp; Daily Evidence
+                  Team Chat
                 </h3>
               </div>
               <button
@@ -1039,10 +1039,10 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               </button>
             </div>
             <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "#475569", fontWeight: 700 }}>
-              Communicate, upload daily evidence to check.
+              Communicate and collaborate with your teammates in real-time.
             </p>
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-              <DailyEvidenceFeed projectId={workspace.project._id} />
+              <TeamMessengerChat projectId={workspace.project._id} />
             </div>
           </div>
         </div>

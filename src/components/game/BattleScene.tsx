@@ -30,9 +30,9 @@ import { LandscapeSky } from "./landscape/LandscapeSky";
 import { LandscapeTerrain } from "./landscape/LandscapeTerrain";
 import { LandscapeVillage } from "./landscape/LandscapeVillage";
 import { LandscapeGoblins, getGoblinCoordinates } from "./landscape/LandscapeGoblins";
-import { LandscapePlayers, getMageTheme } from "./landscape/LandscapePlayers";
+import { LandscapePlayers, getMageTheme, getPlayerCoordinates } from "./landscape/LandscapePlayers";
 import { LandscapeDragon, DRAGON_ORIGINAL_SHAPES, parseCoordinates } from "./landscape/LandscapeDragon";
-import { LandscapeFX } from "./landscape/LandscapeFX";
+import { LandscapeFX, type ActiveAttacker } from "./landscape/LandscapeFX";
 import { LandscapeQuestBoard, type QuestTask } from "./landscape/LandscapeQuestBoard";
 import { LandscapeTutorial } from "./landscape/LandscapeTutorial";
 import { CharacterAvatar } from "../common/CharacterAvatar";
@@ -818,10 +818,6 @@ function BattleResultBoard({
   variant,
   title,
   description,
-  villageHp,
-  bossRemainingHp,
-  bossMaximumHp,
-  verifiedQuests,
   canRemoveRoom,
   onDownloadContribution,
   onViewBattle,
@@ -846,35 +842,11 @@ function BattleResultBoard({
         </div>
         <div className="battle-result-badge">
           <BadgeIcon size={17} strokeWidth={2.25} aria-hidden="true" />
-          <span>{isSuccess ? "Boss defeated" : "Defense failed"}</span>
+          <span>{isSuccess ? "Project completed" : "Project incomplete"}</span>
         </div>
         <h2 id="endgame-title" className="battle-result-title">{title}</h2>
         <p className="battle-result-description">{description}</p>
       </header>
-
-      <dl className="battle-result-stats" aria-label="Final battle statistics">
-        <div className="battle-result-stat is-village">
-          <div className="battle-result-stat-heading">
-            <Shield size={20} strokeWidth={2} aria-hidden="true" />
-            <dt>Village Status</dt>
-          </div>
-          <dd>{villageHp}% HP</dd>
-        </div>
-        <div className="battle-result-stat is-boss">
-          <div className="battle-result-stat-heading">
-            <Target size={20} strokeWidth={2} aria-hidden="true" />
-            <dt>Boss Remaining</dt>
-          </div>
-          <dd>{bossRemainingHp} / {bossMaximumHp} HP</dd>
-        </div>
-        <div className="battle-result-stat is-quests">
-          <div className="battle-result-stat-heading">
-            <ClipboardCheck size={20} strokeWidth={2} aria-hidden="true" />
-            <dt>Verified Quests</dt>
-          </div>
-          <dd>{verifiedQuests}</dd>
-        </div>
-      </dl>
 
       <div className="battle-result-main-actions" aria-label="Result actions">
         <button type="button" className="battle-result-action is-primary" onClick={onDownloadContribution}>
@@ -1008,6 +980,7 @@ export function BattleScene({
   const [showAdjustElementsModal, setShowAdjustElementsModal] = useState(false);
   const [testBossDefeatedPreview, setTestBossDefeatedPreview] = useState(false);
   const [dummyReviewTaskDone, setDummyReviewTaskDone] = useState(false);
+  const [isDummyTaskSubmitted, setIsDummyTaskSubmitted] = useState(false);
   const [selectedReviewTask, setSelectedReviewTask] = useState<any | null>(null);
 
   // Leaderboard data query
@@ -2494,13 +2467,62 @@ export function BattleScene({
   const effectiveTaskCount = Math.max(1, (workspace?.tasks?.length ?? 1) + testExtraTasksCount);
   const computedMaxBossHp = Math.max(50, state.maximumHp + (testExtraTasksCount * TASK_HP_UNIT));
 
-  const baseRemainingHp = state.remainingHp + (testExtraTasksCount * TASK_HP_UNIT) - testSimulatedOnTimeDamage;
-  const rawRemainingHp = testDragonHpOverride !== null
-    ? testDragonHpOverride
-    : Math.max(0, Math.min(computedMaxBossHp, baseRemainingHp));
+  // Compute total and completed tasks including dummy testing triggers
+  const baseCompletedTasks = questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length;
+  const dummyBonus = (isDummyTaskSubmitted ? 1 : 0) + (dummyReviewTaskDone ? 1 : 0);
+  const totalTasksCount = Math.max(1, questTasks.length);
+  const completedTasksCount = Math.min(totalTasksCount, baseCompletedTasks + dummyBonus);
+  const progressPercentage = Math.round((completedTasksCount / totalTasksCount) * 100);
 
-  const hpPercent = computedMaxBossHp === 0 ? 100 : Math.round((rawRemainingHp / computedMaxBossHp) * 100);
-  const defeated = computedMaxBossHp > 0 && rawRemainingHp === 0;
+  const baseRemainingHp = state.remainingHp + (testExtraTasksCount * TASK_HP_UNIT) - testSimulatedOnTimeDamage;
+  const hpPercent = testDragonHpOverride !== null
+    ? testDragonHpOverride
+    : (isDummyTaskSubmitted || dummyReviewTaskDone)
+      ? Math.max(0, 100 - progressPercentage)
+      : (computedMaxBossHp === 0 ? 100 : Math.round((Math.max(0, Math.min(computedMaxBossHp, baseRemainingHp)) / computedMaxBossHp) * 100));
+  const rawRemainingHp = Math.round((hpPercent / 100) * computedMaxBossHp);
+  const defeated = (computedMaxBossHp > 0 && (rawRemainingHp === 0 || hpPercent === 0));
+
+  // Active attackers throwing elemental projectiles at the dragon
+  const activeAttackers: ActiveAttacker[] = useMemo(() => {
+    const attackers: ActiveAttacker[] = [];
+    if (!state?.members) return attackers;
+
+    state.members.forEach((member, idx) => {
+      const memberHasSubmitted = workspace?.tasks?.some(
+        (t) =>
+          t.primaryOwnerProfileId === member.profileId &&
+          (t.status === "submitted" || t.status === "review" || t.status === "verified" || t.status === "completed")
+      );
+      const isCurrentPlayerDummy =
+        (isDummyTaskSubmitted || dummyReviewTaskDone) &&
+        (member.profileId === state.currentProfileId || idx === 0);
+
+      if (memberHasSubmitted || isCurrentPlayerDummy) {
+        const coords = getPlayerCoordinates(idx, state.members.length);
+        attackers.push({
+          profileId: member.profileId,
+          displayName: member.displayName,
+          spellType: member.spellType || (idx % 3 === 0 ? "fire" : idx % 3 === 1 ? "ice" : "lightning"),
+          startX: coords.x,
+          startY: coords.y,
+        });
+      }
+    });
+
+    if (attackers.length === 0 && (isDummyTaskSubmitted || dummyReviewTaskDone)) {
+      const coords = getPlayerCoordinates(0, 1);
+      attackers.push({
+        profileId: state.currentProfileId || "hero",
+        displayName: "Hero",
+        spellType: "fire",
+        startX: coords.x,
+        startY: coords.y,
+      });
+    }
+
+    return attackers;
+  }, [state?.members, state?.currentProfileId, workspace?.tasks, isDummyTaskSubmitted, dummyReviewTaskDone]);
 
   // Village Max HP scales with team size: 100 + (10 * number of players)
   const teamMemberCount = Math.max(1, (state.members?.length ?? 1) + testExtraPlayerCount);
@@ -2515,17 +2537,17 @@ export function BattleScene({
   const dragonX = 580 + damageClearedFraction * 60;
 
   // Collaborative End-Game Screen: Game only ends after all tasks are completed and Dragon is defeated
-  const allTasksCompleted = workspace?.tasks && workspace.tasks.length > 0 && workspace.tasks.every(t => t.status === "completed" || t.status === "verified");
+  const allTasksCompleted = totalTasksCount > 0 && completedTasksCount >= totalTasksCount;
   if ((defeated || allTasksCompleted || testOverdueOverride === true || testBossDefeatedPreview) && !viewBattleSceneOverride) {
     const isVillageDefended = effectiveVillageHp >= 50;
     const resultVariant = isVillageDefended ? "success" : "failed";
     const resultTitle = isVillageDefended
-      ? "Boss defeated"
+      ? "Project completed"
       : "YOU FAILED TO PROTECT THE VILLAGE!";
     const resultDescription = isVillageDefended
-      ? `All project tasks have been successfully completed and the dragon defeated! Your team earned verifiable proof of contribution.`
+      ? `All project tasks have been successfully completed and the boss defeated! Your team earned verifiable proof of contribution.`
       : `The deadline has expired before sufficient task quests were completed. ${funnyBossName} and the goblin horde overwhelmed the defenses.`;
-    const verifiedQuestCount = workspace?.tasks.filter(t => t.status === "verified" || t.status === "completed").length ?? 0;
+    const verifiedQuestCount = completedTasksCount;
 
     return (
       <section className="battle-page battle-result-page" aria-labelledby="endgame-title">
@@ -2747,10 +2769,42 @@ export function BattleScene({
             }}
             onClick={() => setTestBossDefeatedPreview((prev) => !prev)}
             type="button"
-            title="Preview Boss Defeated end screen"
-            aria-label="Toggle Boss Defeated Preview"
+            title="Preview Project Completed end screen"
+            aria-label="Toggle Project Completed Preview"
           >
-            <span>🏆 {testBossDefeatedPreview ? "Exit Defeated" : "Boss Defeated"}</span>
+            <span>🏆 {testBossDefeatedPreview ? "Exit Preview" : "Preview Completed"}</span>
+          </button>
+
+          {/* Test Task Attack & Elemental Projectile Button (Togglable / Undo) */}
+          <button
+            className="rpg-btn-icon-sound"
+            style={{
+              height: "36px",
+              padding: "0 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              borderRadius: "8px",
+              background: isDummyTaskSubmitted ? "#f43f5e" : "#fffded",
+              color: isDummyTaskSubmitted ? "#ffffff" : "#101517",
+              border: "2px solid #101517",
+              boxShadow: "2px 2px 0 #101517",
+              cursor: "pointer",
+              fontWeight: 800,
+              fontSize: "0.78rem",
+            }}
+            onClick={() => {
+              setIsDummyTaskSubmitted((prev) => !prev);
+              if (!isDummyTaskSubmitted) {
+                gameAudio.playDragonRoar();
+                gameAudio.playTing();
+              }
+            }}
+            type="button"
+            title={isDummyTaskSubmitted ? "Undo dummy task attack & projectile" : "Test task attack & elemental projectile against dragon"}
+            aria-label="Test Task Attack"
+          >
+            <span>⚔️ {isDummyTaskSubmitted ? "Undo Dummy Task" : "Test Task Attack"}</span>
           </button>
 
           {/* Admin Edit Dragon Layout Overlay Button */}
@@ -2894,10 +2948,12 @@ export function BattleScene({
           <LandscapeFX
             activeEvent={combinedActiveEvent}
             isVictory={defeated}
+            activeAttackers={activeAttackers}
+            dragonTarget={{ x: dragonX + 80, y: 195 }}
           />
         </div>
 
-        {/* Layer 10: Task Progress Bar with Equal Flags across all Tasks (Replacing Deadline Bar) */}
+        {/* Layer 10: Task Progress Bar (Clean progress bar, flags removed) */}
         <div
           className="pvz-deadline-progress-container project-task-progress-container"
           style={{
@@ -2920,7 +2976,7 @@ export function BattleScene({
             pointerEvents: "auto",
           }}
           role="progressbar"
-          aria-valuenow={questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}
+          aria-valuenow={progressPercentage}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label="Project task completion progress"
@@ -2948,11 +3004,11 @@ export function BattleScene({
               ) : null}
             </span>
             <span style={{ color: "#16a34a", fontWeight: 900 }}>
-              {questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length}/{questTasks.length} TASKS COMPLETED ({questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}%)
+              {completedTasksCount}/{totalTasksCount} TASKS COMPLETED ({progressPercentage}%)
             </span>
           </div>
 
-          {/* Progress Bar Track with Segment Flags */}
+          {/* Progress Bar Track */}
           <div
             style={{
               position: "relative",
@@ -2961,7 +3017,7 @@ export function BattleScene({
               background: "#e2e8f0",
               border: "2px solid #101517",
               borderRadius: "8px",
-              overflow: "visible",
+              overflow: "hidden",
               display: "flex",
               alignItems: "center",
             }}
@@ -2969,107 +3025,13 @@ export function BattleScene({
             {/* Smooth Emerald Task Progress Fill */}
             <div
               style={{
-                width: `${questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}%`,
+                width: `${progressPercentage}%`,
                 height: "100%",
                 background: "linear-gradient(90deg, #15803d, #22c55e)",
                 borderRadius: "6px",
                 transition: "width 0.4s ease",
               }}
             />
-
-            {/* Equal Segment Dividers & Task Flags */}
-            {questTasks.length > 0 && questTasks.map((task, idx) => {
-              const segPct = ((idx + 1) / questTasks.length) * 100;
-              const flagPct = ((idx + 0.5) / questTasks.length) * 100;
-              const isTaskDone = Boolean(task.isCompleted || task.status === "completed" || task.status === "verified");
-              const isTaskInReview = Boolean(task.status === "review" || task.status === "submitted" || task.status === "awaiting_creator");
-
-              return (
-                <div key={task._id || `task-flag-${idx}`}>
-                  {/* Segment boundary tick (except last) */}
-                  {idx < questTasks.length - 1 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: `${segPct}%`,
-                        top: "0px",
-                        width: "1.5px",
-                        height: "100%",
-                        background: "rgba(16, 21, 23, 0.25)",
-                        zIndex: 2,
-                        pointerEvents: "none",
-                      }}
-                    />
-                  )}
-
-                  {/* Task Flag Marker - Graphic Pennant Shape */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTaskId(task._id);
-                      if (task.reviewerProfileId) {
-                        setSelectedReviewerId(task.reviewerProfileId);
-                      }
-                      setShowBossModal(true);
-                    }}
-                    title={`Task ${idx + 1}: ${task.title}\nStatus: ${task.status}\nOwner: ${task.assigneeName || "Unassigned"}\nClick to view details & submit proof`}
-                    style={{
-                      position: "absolute",
-                      left: `${flagPct}%`,
-                      top: "-22px",
-                      transform: "translateX(-50%)",
-                      zIndex: 10,
-                      background: "transparent",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      transition: "transform 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1.2) translateY(-2px)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1)")}
-                  >
-                    <svg
-                      width="22"
-                      height="28"
-                      viewBox="0 0 22 28"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{ filter: "drop-shadow(2px 2px 0 rgba(16,21,23,0.85))", overflow: "visible" }}
-                    >
-                      {/* Flag Pole */}
-                      <line x1="3.5" y1="2" x2="3.5" y2="26" stroke="#101517" strokeWidth="2" strokeLinecap="round" />
-                      {/* Finial Ball */}
-                      <circle cx="3.5" cy="2.5" r="2" fill="#facc15" stroke="#101517" strokeWidth="1" />
-                      {/* Graphic Swallowtail Pennant Flag */}
-                      <path
-                        d="M 4 4.5 L 20 4.5 L 16 11.5 L 20 18.5 L 4 18.5 Z"
-                        fill={isTaskDone ? "#22c55e" : isTaskInReview ? "#f59e0b" : "#475569"}
-                        stroke="#101517"
-                        strokeWidth="1.75"
-                        strokeLinejoin="round"
-                      />
-                      {/* Inner Number or Check */}
-                      <text
-                        x="10.5"
-                        y="12"
-                        fill="#ffffff"
-                        fontSize="8.5"
-                        fontWeight="900"
-                        fontFamily="var(--font-heading), sans-serif"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                      >
-                        {isTaskDone ? "✓" : idx + 1}
-                      </text>
-                    </svg>
-                  </button>
-                </div>
-              );
-            })}
           </div>
         </div>
 
@@ -3668,6 +3630,7 @@ export function BattleScene({
                       style={{ padding: "6px 14px", fontSize: "0.8rem", background: "#22c55e", color: "#ffffff" }}
                       onClick={() => {
                         setDummyReviewTaskDone(true);
+                        setIsDummyTaskSubmitted(true);
                         gameAudio.playDragonRoar();
                         gameAudio.playTing();
                       }}
@@ -3679,7 +3642,9 @@ export function BattleScene({
                       className="rpg-modern-btn is-secondary"
                       style={{ padding: "6px 12px", fontSize: "0.8rem", background: "#fee2e2", color: "#991b1b" }}
                       onClick={() => {
-                        alert("Changes requested for dummy task: please add unit tests for expired tokens.");
+                        setDummyReviewTaskDone(false);
+                        setIsDummyTaskSubmitted(false);
+                        alert("Changes requested for dummy task: task rejected, attack and damage undone.");
                       }}
                     >
                       Request Changes
@@ -3691,7 +3656,10 @@ export function BattleScene({
                     <span>Approved & verified! Boss damage applied.</span>
                     <button
                       type="button"
-                      onClick={() => setDummyReviewTaskDone(false)}
+                      onClick={() => {
+                        setDummyReviewTaskDone(false);
+                        setIsDummyTaskSubmitted(false);
+                      }}
                       style={{ marginLeft: "auto", background: "none", border: "none", color: "#64748b", textDecoration: "underline", cursor: "pointer", fontSize: "0.72rem" }}
                     >
                       Reset test task

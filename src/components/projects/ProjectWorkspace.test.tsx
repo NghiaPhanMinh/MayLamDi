@@ -85,7 +85,7 @@ vi.mock("./AllocationWorkbench", () => ({
   AllocationWorkbench: () => <div>Workload snapshot</div>,
 }));
 vi.mock("./ProjectTeamMembers", () => ({ ProjectTeamMembers: () => <div>Members</div> }));
-vi.mock("./DailyEvidenceFeed", () => ({ DailyEvidenceFeed: () => <div>Daily feed</div> }));
+vi.mock("./TeamMessengerChat", () => ({ TeamMessengerChat: () => <div>Team chat</div> }));
 vi.mock("./AIPlanningAssistant", () => ({ AIPlanningAssistant: () => null }));
 
 describe("ProjectWorkspace information hierarchy", () => {

@@ -68,17 +68,10 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
   }
 }
 
-export function getPlayerCoordinates(index: number = 0, totalCount: number = 1) {
-  if (totalCount <= 2) {
-    const x = 210 + index * 65;
-    const y = 250 + (index % 2) * 12;
-    return { x, y };
-  }
-  // Staggered spacing across the open meadow with village removed
-  const col = index % 3;
-  const row = Math.floor(index / 3);
-  const x = 180 + col * 55;
-  const y = 236 + row * 34;
+export function getPlayerCoordinates(index: number = 0, _totalCount: number = 1) {
+  // Stack players vertically with subtle horizontal stagger so each hero and their projectile path are clearly visible
+  const x = 220 + (index % 2) * 16;
+  const y = 200 + index * 52;
   return { x, y };
 }
 
