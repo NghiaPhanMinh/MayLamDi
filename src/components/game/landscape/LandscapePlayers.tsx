@@ -68,27 +68,73 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
   }
 }
 
-export function getPlayerCoordinates(index: number = 0, _totalCount: number = 1) {
-  // Stagger players in 2 columns across the lush floating island plateau
-  // Col 0 at x=185, Col 1 at x=265 (80px horizontal gap prevents overlapping)
-  // Row spacing of 68px ensures players and name tags never overlap vertically
-  const col = index % 2;
-  const row = Math.floor(index / 2);
-  const x = 185 + col * 80;
-  const y = 200 + row * 68 + col * 12;
-  return { x, y };
+export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
+  const count = Math.max(1, totalCount);
+  let numCols: number;
+  let spriteScale: number;
+
+  if (count <= 2) {
+    numCols = 2;
+    spriteScale = 1.25;
+  } else if (count <= 4) {
+    numCols = 2;
+    spriteScale = 1.15;
+  } else if (count <= 8) {
+    numCols = 4;
+    spriteScale = 1.0;
+  } else if (count <= 14) {
+    numCols = 5;
+    spriteScale = 0.88;
+  } else {
+    numCols = Math.min(7, Math.ceil(Math.sqrt(count * 2)));
+    spriteScale = Math.max(0.68, 0.88 - (count - 14) * 0.015);
+  }
+
+  const numRows = Math.ceil(count / numCols);
+  const row = Math.floor(index / numCols);
+  const col = index % numCols;
+
+  const minX = 175;
+  const maxX = 465;
+  const minY = 188;
+  const maxY = 250;
+
+  const colGap = numCols > 1 ? (maxX - minX) / (numCols - 1) : 0;
+  const rowGap = numRows > 1 ? (maxY - minY) / (numRows - 1) : 0;
+
+  // Stagger alternate rows slightly for RPG party feel
+  const stagger = (row % 2) * (colGap * 0.35);
+  const rawX = minX + col * colGap + stagger;
+  const rawY = minY + row * rowGap;
+
+  // Strict clamp within island plateau bounds so heroes never spill over
+  const x = Math.round(Math.max(minX, Math.min(maxX, rawX)));
+  const y = Math.round(Math.max(minY, Math.min(maxY, rawY)));
+
+  return { x, y, scale: spriteScale };
 }
 
-export function getPlayerStaffTip(index: number = 0, totalCount: number = 1, isAttacking: boolean = true) {
-  const { x, y } = getPlayerCoordinates(index, totalCount);
-  // Group scale is 1.25
-  // When staff tilts 60 deg clockwise around hand (26, 32), the crystal tip (28, 5) moves to (49.5, 18.5)
-  const tipRelX = isAttacking ? 49.5 : 28;
-  const tipRelY = isAttacking ? 18.5 : 5;
-  return {
-    x: Math.round(x + tipRelX * 1.25),
-    y: Math.round(y + tipRelY * 1.25),
-  };
+export function getPlayerCoordinates(index: number = 0, totalCount: number = 1) {
+  const info = getPlayerLayoutInfo(index, totalCount);
+  return { x: info.x, y: info.y };
+}
+
+export function getPlayerStaffTip(
+  index: number = 0,
+  totalCount: number = 1,
+  isAttacking: boolean = true,
+  playerLayerTransform: { x: number; y: number; scale: number } = { x: 0, y: 0, scale: 1 },
+) {
+  const { x, y, scale } = getPlayerLayoutInfo(index, totalCount);
+  // Precise peak of the elemental staff crystal head (28, 0) rotated 60 deg around hand (26, 32)
+  const tipRelX = (isAttacking ? 54.71 : 28) * scale;
+  const tipRelY = (isAttacking ? 17.73 : 0) * scale;
+
+  // World coordinates factoring in player layer transform
+  const worldX = Math.round((x + tipRelX) * playerLayerTransform.scale + playerLayerTransform.x);
+  const worldY = Math.round((y + tipRelY) * playerLayerTransform.scale + playerLayerTransform.y);
+
+  return { x: worldX, y: worldY };
 }
 
 export function LandscapePlayers({ members }: LandscapePlayersProps) {
@@ -97,15 +143,20 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
   return (
     <div className="landscape-layer layer-7-players" aria-label="Party members roster">
       <style>{`
-        @keyframes mage-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3.5px); }
+        @keyframes island-hover {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-7px); }
+        }
+        .floating-island-group {
+          animation: island-hover 5.5s ease-in-out infinite;
+          transform-origin: center center;
         }
       `}</style>
       <svg viewBox="0 0 1000 400" width="100%" height="100%">
-        <g>
+        {/* Synced with island floating animation */}
+        <g className="floating-island-group">
           {members.map((member, index) => {
-            const { x: offsetX, y: offsetY } = getPlayerCoordinates(index, count);
+            const { x: offsetX, y: offsetY, scale: spriteScale } = getPlayerLayoutInfo(index, count);
             const active = member.isActiveToday;
             const mage = getMageTheme(member.spellType, member.profileId, index);
             const isAttacking = Boolean(member.isAttacking);
@@ -113,7 +164,7 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
             return (
               <g
                 key={member.profileId}
-                transform={`translate(${offsetX}, ${offsetY}) scale(1.25)`}
+                transform={`translate(${offsetX}, ${offsetY}) scale(${spriteScale})`}
                 className={`player-character ${isAttacking ? "is-attacking" : ""}`}
                 role="img"
                 aria-label={`${member.displayName} (${mage.name}, ${active ? "Active today" : "Idle"})`}>

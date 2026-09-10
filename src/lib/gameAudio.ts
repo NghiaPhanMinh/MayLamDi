@@ -510,6 +510,174 @@ class GameAudioEngine {
   }
 
   // ============================================================================
+  // NON-LOOPING ELEMENTAL PROJECTILE AUDIO (Electric Zap, Burn Pop, Ice Crack)
+  // ============================================================================
+  public playElectricZap() {
+    const ctx = this.initContext();
+    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const now = ctx.currentTime;
+
+    // 1. Descending Sawtooth Voltage Discharge
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(2200, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.12);
+
+    oscGain.gain.setValueAtTime(0.45, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    const bpFilter = ctx.createBiquadFilter();
+    bpFilter.type = "bandpass";
+    bpFilter.frequency.setValueAtTime(2600, now);
+    bpFilter.Q.setValueAtTime(2.5, now);
+
+    osc.connect(bpFilter);
+    bpFilter.connect(oscGain);
+    oscGain.connect(this.sfxGain);
+
+    osc.start(now);
+    osc.stop(now + 0.15);
+
+    // 2. High-Frequency Electric Spark Noise Burst
+    const burstLen = Math.floor(ctx.sampleRate * 0.08);
+    const buffer = ctx.createBuffer(1, burstLen, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < burstLen; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.02));
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.4, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+    noise.connect(noiseGain);
+    noiseGain.connect(this.sfxGain);
+    noise.start(now);
+  }
+
+  public playBurnPop() {
+    const ctx = this.initContext();
+    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const now = ctx.currentTime;
+
+    // 1. Resonant Warm Combustion Pop
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(360, now);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.09);
+
+    gain.gain.setValueAtTime(0.55, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.12);
+
+    // 2. Muffled Fire Flame Whoosh Noise Crackle
+    const burstLen = Math.floor(ctx.sampleRate * 0.12);
+    const buffer = ctx.createBuffer(1, burstLen, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < burstLen; i++) {
+      const white = Math.random() * 2 - 1;
+      data[i] = (last + 0.08 * white) / 1.08;
+      last = data[i];
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(600, now);
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.35, now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+    noise.connect(filter);
+    filter.connect(nGain);
+    nGain.connect(this.sfxGain);
+    noise.start(now);
+  }
+
+  public playIceCrack() {
+    const ctx = this.initContext();
+    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const now = ctx.currentTime;
+
+    // 1. Brittle High Crystalline Crack Harmonics
+    const freqs = [3200, 4200, 5400];
+    freqs.forEach((f, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(f, now);
+
+      gain.gain.setValueAtTime(0.3 / (idx + 1), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    });
+
+    // 2. Sharp Ice Snap Friction Click
+    const snapLen = Math.floor(ctx.sampleRate * 0.04);
+    const buffer = ctx.createBuffer(1, snapLen, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < snapLen; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
+    }
+    const snap = ctx.createBufferSource();
+    snap.buffer = buffer;
+    const sGain = ctx.createGain();
+    sGain.gain.setValueAtTime(0.45, now);
+    sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+    snap.connect(sGain);
+    sGain.connect(this.sfxGain);
+    snap.start(now);
+  }
+
+  public playArcaneSpark() {
+    const ctx = this.initContext();
+    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const now = ctx.currentTime;
+
+    const notes = [1320, 1760, 2640];
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + idx * 0.02);
+
+      gain.gain.setValueAtTime(0.2, now + idx * 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(now + idx * 0.02);
+      osc.stop(now + 0.25);
+    });
+  }
+
+  public playProjectileSound(spellType?: string) {
+    const type = (spellType || "lightning").toLowerCase();
+    if (type === "fire") {
+      this.playBurnPop();
+    } else if (type === "ice" || type === "water") {
+      this.playIceCrack();
+    } else if (type === "lightning" || type === "spark") {
+      this.playElectricZap();
+    } else {
+      this.playArcaneSpark();
+    }
+  }
+
+  // ============================================================================
   // 4. HEROIC FANFARE MELODY (Triumphant Victory Melodic Fanfare)
   // ============================================================================
   public playHeroicMelody() {

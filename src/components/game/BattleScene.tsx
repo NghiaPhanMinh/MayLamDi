@@ -2,12 +2,14 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { jsPDF } from "jspdf";
 import {
+  BookOpen,
   Check,
   CheckCircle2,
   ClipboardCheck,
   FileDown,
   Flag,
   Gamepad2,
+  GripHorizontal,
   Shield,
   ShieldCheck,
   ShieldX,
@@ -983,6 +985,26 @@ export function BattleScene({
   const [isDummyTaskSubmitted, setIsDummyTaskSubmitted] = useState(false);
   const [selectedReviewTask, setSelectedReviewTask] = useState<any | null>(null);
 
+  // Testing Dummy Attack configuration & modal
+  const [isDummyTestingActive, setIsDummyTestingActive] = useState(false);
+  const [dummyPlayerCount, setDummyPlayerCount] = useState(6);
+  const [dummyElementFilter, setDummyElementFilter] = useState<"mixed" | "fire" | "ice" | "lightning" | "arcane">("mixed");
+  const [showDummyTestModal, setShowDummyTestModal] = useState(false);
+
+  // Draggable toolbar & progress bar offsets
+  const [toolbarOffset, setToolbarOffset] = useState({ x: 0, y: 0 });
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
+  const toolbarDragStartRef = useRef({ mouseX: 0, mouseY: 0, startX: 0, startY: 0 });
+
+  const [pvzBarPos, setPvzBarPos] = useState({ x: 0, y: 0 });
+  const [isDraggingPvzBar, setIsDraggingPvzBar] = useState(false);
+  const pvzBarDragStartRef = useRef({ mouseX: 0, mouseY: 0, startX: 0, startY: 0 });
+
+  // Draggable Adjust Elements Modal offset
+  const [adjustModalPos, setAdjustModalPos] = useState({ x: 0, y: 0 });
+  const [isDraggingAdjustModal, setIsDraggingAdjustModal] = useState(false);
+  const adjustModalDragStartRef = useRef({ mouseX: 0, mouseY: 0, startX: 0, startY: 0 });
+
   // Leaderboard data query
   const leaderboardData = useQuery(api.battle.getLeaderboard, { projectId });
 
@@ -1033,6 +1055,61 @@ export function BattleScene({
       onClearActiveBattleAction?.();
     }
   }, [activeBattleAction, onClearActiveBattleAction]);
+
+  // Drag movement handlers for bottom toolbar, top progress bar, and adjust elements modal
+  useEffect(() => {
+    if (!isDraggingToolbar && !isDraggingPvzBar && !isDraggingAdjustModal) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+
+      if (isDraggingToolbar) {
+        const dx = clientX - toolbarDragStartRef.current.mouseX;
+        const dy = clientY - toolbarDragStartRef.current.mouseY;
+        setToolbarOffset({
+          x: toolbarDragStartRef.current.startX + dx,
+          y: toolbarDragStartRef.current.startY - dy,
+        });
+      }
+
+      if (isDraggingPvzBar) {
+        const dx = clientX - pvzBarDragStartRef.current.mouseX;
+        const dy = clientY - pvzBarDragStartRef.current.mouseY;
+        setPvzBarPos({
+          x: pvzBarDragStartRef.current.startX + dx,
+          y: pvzBarDragStartRef.current.startY + dy,
+        });
+      }
+
+      if (isDraggingAdjustModal) {
+        const dx = clientX - adjustModalDragStartRef.current.mouseX;
+        const dy = clientY - adjustModalDragStartRef.current.mouseY;
+        setAdjustModalPos({
+          x: adjustModalDragStartRef.current.startX + dx,
+          y: adjustModalDragStartRef.current.startY + dy,
+        });
+      }
+    };
+
+    const handleEnd = () => {
+      setIsDraggingToolbar(false);
+      setIsDraggingPvzBar(false);
+      setIsDraggingAdjustModal(false);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleEnd);
+    window.addEventListener("touchmove", handleMove);
+    window.addEventListener("touchend", handleEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+    };
+  }, [isDraggingToolbar, isDraggingPvzBar, isDraggingAdjustModal]);
   const [showCreateQuestModal, setShowCreateQuestModal] = useState(false);
   const [isClaimingQuest, setIsClaimingQuest] = useState(false);
   const [claimQuestError, setClaimQuestError] = useState<string | null>(null);
@@ -1128,6 +1205,10 @@ export function BattleScene({
   useEffect(() => {
     localStorage.setItem("layer_transforms_config", JSON.stringify(layerTransforms));
   }, [layerTransforms]);
+
+  useEffect(() => {
+    localStorage.setItem("pvz_bar_config", JSON.stringify(pvzBarOffset));
+  }, [pvzBarOffset]);
 
   const [terrainOffsets, setTerrainOffsets] = useState<{
     mountain: { x: number; y: number; scale: number };
@@ -2182,17 +2263,75 @@ export function BattleScene({
   }, [state, testDeadGoblins]);
 
   const players = useMemo(() => {
-    if (!state) return [];
-    return state.members.map((member) => ({
-      profileId: member.profileId,
-      displayName: member.displayName,
-      characterFill: member.characterFill,
-      characterOutline: member.characterOutline,
-      spellType: member.spellType,
-      isActiveToday: member.hasSubmittedToday,
-      isAttacking: true,
-    }));
-  }, [state]);
+    if (isDummyTestingActive) {
+      const count = Math.max(1, Math.min(25, dummyPlayerCount));
+      const list = [];
+      const elementalPool =
+        dummyElementFilter === "mixed"
+          ? ["fire", "ice", "lightning"]
+          : [dummyElementFilter === "arcane" ? "lightning" : dummyElementFilter];
+
+      for (let i = 0; i < count; i++) {
+        const elem = elementalPool[i % elementalPool.length];
+        list.push({
+          profileId: `dummy_hero_${i + 1}`,
+          displayName: `Hero ${i + 1}`,
+          characterFill: undefined,
+          characterOutline: undefined,
+          spellType: elem,
+          isActiveToday: true,
+          isAttacking: true,
+        });
+      }
+      return list;
+    }
+
+    if (!state?.members) return [];
+
+    // Identify which members have submitted any task or evidence
+    const submittedMemberIds = new Set<string>();
+    if (isDummyTaskSubmitted && state.currentProfileId) {
+      submittedMemberIds.add(state.currentProfileId);
+    }
+    workspace?.tasks?.forEach((task) => {
+      const t = task as any;
+      if (
+        task.primaryOwnerProfileId &&
+        (task.status === "submitted" ||
+          task.status === "review" ||
+          task.status === "awaiting_creator" ||
+          task.status === "verified" ||
+          task.status === "completed" ||
+          Boolean(t.evidenceUrl) ||
+          Boolean(t.proofSummary) ||
+          Boolean(task.completedAt))
+      ) {
+        submittedMemberIds.add(task.primaryOwnerProfileId);
+      }
+    });
+
+    return state.members.map((member) => {
+      const hasSubmitted =
+        Boolean(member.hasSubmittedToday) || submittedMemberIds.has(member.profileId);
+      return {
+        profileId: member.profileId,
+        displayName: member.displayName,
+        characterFill: member.characterFill,
+        characterOutline: member.characterOutline,
+        spellType: member.spellType,
+        isActiveToday: member.hasSubmittedToday,
+        isAttacking: hasSubmitted,
+      };
+    });
+  }, [
+    state?.members,
+    state?.currentProfileId,
+    isDummyTestingActive,
+    dummyPlayerCount,
+    dummyElementFilter,
+    isDummyTaskSubmitted,
+    workspace?.tasks,
+  ]);
 
   // All Project Tasks for In-Canvas Quest Board (Active first, Completed sent to end)
   const questTasks: QuestTask[] = useMemo(() => {
@@ -2224,26 +2363,21 @@ export function BattleScene({
   // Active attackers throwing elemental projectiles at the dragon from staff tip
   const activeAttackers: ActiveAttacker[] = useMemo(() => {
     const attackers: ActiveAttacker[] = [];
-    if (!state?.members || state.members.length === 0) {
-      const coords = getPlayerStaffTip(0, 1, true);
-      return [
-        {
-          profileId: state?.currentProfileId || "hero",
-          displayName: "Hero",
-          spellType: "fire",
-          startX: coords.x,
-          startY: coords.y,
-        },
-      ];
-    }
+    const totalCount = players.length;
+    const playerTransform = {
+      x: layerTransforms.players?.x || 0,
+      y: layerTransforms.players?.y || 0,
+      scale: layerTransforms.players?.scale || 1,
+    };
 
-    const totalCount = state.members.length;
-    state.members.forEach((member, idx) => {
-      const coords = getPlayerStaffTip(idx, totalCount, true);
-      const mage = getMageTheme(member.spellType, member.profileId, idx);
+    players.forEach((player, idx) => {
+      // Only heroes who have submitted work (or during dummy test mode) cast projectiles
+      if (!player.isAttacking) return;
+      const coords = getPlayerStaffTip(idx, totalCount, true, playerTransform);
+      const mage = getMageTheme(player.spellType, player.profileId, idx);
       attackers.push({
-        profileId: member.profileId,
-        displayName: member.displayName,
+        profileId: player.profileId,
+        displayName: player.displayName,
         spellType: mage.type,
         startX: coords.x,
         startY: coords.y,
@@ -2251,7 +2385,7 @@ export function BattleScene({
     });
 
     return attackers;
-  }, [state?.members, state?.currentProfileId]);
+  }, [players, layerTransforms.players]);
 
   // Auto-prompt for Browser Push Notifications if not decided yet
   useEffect(() => {
@@ -2732,163 +2866,106 @@ export function BattleScene({
 
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
       <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
-        {/* Top Control Bar Overlay (Flex row - compact & clean) */}
+        {/* Layer 10: Task Progress Bar (TOP, centered text, draggable, responsive width) */}
         <div
-          className="rpg-top-bar-controls"
+          className="pvz-deadline-progress-container project-task-progress-container"
           style={{
             position: "absolute",
-            top: "14px",
-            right: "16px",
+            top: `calc(14px + ${pvzBarPos.y + pvzBarOffset.y}px)`,
+            left: `calc(50% + ${pvzBarPos.x + pvzBarOffset.x}px)`,
+            transform: `translateX(-50%) scale(${pvzBarOffset.scale})`,
             zIndex: 25,
-            display: "flex",
+            width: `${pvzBarOffset.width}px`,
+            background: "#fffded",
+            border: "3px solid #101517",
+            boxShadow: "4px 4px 0 rgba(16, 21, 23, 0.72)",
+            borderRadius: "14px",
+            padding: "8px 14px 10px 14px",
+            display: pvzBarOffset.visible ? "flex" : "none",
+            flexDirection: "column",
             alignItems: "center",
-            gap: "8px",
+            gap: "6px",
+            userSelect: "none",
+            pointerEvents: "auto",
+            cursor: isDraggingPvzBar ? "grabbing" : "grab",
           }}
+          onMouseDown={(e) => {
+            if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "BUTTON") return;
+            setIsDraggingPvzBar(true);
+            pvzBarDragStartRef.current = {
+              mouseX: e.clientX,
+              mouseY: e.clientY,
+              startX: pvzBarPos.x,
+              startY: pvzBarPos.y,
+            };
+          }}
+          onTouchStart={(e) => {
+            if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "BUTTON") return;
+            setIsDraggingPvzBar(true);
+            pvzBarDragStartRef.current = {
+              mouseX: e.touches[0].clientX,
+              mouseY: e.touches[0].clientY,
+              startX: pvzBarPos.x,
+              startY: pvzBarPos.y,
+            };
+          }}
+          role="progressbar"
+          aria-valuenow={progressPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Project task completion progress"
         >
-          {/* Tutorial Cutscene Button */}
-          <button
-            className="rpg-btn-leaderboard rpg-btn-tutorial"
-            style={{ position: "relative", top: 0, right: 0 }}
-            onClick={() => setShowTutorial(true)}
-            type="button"
-          >
-            <span className="rpg-book-icon" aria-hidden="true">
-              <i /><i />
-            </span>
-            Tutorial
-          </button>
-
-          {/* Sound & Notifications Controls Button (Compact Icon Button) */}
-          <button
-            className="rpg-btn-icon-sound"
+          {/* Top Info Header - CENTERED TEXT */}
+          <div
             style={{
-              width: "36px",
-              height: "36px",
-              padding: 0,
+              width: "100%",
               display: "flex",
-              alignItems: "center",
               justifyContent: "center",
-              borderRadius: "8px",
-              background: "#fffded",
-              border: "2px solid #101517",
-              boxShadow: "2px 2px 0 #101517",
-              cursor: "pointer",
+              alignItems: "center",
+              textAlign: "center",
+              fontSize: "0.74rem",
+              fontWeight: 900,
+              fontFamily: "var(--font-heading), sans-serif",
+              letterSpacing: "0.02em",
               color: "#101517",
+              gap: "8px",
             }}
-            onClick={() => setShowSoundSettingsModal(true)}
-            type="button"
-            title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
-            aria-label="Sound and music settings"
           >
-            {isAudioMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
+            <span>
+              DAY {daysPassed}/{totalDays || 13} · {completedTasksCount}/{totalTasksCount} TASKS COMPLETED ({progressPercentage}%)
+            </span>
+            {daysRemaining <= 0 && (
+              <span style={{ color: "#d97706", fontWeight: 700, fontSize: "0.68rem" }}>
+                (Target passed · No penalty)
+              </span>
+            )}
+          </div>
 
-          {/* Adjust Elements Button (Size, Width, Positions of Dragon, HP Bar, Players) */}
-          <button
-            className="rpg-btn-icon-sound"
+          {/* Progress Bar Track */}
+          <div
             style={{
-              height: "36px",
-              padding: "0 10px",
+              position: "relative",
+              width: "100%",
+              height: "20px",
+              background: "#e2e8f0",
+              border: "2px solid #101517",
+              borderRadius: "8px",
+              overflow: "hidden",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
-              borderRadius: "8px",
-              background: "#fffded",
-              border: "2px solid #101517",
-              boxShadow: "2px 2px 0 #101517",
-              cursor: "pointer",
-              color: "#101517",
-              fontWeight: 800,
-              fontSize: "0.78rem",
             }}
-            onClick={() => setShowAdjustElementsModal(true)}
-            type="button"
-            title="Adjust size, width, and position of Dragon, Health Bar, and Players"
-            aria-label="Adjust Elements"
           >
-            <Sliders size={16} />
-            <span>Adjust Elements</span>
-          </button>
-
-          {/* Boss Defeated Preview Dummy Button (Togglable) */}
-          <button
-            className="rpg-btn-icon-sound"
-            style={{
-              height: "36px",
-              padding: "0 10px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              borderRadius: "8px",
-              background: testBossDefeatedPreview ? "#22c55e" : "#fffded",
-              color: testBossDefeatedPreview ? "#ffffff" : "#101517",
-              border: "2px solid #101517",
-              boxShadow: "2px 2px 0 #101517",
-              cursor: "pointer",
-              fontWeight: 800,
-              fontSize: "0.78rem",
-            }}
-            onClick={() => setTestBossDefeatedPreview((prev) => !prev)}
-            type="button"
-            title="Preview Project Completed end screen"
-            aria-label="Toggle Project Completed Preview"
-          >
-            <span>🏆 {testBossDefeatedPreview ? "Exit Preview" : "Preview Completed"}</span>
-          </button>
-
-          {/* Test Task Attack & Elemental Projectile Button (Togglable / Undo) */}
-          <button
-            className="rpg-btn-icon-sound"
-            style={{
-              height: "36px",
-              padding: "0 10px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              borderRadius: "8px",
-              background: isDummyTaskSubmitted ? "#f43f5e" : "#fffded",
-              color: isDummyTaskSubmitted ? "#ffffff" : "#101517",
-              border: "2px solid #101517",
-              boxShadow: "2px 2px 0 #101517",
-              cursor: "pointer",
-              fontWeight: 800,
-              fontSize: "0.78rem",
-            }}
-            onClick={() => {
-              setIsDummyTaskSubmitted((prev) => !prev);
-              if (!isDummyTaskSubmitted) {
-                gameAudio.playDragonRoar();
-                gameAudio.playTing();
-              }
-            }}
-            type="button"
-            title={isDummyTaskSubmitted ? "Undo dummy task attack & projectile" : "Test task attack & elemental projectile against dragon"}
-            aria-label="Test Task Attack"
-          >
-            <span>⚔️ {isDummyTaskSubmitted ? "Undo Dummy Task" : "Test Task Attack"}</span>
-          </button>
-
-          {/* Admin Edit Dragon Layout Overlay Button */}
-          {(showDragonEditor || adminAuthenticated) && (
-            <button
-              className="rpg-btn-leaderboard rpg-btn-layout-admin"
-              style={{ position: "relative", top: 0, right: 0 }}
-              onClick={() => {
-                if (!adminAuthenticated) {
-                  setShowAdminPasswordModal(true);
-                } else {
-                  setShowDragonEditor((prev) => !prev);
-                  if (!selectedDragonPart) {
-                    setSelectedDragonPart("headNeck");
-                  }
-                }
+            {/* Smooth Emerald Task Progress Fill */}
+            <div
+              style={{
+                width: `${progressPercentage}%`,
+                height: "100%",
+                background: "linear-gradient(90deg, #15803d, #22c55e)",
+                borderRadius: "6px",
+                transition: "width 0.4s ease",
               }}
-              type="button"
-            >
-              <span className="rpg-control-icon rpg-layout-icon" aria-hidden="true"><i /><i /><i /><i /></span>
-              Layout Admin
-            </button>
-          )}
+            />
+          </div>
         </div>
 
         {/* Floating Mob-Style Boss HP Bar (Positioned in middle of dragon) */}
@@ -3014,90 +3091,153 @@ export function BattleScene({
             activeEvent={combinedActiveEvent}
             isVictory={defeated}
             activeAttackers={activeAttackers}
-            dragonTarget={{ x: dragonX + 80, y: 195 }}
+            dragonTarget={{
+              x: Math.round((dragonX + 80) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
+              y: Math.round(195 * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.y || 0)),
+            }}
           />
         </div>
 
-        {/* Layer 10: Task Progress Bar (Clean progress bar, flags removed) */}
+        {/* Floating Bottom Toolbar (Logos Only, Draggable) */}
         <div
-          className="pvz-deadline-progress-container project-task-progress-container"
+          className="rpg-bottom-floating-toolbar"
           style={{
             position: "absolute",
-            bottom: "12px",
-            left: `calc(50% + ${pvzBarOffset.x}px)`,
-            transform: `translateX(-50%) scale(${pvzBarOffset.scale})`,
-            zIndex: 25,
-            width: `clamp(320px, ${Math.max(pvzBarOffset.width, 480)}px, 680px)`,
+            bottom: `calc(16px - ${toolbarOffset.y}px)`,
+            left: `calc(50% + ${toolbarOffset.x}px)`,
+            transform: "translateX(-50%)",
+            zIndex: 30,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
             background: "#fffded",
             border: "3px solid #101517",
             boxShadow: "4px 4px 0 rgba(16, 21, 23, 0.72)",
             borderRadius: "14px",
-            padding: "8px 14px 10px 14px",
-            display: pvzBarOffset.visible ? "flex" : "none",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "6px",
+            padding: "6px 10px",
             userSelect: "none",
-            pointerEvents: "auto",
           }}
-          role="progressbar"
-          aria-valuenow={progressPercentage}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Project task completion progress"
         >
-          {/* Top Info Header */}
+          {/* Grip Drag Handle */}
           <div
             style={{
-              width: "100%",
+              cursor: isDraggingToolbar ? "grabbing" : "grab",
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              fontSize: "0.72rem",
-              fontWeight: 900,
-              fontFamily: "var(--font-heading), sans-serif",
-              letterSpacing: "0.02em",
-              color: "#101517",
+              padding: "4px 2px",
+              color: "#64748b",
             }}
+            onMouseDown={(e) => {
+              setIsDraggingToolbar(true);
+              toolbarDragStartRef.current = {
+                mouseX: e.clientX,
+                mouseY: e.clientY,
+                startX: toolbarOffset.x,
+                startY: toolbarOffset.y,
+              };
+            }}
+            onTouchStart={(e) => {
+              setIsDraggingToolbar(true);
+              toolbarDragStartRef.current = {
+                mouseX: e.touches[0].clientX,
+                mouseY: e.touches[0].clientY,
+                startX: toolbarOffset.x,
+                startY: toolbarOffset.y,
+              };
+            }}
+            title="Drag toolbar"
+            aria-label="Drag toolbar"
           >
-            <span>
-              DAY {daysPassed}/{totalDays || 13}
-              {daysRemaining <= 0 ? (
-                <span style={{ color: "#d97706", marginLeft: "6px", fontWeight: 700 }}>
-                  (Target passed · No penalty)
-                </span>
-              ) : null}
-            </span>
-            <span style={{ color: "#16a34a", fontWeight: 900 }}>
-              {completedTasksCount}/{totalTasksCount} TASKS COMPLETED ({progressPercentage}%)
-            </span>
+            <GripHorizontal size={18} />
           </div>
 
-          {/* Progress Bar Track */}
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              height: "20px",
-              background: "#e2e8f0",
-              border: "2px solid #101517",
-              borderRadius: "8px",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
-            }}
+          {/* 1. Tutorial */}
+          <button
+            type="button"
+            className="rpg-btn-icon"
+            onClick={() => setShowTutorial(true)}
+            title="Tutorial Cutscene"
+            aria-label="Tutorial Cutscene"
           >
-            {/* Smooth Emerald Task Progress Fill */}
-            <div
+            <BookOpen size={20} />
+          </button>
+
+          {/* 2. Sound & Music */}
+          <button
+            type="button"
+            className="rpg-btn-icon"
+            onClick={() => setShowSoundSettingsModal(true)}
+            title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
+            aria-label="Sound and music settings"
+          >
+            {isAudioMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+
+          {/* 3. Adjust Elements */}
+          <button
+            type="button"
+            className={`rpg-btn-icon ${showAdjustElementsModal ? "active" : ""}`}
+            onClick={() => setShowAdjustElementsModal((prev) => !prev)}
+            title="Adjust Elements Layout & Scale"
+            aria-label="Adjust Elements Layout & Scale"
+          >
+            <Sliders size={20} />
+          </button>
+
+          {/* 4. Testing Attack & Dummy Heroes Generator */}
+          <button
+            type="button"
+            className={`rpg-btn-icon ${isDummyTestingActive || isDummyTaskSubmitted ? "active-attack" : ""}`}
+            onClick={() => setShowDummyTestModal(true)}
+            title="Testing Attack & Dummy Heroes Generator"
+            aria-label="Testing Attack & Dummy Heroes Generator"
+          >
+            <Gamepad2 size={20} />
+          </button>
+
+          {/* 5. Preview Completed */}
+          <button
+            type="button"
+            className={`rpg-btn-icon ${testBossDefeatedPreview ? "active-gold" : ""}`}
+            onClick={() => setTestBossDefeatedPreview((prev) => !prev)}
+            title={testBossDefeatedPreview ? "Exit Completed Preview" : "Preview Project Completed"}
+            aria-label="Preview Project Completed"
+          >
+            <Trophy size={20} />
+          </button>
+
+          {/* 6. Layout Admin */}
+          {(showDragonEditor || adminAuthenticated) && (
+            <button
+              type="button"
+              className="rpg-btn-leaderboard rpg-btn-layout-admin"
               style={{
-                width: `${progressPercentage}%`,
-                height: "100%",
-                background: "linear-gradient(90deg, #15803d, #22c55e)",
-                borderRadius: "6px",
-                transition: "width 0.4s ease",
+                width: "40px",
+                height: "40px",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "10px",
+                border: "2px solid #101517",
+                cursor: "pointer",
               }}
-            />
-          </div>
+              onClick={() => {
+                if (!adminAuthenticated) {
+                  setShowAdminPasswordModal(true);
+                } else {
+                  setShowDragonEditor((prev) => !prev);
+                  if (!selectedDragonPart) {
+                    setSelectedDragonPart("headNeck");
+                  }
+                }
+              }}
+              title="Dragon Layout Admin"
+              aria-label="Dragon Layout Admin"
+            >
+              <Shield size={20} />
+            </button>
+          )}
         </div>
 
         {/* Interactive Visual Novel Cutscene Tutorial Overlay (Strictly inside game canvas) */}
@@ -3138,10 +3278,41 @@ export function BattleScene({
               borderRadius: "16px",
               padding: "20px",
               gap: "14px",
+              transform: `translate(${adjustModalPos.x}px, ${adjustModalPos.y}px)`,
+              transition: isDraggingAdjustModal ? "none" : "transform 0.1s ease",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                cursor: isDraggingAdjustModal ? "grabbing" : "grab",
+                userSelect: "none",
+              }}
+              onMouseDown={(e) => {
+                if ((e.target as HTMLElement).tagName === "BUTTON") return;
+                setIsDraggingAdjustModal(true);
+                adjustModalDragStartRef.current = {
+                  mouseX: e.clientX,
+                  mouseY: e.clientY,
+                  startX: adjustModalPos.x,
+                  startY: adjustModalPos.y,
+                };
+              }}
+              onTouchStart={(e) => {
+                if ((e.target as HTMLElement).tagName === "BUTTON") return;
+                setIsDraggingAdjustModal(true);
+                adjustModalDragStartRef.current = {
+                  mouseX: e.touches[0].clientX,
+                  mouseY: e.touches[0].clientY,
+                  startX: adjustModalPos.x,
+                  startY: adjustModalPos.y,
+                };
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <GripHorizontal size={20} style={{ color: "#64748b" }} />
                 <Sliders size={20} />
                 <h3 className="rpg-modern-title" style={{ fontSize: "1.25rem", margin: 0 }}>
                   Adjust Elements
@@ -3582,6 +3753,80 @@ export function BattleScene({
                   </div>
                 </div>
               </div>
+
+              {/* 8. Task Progress Bar */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  🎯 Task Progress Bar
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {pvzBarOffset.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-350"
+                      max="350"
+                      value={pvzBarOffset.x}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setPvzBarOffset((prev) => ({ ...prev, x: val }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {pvzBarOffset.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-150"
+                      max="300"
+                      value={pvzBarOffset.y}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setPvzBarOffset((prev) => ({ ...prev, y: val }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Width: {pvzBarOffset.width}px
+                    </label>
+                    <input
+                      type="range"
+                      min="200"
+                      max="850"
+                      value={pvzBarOffset.width}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 380;
+                        setPvzBarOffset((prev) => ({ ...prev, width: val }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {pvzBarOffset.scale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.05"
+                      value={pvzBarOffset.scale}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setPvzBarOffset((prev) => ({ ...prev, scale: val }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "2px solid #101517" }}>
@@ -3603,6 +3848,15 @@ export function BattleScene({
                     green: { x: 0, y: 0, scale: 1 },
                     cloud: { x: 0, y: 0, scale: 1 },
                   });
+                  setPvzBarOffset({
+                    x: 0,
+                    y: 0,
+                    width: 380,
+                    scale: 1.05,
+                    visible: true,
+                  });
+                  setPvzBarPos({ x: 0, y: 0 });
+                  setAdjustModalPos({ x: 0, y: 0 });
                 }}
                 style={{ fontSize: "0.78rem", padding: "6px 14px" }}
               >
@@ -3617,6 +3871,180 @@ export function BattleScene({
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TESTING ATTACK & DUMMY PLAYERS GENERATOR MODAL
+         ========================================================================= */}
+      {showDummyTestModal && (
+        <div className="rpg-modal-backdrop" onClick={() => setShowDummyTestModal(false)}>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "500px",
+              width: "95vw",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              background: "#fffded",
+              border: "3px solid #101517",
+              boxShadow: "6px 6px 0 #101517",
+              borderRadius: "16px",
+              padding: "20px",
+              gap: "14px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Gamepad2 size={22} style={{ color: "#e11d48" }} />
+                <h3 className="rpg-modern-title" style={{ fontSize: "1.25rem", margin: 0 }}>
+                  Testing Attack & Dummy Heroes
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDummyTestModal(false)}
+                style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "2px solid #101517",
+                  borderRadius: "8px",
+                  width: "30px",
+                  height: "30px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontSize: "1rem",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: 0, fontSize: "0.82rem", color: "#475569", lineHeight: 1.45 }}>
+              Use this debugging tool to test island plateau capacity, hero layout auto-scaling, staff tilting, and elemental projectile animations. In normal game mode, only heroes who have submitted tasks cast projectiles.
+            </p>
+
+            {/* Toggle Testing Mode */}
+            <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <span style={{ display: "block", fontSize: "0.88rem", fontWeight: 900, color: "#101517" }}>
+                  Dummy Heroes Attack Simulation
+                </span>
+                <span style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                  {isDummyTestingActive ? "Active — Spawning dummy test heroes" : "Off — Showing real project members"}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`rpg-modern-btn ${isDummyTestingActive ? "is-boss" : "is-primary"}`}
+                style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+                onClick={() => {
+                  const next = !isDummyTestingActive;
+                  setIsDummyTestingActive(next);
+                  if (next) {
+                    gameAudio.playProjectileSound(dummyElementFilter === "mixed" ? "fire" : dummyElementFilter);
+                    gameAudio.playDragonRoar();
+                  }
+                }}
+              >
+                {isDummyTestingActive ? "Turn Off Simulation" : "Activate Simulation"}
+              </button>
+            </div>
+
+            {/* Dummy Heroes Count (1 to 25) */}
+            <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517", display: "grid", gap: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "0.88rem", fontWeight: 900, color: "#101517" }}>
+                  Dummy Heroes Count (Island Capacity)
+                </span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 900, color: "#e11d48" }}>
+                  {dummyPlayerCount} Heroes
+                </span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="25"
+                value={dummyPlayerCount}
+                onChange={(e) => setDummyPlayerCount(parseInt(e.target.value, 10) || 1)}
+                style={{ width: "100%", accentColor: "#e11d48" }}
+              />
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                Heroes dynamically auto-grid and auto-scale to stay strictly on the floating island plateau.
+              </span>
+            </div>
+
+            {/* Elemental Setting */}
+            <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517", display: "grid", gap: "8px" }}>
+              <span style={{ fontSize: "0.88rem", fontWeight: 900, color: "#101517" }}>
+                Elemental Projectile Type
+              </span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px" }}>
+                {(["mixed", "fire", "ice", "lightning", "arcane"] as const).map((elem) => (
+                  <button
+                    key={elem}
+                    type="button"
+                    className={`rpg-modern-btn ${dummyElementFilter === elem ? "is-primary" : "is-secondary"}`}
+                    style={{
+                      padding: "6px 2px",
+                      fontSize: "0.72rem",
+                      fontWeight: 800,
+                      textTransform: "capitalize",
+                      background: dummyElementFilter === elem ? "#0284c7" : undefined,
+                      color: dummyElementFilter === elem ? "#ffffff" : undefined,
+                    }}
+                    onClick={() => {
+                      setDummyElementFilter(elem);
+                      gameAudio.playProjectileSound(elem === "mixed" ? "fire" : elem);
+                    }}
+                  >
+                    {elem}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Single User Submit Task Simulation */}
+            <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <span style={{ display: "block", fontSize: "0.85rem", fontWeight: 900, color: "#101517" }}>
+                  Current User Task Submit Test
+                </span>
+                <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                  {isDummyTaskSubmitted ? "Simulating submitted task (tilt + attack active)" : "Normal idle state (staff upright)"}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`rpg-modern-btn ${isDummyTaskSubmitted ? "is-boss" : "is-secondary"}`}
+                style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+                onClick={() => {
+                  const next = !isDummyTaskSubmitted;
+                  setIsDummyTaskSubmitted(next);
+                  if (next) {
+                    gameAudio.playDragonRoar();
+                    gameAudio.playProjectileSound("fire");
+                    gameAudio.playTing();
+                  }
+                }}
+              >
+                {isDummyTaskSubmitted ? "Undo Task Submit" : "Simulate Task Submit"}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="rpg-modern-btn is-primary"
+              style={{ marginTop: "4px" }}
+              onClick={() => setShowDummyTestModal(false)}
+            >
+              Done
+            </button>
           </div>
         </div>
       )}
@@ -6790,6 +7218,38 @@ export function BattleScene({
                 <button
                   type="button"
                   className="rpg-modern-btn is-secondary"
+                  style={{ padding: "6px", fontSize: "0.74rem", color: "#eab308" }}
+                  onClick={() => gameAudio.playElectricZap()}
+                >
+                  ⚡ Electric Zap
+                </button>
+                <button
+                  type="button"
+                  className="rpg-modern-btn is-secondary"
+                  style={{ padding: "6px", fontSize: "0.74rem", color: "#f97316" }}
+                  onClick={() => gameAudio.playBurnPop()}
+                >
+                  🔥 Burn Pop
+                </button>
+                <button
+                  type="button"
+                  className="rpg-modern-btn is-secondary"
+                  style={{ padding: "6px", fontSize: "0.74rem", color: "#38bdf8" }}
+                  onClick={() => gameAudio.playIceCrack()}
+                >
+                  ❄️ Ice Crack
+                </button>
+                <button
+                  type="button"
+                  className="rpg-modern-btn is-secondary"
+                  style={{ padding: "6px", fontSize: "0.74rem", color: "#a855f7" }}
+                  onClick={() => gameAudio.playArcaneSpark()}
+                >
+                  ✨ Arcane Spark
+                </button>
+                <button
+                  type="button"
+                  className="rpg-modern-btn is-secondary"
                   style={{ padding: "6px", fontSize: "0.74rem" }}
                   onClick={() => gameAudio.playLightning(1600)}
                 >
@@ -6802,14 +7262,6 @@ export function BattleScene({
                   onClick={() => gameAudio.playFreeze()}
                 >
                   Ice Freeze
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playFireBurn(1600)}
-                >
-                  Fire Burn
                 </button>
               </div>
             </div>

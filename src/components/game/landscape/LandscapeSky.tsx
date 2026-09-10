@@ -45,12 +45,24 @@ export function LandscapeSky({
         {/* Layer 1: Far Clouds */}
         <div className="landscape-layer layer-1-far-clouds" aria-hidden="true">
           <div className="cloud-far-wrapper">
-            <svg viewBox="0 0 1200 120" width="100%" height="100%">
+            <svg viewBox="0 0 2000 120" width="2000" height="120">
+              {/* Segment 1 */}
               {FAR_CLOUDS.map((cloud) => (
                 <use
-                  key={cloud.id}
+                  key={`far-1-${cloud.id}`}
                   href="#cloud-cluster-1"
                   x={cloud.x}
+                  y={cloud.y}
+                  transform={`scale(${cloud.scale})`}
+                  opacity="0.65"
+                />
+              ))}
+              {/* Segment 2 (Offset by exactly +1000px for seamless loop) */}
+              {FAR_CLOUDS.map((cloud) => (
+                <use
+                  key={`far-2-${cloud.id}`}
+                  href="#cloud-cluster-1"
+                  x={cloud.x + 1000}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
                   opacity="0.65"
@@ -63,12 +75,24 @@ export function LandscapeSky({
         {/* Layer 2: Near Clouds */}
         <div className="landscape-layer layer-2-near-clouds" aria-hidden="true">
           <div className="cloud-near-wrapper">
-            <svg viewBox="0 0 1200 140" width="100%" height="100%">
+            <svg viewBox="0 0 2000 140" width="2000" height="140">
+              {/* Segment 1 */}
               {NEAR_CLOUDS.map((cloud) => (
                 <use
-                  key={cloud.id}
+                  key={`near-1-${cloud.id}`}
                   href="#cloud-cluster-2"
                   x={cloud.x}
+                  y={cloud.y}
+                  transform={`scale(${cloud.scale})`}
+                  opacity="0.9"
+                />
+              ))}
+              {/* Segment 2 (Offset by exactly +1000px for seamless loop) */}
+              {NEAR_CLOUDS.map((cloud) => (
+                <use
+                  key={`near-2-${cloud.id}`}
+                  href="#cloud-cluster-2"
+                  x={cloud.x + 1000}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
                   opacity="0.9"
