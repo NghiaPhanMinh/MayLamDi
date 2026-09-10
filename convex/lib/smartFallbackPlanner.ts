@@ -50,46 +50,38 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
 
   // 2. Match Animation / Film / Narrative Briefs (using strict word boundaries)
   if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|\b2d\b|\b3d\b|greyscale|video|film|movie/.test(text)) {
-    if (/\bscript\b|screenplay|narrative|story/.test(text)) {
-      deliverables.push({
+    deliverables.push(
+      {
         title: "Script & Narrative Screenplay",
         desc: "Draft full screenplay, character dialogues, and narrative story structure for target audience.",
         skills: ["Screenwriting", "Storytelling"],
         weight: 3, diff: 3, effort: 6, offset: 3,
-      });
-    }
-    if (/shot list|storyboard|framing|camera/.test(text)) {
-      deliverables.push({
-        title: "Shot List & Storyboard Framing",
+      },
+      {
+        title: "Shot List & Storyboard Framing Composition",
         desc: "Detailed shot list breakdown, camera angles, timing, and key scene framing composition.",
         skills: ["Storyboarding", "Cinematography"],
         weight: 3, diff: 3, effort: 8, offset: 6,
-      });
-    }
-    if (/design document|character|art direction|look dev|greyscale|background/.test(text)) {
-      deliverables.push({
+      },
+      {
         title: "Design Document & Art Direction Specs",
         desc: "Character design sheets, background turnarounds, visual style guide, and look development.",
         skills: ["Concept Art", "Art Direction"],
         weight: 4, diff: 3, effort: 10, offset: 10,
-      });
-    }
-    if (/animatic|greyscale|edit|timeline|45\+?|second/.test(text)) {
-      deliverables.push({
+      },
+      {
         title: "Greyscale Animatic Render & Timeline Assembly",
         desc: "Timed 45+ second greyscale animatic sequence with scratch audio and pacing validation.",
         skills: ["Video Editing", "Animation"],
         weight: 5, diff: 4, effort: 12, offset: 15,
-      });
-    }
-    if (/final|animated|presentation|artwork/.test(text) || deliverables.length < 4) {
-      deliverables.push({
+      },
+      {
         title: "Final Artwork Render & Presentation Assembly",
         desc: "Export final high-res animation file, full documentation, and project presentation deck.",
         skills: ["Post-Production", "Presentation"],
         weight: 3, diff: 2, effort: 6, offset: 18,
-      });
-    }
+      }
+    );
   }
 
   // Match Web / Software Briefs
@@ -163,7 +155,7 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
   }));
 
   const tasks = rawTasks.map((task, index) => {
-    const assignedPhase = phases[index % phases.length];
+    const assignedPhase = phases[Math.floor((index / rawTasks.length) * phases.length)] || phases[0];
     const assignedOwner = members[index % members.length];
     const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
 
