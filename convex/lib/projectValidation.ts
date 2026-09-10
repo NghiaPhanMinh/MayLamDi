@@ -50,7 +50,7 @@ export function validateProjectDetails(input: {
   const description = normaliseText(
     input.description,
     "Project brief",
-    500,
+    8000,
   );
 
   if (title.length < 2) {

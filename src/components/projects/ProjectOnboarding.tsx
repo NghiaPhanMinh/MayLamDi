@@ -151,7 +151,7 @@ export function ProjectOnboarding({
     if (step === 2) {
       if (!title.trim() || !brief.trim() || !deadline) return "Add a project name, deadline, team size, and brief.";
       if (brief.trim().length < 20) return "Project brief must be at least 20 characters to answer what you are making, who it is for, and what needs to be delivered.";
-      if (brief.trim().length > 500) return "Project brief must be 500 characters or fewer for optimal AI assistance.";
+      if (brief.trim().length > 8000) return "Project brief must be 8,000 characters or fewer for optimal AI assistance.";
     }
     if (step === 3 && taskCreationMode === "manual" && draftTasks.length === 0) return "Add at least one task, or choose the AI-assisted plan.";
     return null;
