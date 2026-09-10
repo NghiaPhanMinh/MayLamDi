@@ -188,21 +188,30 @@ type GeneratedAiPlan = ValidatedAiPlan & {
 };
 
 function planningPrompts(brief: string, context: AiPlanningContext) {
+  const frameworkPhasesText = context.phases
+    .map((p, idx) => `Phase ${idx + 1} (${p.phaseId}): ${p.title} - ${p.description}`)
+    .join("\n");
+
   const systemPrompt = [
     "You are MayLamDi's Lead AI Technical Architect.",
-    "DIRECT BRIEF DECONSTRUCTION: Analyze the user's raw 'brief' text thoroughly to extract explicit, real-world project deliverables.",
-    "EVERY GENERATED TASK MUST BE A CONCRETE DELIVERABLE DIRECTLY DERIVED FROM THE USER'S BRIEF AND PROJECT GOALS.",
-    "NEVER OUTPUT GENERIC PLACEHOLDER TITLES (e.g. DO NOT output 'Research', 'UI Design', 'Backend Development', 'Testing', 'Documentation'). Instead, write specific titles reflecting the actual project requirements.",
-    "SKILL ALLOCATION: Assign each task to the team member profile ID whose self-reported skills match the task best. Provide a clear reasoning in 'allocationExplanation'.",
-    "TASK DESCRIPTIONS: For each task, write a concise 2-sentence description specifying (1) exact deliverable requirements and (2) verification / definition of done criteria.",
-    "Use ONLY the supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
+    "DUAL-ALIGNMENT TASK GENERATION:",
+    "1. FRAMEWORK ALIGNMENT: You MUST map every generated task into the exact framework phases provided below in sequential order.",
+    "Distribute tasks logically across ALL active framework phases (from early concept/discovery phases to mid-tier execution and final delivery phases).",
+    "2. BRIEF DECONSTRUCTION: Every task title and description MUST be a concrete, real-world deliverable derived directly from the user's raw 'brief' text.",
+    "3. NO GENERIC PLACEHOLDERS: Do NOT use generic titles like 'Research', 'UI Design', 'Backend', 'Testing'. Combine the specific project deliverable with its framework phase context (e.g. 'Coffee Brand Logo Concept Sheet' in Discovery phase, 'Interactive 3D Cup Viewer' in Execution phase).",
+    "4. SKILL ALLOCATION: Assign each task to the team member profile ID whose self-reported skills match the deliverable best. Explain your choice in 'allocationExplanation'.",
+    "5. TASK DESCRIPTIONS: For each task, write a concise 2-sentence description specifying (1) exact deliverable specs from the brief and (2) verification / definition of done criteria.",
+    "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Parse the project brief into concrete deliverables and assign them to team members based on skills and workload balance.",
+    request: "Parse the project brief into concrete deliverables mapped sequentially across the selected framework phases, and assign them to team members based on skills and workload balance.",
     rawProjectBrief: brief,
     project: context.project,
-    currentFramework: context.project.frameworkName,
+    selectedFramework: {
+      name: context.project.frameworkName,
+      phasesSequence: frameworkPhasesText,
+    },
     phases: context.phases,
     members: context.members,
     existingTasks: context.existingTasks,
