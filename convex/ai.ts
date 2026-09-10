@@ -189,28 +189,37 @@ type GeneratedAiPlan = ValidatedAiPlan & {
 
 function planningPrompts(brief: string, context: AiPlanningContext) {
   const frameworkPhasesText = context.phases
-    .map((p, idx) => `Phase ${idx + 1} (${p.phaseId}): ${p.title} - ${p.description}`)
+    .map((p, idx) => `Phase ${idx + 1} (ID: "${p.phaseId}"): Title: "${p.title}" - Description: "${p.description}"`)
     .join("\n");
 
   const systemPrompt = [
-    "You are MayLamDi's Lead AI Technical Architect & Academic Assignment Analyzer.",
-    "DECONSTRUCTING LONG ASSIGNMENT BRIEFS (3-LAYER ANALYZER):",
-    "1. SUBMISSION REQUIREMENTS: Extract all mandatory deliverables specified in the brief (e.g., live URLs, hosted deployments, asset zip packages, technical reflection notes). Create explicit tasks for each.",
-    "2. ASSESSMENT FOCUS & DEFINITION OF DONE: Incorporate evaluation criteria (e.g. technical exploration, originality, accessibility, responsive design) as definition-of-done criteria in task descriptions.",
-    "3. FRAMEWORK PHASE MAPPING: Map every generated task into the exact framework phases provided below in sequential order (Phase 1 Ideation -> Phase 2 Design -> Phase 3 Implementation -> Phase 4 Deployment & Reflection).",
-    "4. NO GENERIC PLACEHOLDERS: Do NOT output generic titles like 'Research', 'UI Design', 'Testing'. Write specific titles reflecting the actual assignment requirements.",
-    "5. SKILL ALLOCATION: Assign each deliverable task to the team member profile ID whose self-reported skills match best. Explain your choice in 'allocationExplanation'.",
-    "6. TASK DESCRIPTIONS: Write a concise 2-sentence description for each task specifying (1) exact deliverable specs and (2) verification / definition of done criteria.",
+    "You are MayLamDi's Senior Project Architect & Academic Assignment Strategist.",
+    "GOAL: Convert the raw project brief into an actionable, context-aware project plan that balances product development, testing, iteration, research/evidence, technical architecture, and final presentation.",
+    "CORE PLANNING PRINCIPLE: Do NOT simply copy text or output generic implementation steps (e.g. NEVER output 'Build frontend', 'HTML/CSS Layout', 'Testing', 'UX Analysis', 'Technical Note'). Instead, create outcome-oriented tasks describing real project deliverables.",
+    "WORK CATEGORIES TO INCLUDE WHERE RELEVANT TO BRIEF:",
+    "1. Product Development: Define concrete feature workflows (e.g., 'Refine core responsive desktop and mobile interaction workflow').",
+    "2. Problem Context & Audience Research: Understand user needs & constraints (e.g., 'Analyse MVP feedback and identify top 3 UX friction points').",
+    "3. Usability & Functional Testing: Test core features (e.g., 'Run usability and functional testing on key user flow and record issues').",
+    "4. Evidence-Based Iteration: When a brief requires iteration or improvement, structure a logical sequence (Analyse MVP -> Identify problems -> Implement targeted fixes -> Compare before/after evidence).",
+    "5. Technical Architecture & Security: Document system design, APIs, and fallbacks (e.g., 'Document final architecture, AI/API integration, data flow, security and fallback behavior').",
+    "6. Presentation & Submission: Package defensible solution and submission deliverables (e.g., 'Deploy live hosted URL and prepare defensible technical presentation package').",
+    "TASK TITLE FORMAT: Every task title MUST start with an active outcome verb describing a specific tangible result (e.g. 'Analyse...', 'Refine...', 'Implement...', 'Test...', 'Document...').",
+    "FRAMEWORK PHASE ALIGNMENT: Map tasks logically across the provided framework phases in sequential order. Adapt tasks to fit the brief's real lifecycle rather than forcing a rigid template.",
+    "SKILL ALLOCATION & TASK SPECS: Assign each task to the team member profile ID whose skills match best. Write a concise 2-sentence description for each task specifying (1) exact work specs and (2) definition-of-done / verification criteria.",
     "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Analyze this assignment brief across all 3 layers (Submission Requirements, Assessment Criteria, Framework Sequence) to generate a complete project task plan.",
+    request: "Analyze project brief and generate a context-aware, outcome-oriented project plan with clear dependencies and team allocation.",
     rawProjectBrief: brief,
-    selectedFramework: {
-      name: context.project.frameworkName,
-      phasesSequence: frameworkPhasesText,
+    project: {
+      title: context.project.title,
+      description: context.project.description,
+      frameworkName: context.project.frameworkName,
+      startDate: context.project.startDate,
+      deadline: context.project.deadline,
     },
+    frameworkPhases: frameworkPhasesText,
     phases: context.phases,
     members: context.members,
     existingTasks: context.existingTasks,

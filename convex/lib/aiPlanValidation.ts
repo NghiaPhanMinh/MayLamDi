@@ -89,12 +89,27 @@ function dateInProject(value: unknown, label: string, context: PlanningContext) 
   return date;
 }
 
-const GENERIC_TITLE_REGEX = /^(research|testing|ui design|backend|frontend|implementation|setup|task \d+|overview|project setup|development|design|testing & qa)$/i;
+const GENERIC_TITLE_REGEX = /^(research|testing|ui design|ux analysis|backend|frontend|build frontend|build backend|implementation|setup|task \d+|overview|project setup|development|design|testing & qa|ai development|ai testing|technical note|project technical note|asset archive packaging)$/i;
 
 function sanitizeTaskTitle(rawTitle: string): string {
   const trimmed = rawTitle.trim();
   if (GENERIC_TITLE_REGEX.test(trimmed) || trimmed.split(" ").length < 2) {
-    return `${trimmed} — Specific Deliverables & Specifications`;
+    if (/testing|qa/i.test(trimmed)) {
+      return "Run usability and functional testing on core project workflow";
+    }
+    if (/ux|design/i.test(trimmed)) {
+      return "Analyse user experience requirements and refine core UI workflow";
+    }
+    if (/backend|api/i.test(trimmed)) {
+      return "Implement core backend API services, data flow, and error handling";
+    }
+    if (/frontend|build|implementation/i.test(trimmed)) {
+      return "Refine core responsive frontend interaction and component workflow";
+    }
+    if (/note|documentation|setup|packaging/i.test(trimmed)) {
+      return "Document architecture, security fallbacks, and technical presentation package";
+    }
+    return `Refine ${trimmed} — specific deliverables and verification steps`;
   }
   return trimmed;
 }
