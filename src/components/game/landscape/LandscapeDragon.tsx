@@ -222,7 +222,7 @@ export function LandscapeDragon({
   layerOrder = [],
 }: LandscapeDragonProps) {
   const damageClearedFraction = (100 - bossHpPercent) / 100;
-  const dragonX = 730 + damageClearedFraction * 60;
+  const dragonX = 580 + damageClearedFraction * 60;
 
   // Build list of shapes dynamically in layer order
   const sortedShapes = React.useMemo(() => {

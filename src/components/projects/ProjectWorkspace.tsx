@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { AlertTriangle, Check, CheckSquare, Clipboard, Clock, Crown, FileCheck, Key, Lock, Megaphone, PencilLine, User, Users, Zap } from "lucide-react";
+import { AlertTriangle, Check, CheckSquare, Clipboard, Clock, Crown, FileCheck, Key, Lock, Megaphone, MessageSquare, PencilLine, User, Users, Zap } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -12,6 +12,7 @@ import { BattleScene } from "../game/BattleScene";
 import { AIPlanningAssistant, type AiTaskSuggestion } from "./AIPlanningAssistant";
 import { AllocationWorkbench } from "./AllocationWorkbench";
 import { BattleTaskBoard, type BattleTaskSummary } from "./BattleTaskBoard";
+import { DailyEvidenceFeed } from "./DailyEvidenceFeed";
 import { ProjectTeamMembers } from "./ProjectTeamMembers";
 import { TaskEvidencePanel } from "./TaskEvidencePanel";
 import { TaskTradePanel } from "./TaskTradePanel";
@@ -278,6 +279,8 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
   const shouldRunAi = workspace.members.length > 1 || manualAiStart;
   const [editingTaskId, setEditingTaskId] = useState<Id<"tasks"> | null>(null);
   const [openBattleTaskId, setOpenBattleTaskId] = useState<Id<"tasks"> | null>(null);
+  const [activeBattleAction, setActiveBattleAction] = useState<"my_tasks" | "peer_review" | null>(null);
+  const [showTeamChatModal, setShowTeamChatModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskPhaseId, setTaskPhaseId] = useState("");
@@ -861,10 +864,12 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               tasksLocked={Boolean(workspace.project.tasksLocked)}
               openTaskId={openBattleTaskId}
               onClearOpenTaskId={() => setOpenBattleTaskId(null)}
+              activeBattleAction={activeBattleAction}
+              onClearActiveBattleAction={() => setActiveBattleAction(null)}
             />
           </section>
 
-          {/* Collaborative Action Deck: My Tasks & Peer Review */}
+          {/* Collaborative Action Deck: My Tasks, Peer Review, Team Chat */}
           <div
             className="project-action-deck"
             style={{
@@ -879,8 +884,8 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               type="button"
               className="primary-button project-deck-btn"
               style={{
-                flex: "1 1 220px",
-                padding: "0.9rem 1.25rem",
+                flex: "1 1 200px",
+                padding: "0.85rem 1.15rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -892,16 +897,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 boxShadow: "4px 4px 0 #101517",
                 cursor: "pointer",
               }}
-              onClick={() => {
-                const pending = workspace.tasks.find(
-                  (t) => t.primaryOwnerProfileId === workspace.currentProfileId && !["completed", "verified"].includes(t.status)
-                );
-                if (pending) {
-                  setOpenBattleTaskId(pending._id);
-                } else {
-                  setActiveTab("tasks");
-                }
-              }}
+              onClick={() => setActiveBattleAction("my_tasks")}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                 <CheckSquare size={22} strokeWidth={2.5} />
@@ -925,8 +921,8 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               type="button"
               className="secondary-button project-deck-btn"
               style={{
-                flex: "1 1 220px",
-                padding: "0.9rem 1.25rem",
+                flex: "1 1 200px",
+                padding: "0.85rem 1.15rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -940,16 +936,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 color: "#101517",
                 cursor: "pointer",
               }}
-              onClick={() => {
-                const reviewTask = workspace.tasks.find(
-                  (t) => t.reviewerProfileId === workspace.currentProfileId && ["submitted", "review"].includes(t.status)
-                );
-                if (reviewTask) {
-                  setOpenBattleTaskId(reviewTask._id);
-                } else {
-                  setActiveTab("tasks");
-                }
-              }}
+              onClick={() => setActiveBattleAction("peer_review")}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                 <FileCheck size={22} strokeWidth={2.5} />
@@ -968,10 +955,98 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 {needsMyReviewCount}
               </span>
             </button>
-          </div>
 
+            {/* Third Action Button: Team Chat */}
+            <button
+              type="button"
+              className="secondary-button project-deck-btn"
+              title="Communicate, upload daily evidence to check."
+              style={{
+                flex: "1 1 230px",
+                padding: "0.75rem 1.15rem",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                gap: "0.2rem",
+                borderRadius: "14px",
+                border: "3px solid #101517",
+                boxShadow: "4px 4px 0 #101517",
+                background: "var(--color-surface, #ffffff)",
+                color: "#101517",
+                cursor: "pointer",
+              }}
+              onClick={() => setShowTeamChatModal(true)}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <MessageSquare size={20} strokeWidth={2.5} />
+                  <span style={{ fontSize: "1rem", fontWeight: 800 }}>Team Chat</span>
+                </div>
+                <span
+                  style={{
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    fontSize: "0.76rem",
+                    fontWeight: 900,
+                  }}
+                >
+                  Live
+                </span>
+              </div>
+              <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#64748b", lineHeight: 1.2 }}>
+                Communicate, upload daily evidence to check.
+              </span>
+            </button>
+          </div>
         </div>
       ) : null}
+
+      {/* Team Chat & Daily Evidence Modal */}
+      {showTeamChatModal && (
+        <div className="rpg-modal-backdrop" onClick={() => setShowTeamChatModal(false)} style={{ zIndex: 1000 }}>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "680px", width: "95vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #101517", paddingBottom: "10px", marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <MessageSquare size={22} strokeWidth={2.5} />
+                <h3 className="rpg-modern-title" style={{ margin: 0, fontSize: "1.25rem" }}>
+                  Team Chat &amp; Daily Evidence
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTeamChatModal(false)}
+                style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "2px solid #101517",
+                  borderRadius: "8px",
+                  width: "30px",
+                  height: "30px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "#475569", fontWeight: 700 }}>
+              Communicate, upload daily evidence to check.
+            </p>
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+              <DailyEvidenceFeed projectId={workspace.project._id} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "tasks" ? (
         <section className="tasks-room-tab" aria-labelledby="team-tasks-title">

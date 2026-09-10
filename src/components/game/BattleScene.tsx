@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { jsPDF } from "jspdf";
 import {
   Check,
+  CheckCircle2,
   ClipboardCheck,
   FileDown,
   Flag,
@@ -10,6 +11,7 @@ import {
   Shield,
   ShieldCheck,
   ShieldX,
+  Sliders,
   Sparkles,
   Target,
   Trash2,
@@ -75,6 +77,8 @@ type BattleSceneProps = {
   tasksLocked?: boolean;
   openTaskId?: Id<"tasks"> | null;
   onClearOpenTaskId?: () => void;
+  activeBattleAction?: "my_tasks" | "peer_review" | null;
+  onClearActiveBattleAction?: () => void;
 };
 
 type OptionalBattleMetrics = {
@@ -805,7 +809,7 @@ type BattleResultBoardProps = {
   verifiedQuests: number;
   canRemoveRoom: boolean;
   onDownloadContribution: () => void;
-  onOpenLeaderboard: () => void;
+  onOpenLeaderboard?: () => void;
   onViewBattle: () => void;
   onRemoveRoom: () => void;
 };
@@ -820,7 +824,6 @@ function BattleResultBoard({
   verifiedQuests,
   canRemoveRoom,
   onDownloadContribution,
-  onOpenLeaderboard,
   onViewBattle,
   onRemoveRoom,
 }: BattleResultBoardProps) {
@@ -843,7 +846,7 @@ function BattleResultBoard({
         </div>
         <div className="battle-result-badge">
           <BadgeIcon size={17} strokeWidth={2.25} aria-hidden="true" />
-          <span>{isSuccess ? "Project defended" : "Defense failed"}</span>
+          <span>{isSuccess ? "Boss defeated" : "Defense failed"}</span>
         </div>
         <h2 id="endgame-title" className="battle-result-title">{title}</h2>
         <p className="battle-result-description">{description}</p>
@@ -876,11 +879,7 @@ function BattleResultBoard({
       <div className="battle-result-main-actions" aria-label="Result actions">
         <button type="button" className="battle-result-action is-primary" onClick={onDownloadContribution}>
           <FileDown size={20} strokeWidth={2} aria-hidden="true" />
-          Download Contribution Dossier (PDF)
-        </button>
-        <button type="button" className="battle-result-action is-leaderboard" onClick={onOpenLeaderboard}>
-          <Trophy size={20} strokeWidth={2} aria-hidden="true" />
-          Final Leaderboard
+          Download personal contribution
         </button>
         <button type="button" className="battle-result-action is-battle" onClick={onViewBattle}>
           <Gamepad2 size={20} strokeWidth={2} aria-hidden="true" />
@@ -890,7 +889,6 @@ function BattleResultBoard({
 
       {canRemoveRoom && (
         <div className="battle-result-danger-zone">
-          <span>Personal controls</span>
           <button type="button" className="battle-result-delete" onClick={onRemoveRoom}>
             <Trash2 size={18} strokeWidth={2} aria-hidden="true" />
             Remove from my account
@@ -995,6 +993,8 @@ export function BattleScene({
   tasksLocked = true,
   openTaskId = null,
   onClearOpenTaskId,
+  activeBattleAction = null,
+  onClearActiveBattleAction,
 }: BattleSceneProps) {
   const state = useQuery(api.battle.getState, { projectId });
 
@@ -1003,6 +1003,12 @@ export function BattleScene({
   const [showAttackChoiceModal, setShowAttackChoiceModal] = useState(false);
   const [showGoblinModal, setShowGoblinModal] = useState(false);
   const [showBossModal, setShowBossModal] = useState(false);
+  const [showMyTasksModal, setShowMyTasksModal] = useState(false);
+  const [showPeerReviewModal, setShowPeerReviewModal] = useState(false);
+  const [showAdjustElementsModal, setShowAdjustElementsModal] = useState(false);
+  const [testBossDefeatedPreview, setTestBossDefeatedPreview] = useState(false);
+  const [dummyReviewTaskDone, setDummyReviewTaskDone] = useState(false);
+  const [selectedReviewTask, setSelectedReviewTask] = useState<any | null>(null);
 
   // Leaderboard data query
   const leaderboardData = useQuery(api.battle.getLeaderboard, { projectId });
@@ -1038,17 +1044,22 @@ export function BattleScene({
     if (openTaskId && workspace?.tasks) {
       const task = workspace.tasks.find((t) => t._id === openTaskId);
       if (task) {
-        const assignee = workspace.members.find((m) => m?.profileId === task.primaryOwnerProfileId);
-        setSelectedQuestTask({
-          ...task,
-          assigneeName: assignee?.displayName,
-          isMine: task.primaryOwnerProfileId === workspace.currentProfileId,
-        });
+        setSelectedTaskId(task._id);
+        setShowBossModal(true);
       }
-      setShowQuestBoardModal(true);
       onClearOpenTaskId?.();
     }
   }, [openTaskId, workspace, onClearOpenTaskId]);
+
+  useEffect(() => {
+    if (activeBattleAction === "my_tasks") {
+      setShowMyTasksModal(true);
+      onClearActiveBattleAction?.();
+    } else if (activeBattleAction === "peer_review") {
+      setShowPeerReviewModal(true);
+      onClearActiveBattleAction?.();
+    }
+  }, [activeBattleAction, onClearActiveBattleAction]);
   const [showCreateQuestModal, setShowCreateQuestModal] = useState(false);
   const [isClaimingQuest, setIsClaimingQuest] = useState(false);
   const [claimQuestError, setClaimQuestError] = useState<string | null>(null);
@@ -2501,15 +2512,15 @@ export function BattleScene({
   const optionalMetrics = state as typeof state & OptionalBattleMetrics;
 
   const damageClearedFraction = (100 - hpPercent) / 100;
-  const dragonX = 730 + damageClearedFraction * 60;
+  const dragonX = 580 + damageClearedFraction * 60;
 
   // Collaborative End-Game Screen: Game only ends after all tasks are completed and Dragon is defeated
   const allTasksCompleted = workspace?.tasks && workspace.tasks.length > 0 && workspace.tasks.every(t => t.status === "completed" || t.status === "verified");
-  if ((defeated || allTasksCompleted || testOverdueOverride === true) && !viewBattleSceneOverride) {
+  if ((defeated || allTasksCompleted || testOverdueOverride === true || testBossDefeatedPreview) && !viewBattleSceneOverride) {
     const isVillageDefended = effectiveVillageHp >= 50;
     const resultVariant = isVillageDefended ? "success" : "failed";
     const resultTitle = isVillageDefended
-      ? "YOU SUCCESSFULLY DEFENDED THE VILLAGE!"
+      ? "Boss defeated"
       : "YOU FAILED TO PROTECT THE VILLAGE!";
     const resultDescription = isVillageDefended
       ? `All project tasks have been successfully completed and the dragon defeated! Your team earned verifiable proof of contribution.`
@@ -2529,8 +2540,10 @@ export function BattleScene({
           verifiedQuests={verifiedQuestCount}
           canRemoveRoom={Boolean(workspace)}
           onDownloadContribution={generateContributionPdf}
-          onOpenLeaderboard={() => setShowLeaderboardModal(true)}
-          onViewBattle={() => setViewBattleSceneOverride(true)}
+          onViewBattle={() => {
+            setViewBattleSceneOverride(true);
+            setTestBossDefeatedPreview(false);
+          }}
           onRemoveRoom={() => setShowDeleteRoomModal(true)}
         />
 
@@ -2687,6 +2700,59 @@ export function BattleScene({
             {isAudioMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
 
+          {/* Adjust Elements Button (Size, Width, Positions of Dragon, HP Bar, Players) */}
+          <button
+            className="rpg-btn-icon-sound"
+            style={{
+              height: "36px",
+              padding: "0 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              borderRadius: "8px",
+              background: "#fffded",
+              border: "2px solid #101517",
+              boxShadow: "2px 2px 0 #101517",
+              cursor: "pointer",
+              color: "#101517",
+              fontWeight: 800,
+              fontSize: "0.78rem",
+            }}
+            onClick={() => setShowAdjustElementsModal(true)}
+            type="button"
+            title="Adjust size, width, and position of Dragon, Health Bar, and Players"
+            aria-label="Adjust Elements"
+          >
+            <Sliders size={16} />
+            <span>Adjust Elements</span>
+          </button>
+
+          {/* Boss Defeated Preview Dummy Button (Togglable) */}
+          <button
+            className="rpg-btn-icon-sound"
+            style={{
+              height: "36px",
+              padding: "0 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              borderRadius: "8px",
+              background: testBossDefeatedPreview ? "#22c55e" : "#fffded",
+              color: testBossDefeatedPreview ? "#ffffff" : "#101517",
+              border: "2px solid #101517",
+              boxShadow: "2px 2px 0 #101517",
+              cursor: "pointer",
+              fontWeight: 800,
+              fontSize: "0.78rem",
+            }}
+            onClick={() => setTestBossDefeatedPreview((prev) => !prev)}
+            type="button"
+            title="Preview Boss Defeated end screen"
+            aria-label="Toggle Boss Defeated Preview"
+          >
+            <span>🏆 {testBossDefeatedPreview ? "Exit Defeated" : "Boss Defeated"}</span>
+          </button>
+
           {/* Admin Edit Dragon Layout Overlay Button */}
           {(showDragonEditor || adminAuthenticated) && (
             <button
@@ -2710,18 +2776,18 @@ export function BattleScene({
           )}
         </div>
 
-        {/* Floating Mob-Style Boss HP Bar (No Name Float, Scaled Down) */}
+        {/* Floating Mob-Style Boss HP Bar (Positioned in middle of dragon) */}
         <div
           className="boss-hp-container"
           style={{
             position: "absolute",
-            left: `calc(${Math.min(92, Math.max(8, (dragonX / 10) - 2.5))}% + ${dragonHpBarPos.x}px)`,
-            top: `calc(65px + ${dragonHpBarPos.y}px)`,
+            left: `calc(${Math.min(92, Math.max(8, (dragonX / 10) + 7))}% + ${dragonHpBarPos.x}px)`,
+            top: `calc(195px + ${dragonHpBarPos.y}px)`,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             zIndex: 35,
-            transform: `scale(${dragonHpBarScale * 0.85})`,
+            transform: `scale(${dragonHpBarScale * 0.95})`,
             transformOrigin: "center center",
             pointerEvents: "none",
           }}
@@ -2874,7 +2940,7 @@ export function BattleScene({
             }}
           >
             <span>
-              DAY {daysPassed} {totalDays > 0 ? `· TARGET ${totalDays}D` : ""}
+              DAY {daysPassed}/{totalDays || 13}
               {daysRemaining <= 0 ? (
                 <span style={{ color: "#d97706", marginLeft: "6px", fontWeight: 700 }}>
                   (Target passed · No penalty)
@@ -2936,43 +3002,70 @@ export function BattleScene({
                     />
                   )}
 
-                  {/* Task Flag Marker */}
+                  {/* Task Flag Marker - Graphic Pennant Shape */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedTaskId(task._id);
+                      if (task.reviewerProfileId) {
+                        setSelectedReviewerId(task.reviewerProfileId);
+                      }
                       setShowBossModal(true);
                     }}
-                    title={`Task ${idx + 1}: ${task.title}\nStatus: ${task.status}\nOwner: ${task.assigneeName || "Unassigned"}\nClick to view details & evidence`}
+                    title={`Task ${idx + 1}: ${task.title}\nStatus: ${task.status}\nOwner: ${task.assigneeName || "Unassigned"}\nClick to view details & submit proof`}
                     style={{
                       position: "absolute",
                       left: `${flagPct}%`,
-                      top: "-10px",
+                      top: "-22px",
                       transform: "translateX(-50%)",
                       zIndex: 10,
-                      background: isTaskDone ? "#16a34a" : isTaskInReview ? "#f59e0b" : "#475569",
-                      color: "#ffffff",
-                      border: "1.5px solid #101517",
-                      borderRadius: "5px",
-                      padding: "2px 4px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "2px",
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
                       cursor: "pointer",
-                      boxShadow: "1px 2px 0 rgba(0,0,0,0.3)",
-                      fontSize: "0.6rem",
-                      fontWeight: 800,
-                      lineHeight: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
                       transition: "transform 0.15s ease",
                     }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1.2) translateY(-2px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1)")}
                   >
-                    {isTaskDone ? (
-                      <Check size={10} strokeWidth={3} />
-                    ) : (
-                      <Flag size={9} strokeWidth={2.5} fill={isTaskInReview ? "#fff" : "none"} />
-                    )}
-                    <span>{idx + 1}</span>
+                    <svg
+                      width="22"
+                      height="28"
+                      viewBox="0 0 22 28"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{ filter: "drop-shadow(2px 2px 0 rgba(16,21,23,0.85))", overflow: "visible" }}
+                    >
+                      {/* Flag Pole */}
+                      <line x1="3.5" y1="2" x2="3.5" y2="26" stroke="#101517" strokeWidth="2" strokeLinecap="round" />
+                      {/* Finial Ball */}
+                      <circle cx="3.5" cy="2.5" r="2" fill="#facc15" stroke="#101517" strokeWidth="1" />
+                      {/* Graphic Swallowtail Pennant Flag */}
+                      <path
+                        d="M 4 4.5 L 20 4.5 L 16 11.5 L 20 18.5 L 4 18.5 Z"
+                        fill={isTaskDone ? "#22c55e" : isTaskInReview ? "#f59e0b" : "#475569"}
+                        stroke="#101517"
+                        strokeWidth="1.75"
+                        strokeLinejoin="round"
+                      />
+                      {/* Inner Number or Check */}
+                      <text
+                        x="10.5"
+                        y="12"
+                        fill="#ffffff"
+                        fontSize="8.5"
+                        fontWeight="900"
+                        fontFamily="var(--font-heading), sans-serif"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                      >
+                        {isTaskDone ? "✓" : idx + 1}
+                      </text>
+                    </svg>
                   </button>
                 </div>
               );
@@ -2996,6 +3089,738 @@ export function BattleScene({
           />
         )}
       </div>
+
+      {/* =========================================================================
+          ADJUST ELEMENTS MODAL (Dragon, HP Bar, Players)
+         ========================================================================= */}
+      {showAdjustElementsModal && (
+        <div className="rpg-modal-backdrop" onClick={() => setShowAdjustElementsModal(false)}>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "540px",
+              width: "95vw",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              background: "#fffded",
+              border: "3px solid #101517",
+              boxShadow: "6px 6px 0 #101517",
+              borderRadius: "16px",
+              padding: "20px",
+              gap: "14px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Sliders size={20} />
+                <h3 className="rpg-modern-title" style={{ fontSize: "1.25rem", margin: 0 }}>
+                  Adjust Elements
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdjustElementsModal(false)}
+                style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "2px solid #101517",
+                  borderRadius: "8px",
+                  width: "30px",
+                  height: "30px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontSize: "1rem",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: 0, fontSize: "0.82rem", color: "#475569" }}>
+              Fine-tune the layout position, scale, and size of the dragon, dragon health bar, and party heroes. Changes persist automatically.
+            </p>
+
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", paddingRight: "4px" }}>
+              {/* 1. Dragon Health Bar */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  ❤️ Dragon Health Bar
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {dragonHpBarPos.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-250"
+                      max="250"
+                      value={dragonHpBarPos.x}
+                      onChange={(e) => setDragonHpBarPos((prev) => ({ ...prev, x: parseInt(e.target.value) || 0 }))}
+                      style={{ width: "100%", accentColor: "#ef4444" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {dragonHpBarPos.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      value={dragonHpBarPos.y}
+                      onChange={(e) => setDragonHpBarPos((prev) => ({ ...prev, y: parseInt(e.target.value) || 0 }))}
+                      style={{ width: "100%", accentColor: "#ef4444" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Width: {dragonHpBarWidth}px
+                    </label>
+                    <input
+                      type="range"
+                      min="80"
+                      max="260"
+                      value={dragonHpBarWidth}
+                      onChange={(e) => setDragonHpBarWidth(parseInt(e.target.value) || 125)}
+                      style={{ width: "100%", accentColor: "#ef4444" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {dragonHpBarScale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.05"
+                      value={dragonHpBarScale}
+                      onChange={(e) => setDragonHpBarScale(parseFloat(e.target.value) || 1)}
+                      style={{ width: "100%", accentColor: "#ef4444" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Dragon Boss */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  🐉 Dragon Boss Element
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {layerTransforms.dragon?.x || 0}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={layerTransforms.dragon?.x || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setLayerTransforms((prev) => ({ ...prev, dragon: { ...prev.dragon, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#dc2626" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {layerTransforms.dragon?.y || 0}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      value={layerTransforms.dragon?.y || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setLayerTransforms((prev) => ({ ...prev, dragon: { ...prev.dragon, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#dc2626" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {((layerTransforms.dragon?.scale || 1)).toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.2"
+                      step="0.05"
+                      value={layerTransforms.dragon?.scale || 1}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setLayerTransforms((prev) => ({ ...prev, dragon: { ...prev.dragon, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#dc2626" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Player Party */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  🧙 Player Party Heroes
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {layerTransforms.players?.x || 0}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={layerTransforms.players?.x || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setLayerTransforms((prev) => ({ ...prev, players: { ...prev.players, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#2563eb" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {layerTransforms.players?.y || 0}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      value={layerTransforms.players?.y || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setLayerTransforms((prev) => ({ ...prev, players: { ...prev.players, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#2563eb" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {((layerTransforms.players?.scale || 1)).toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.2"
+                      step="0.05"
+                      value={layerTransforms.players?.scale || 1}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setLayerTransforms((prev) => ({ ...prev, players: { ...prev.players, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#2563eb" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "2px solid #101517" }}>
+              <button
+                type="button"
+                className="rpg-modern-btn is-secondary"
+                onClick={() => {
+                  setDragonHpBarPos({ x: 0, y: 0 });
+                  setDragonHpBarWidth(125);
+                  setDragonHpBarScale(1);
+                  setLayerTransforms((prev) => ({
+                    ...prev,
+                    dragon: { x: 0, y: 0, scale: 1, visible: true },
+                    players: { x: 0, y: 0, scale: 1, visible: true },
+                  }));
+                }}
+                style={{ fontSize: "0.78rem", padding: "6px 14px" }}
+              >
+                Reset to Defaults
+              </button>
+              <button
+                type="button"
+                className="rpg-modern-btn is-primary"
+                onClick={() => setShowAdjustElementsModal(false)}
+                style={{ fontSize: "0.78rem", padding: "6px 18px" }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MY TASKS MODAL (Only shows user's tasks, no new task button, no 4 filter tabs, no bottom line)
+         ========================================================================= */}
+      {showMyTasksModal && (
+        <div className="rpg-modal-backdrop" onClick={() => setShowMyTasksModal(false)}>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "680px",
+              width: "95vw",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              background: "#fffded",
+              border: "3px solid #101517",
+              boxShadow: "6px 6px 0 #101517",
+              borderRadius: "16px",
+              padding: "20px",
+            }}
+          >
+            {/* Header: Title "My Tasks" + count badge, and Red Close Button. NO "+ New Task" button! */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h3 className="rpg-modern-title" style={{ fontSize: "1.35rem", margin: 0 }}>
+                  My Tasks
+                </h3>
+                <span
+                  style={{
+                    background: "#fff73f",
+                    color: "#101517",
+                    border: "2px solid #101517",
+                    borderRadius: "12px",
+                    padding: "2px 10px",
+                    fontSize: "0.78rem",
+                    fontWeight: 900,
+                  }}
+                >
+                  {myAssignableTasks.length} {myAssignableTasks.length === 1 ? "Task" : "Tasks"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMyTasksModal(false)}
+                style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "2px solid #101517",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontSize: "1rem",
+                  boxShadow: "2px 2px 0 #101517",
+                }}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body: NO the 4 buttons ("All Tasks", "My Tasks", "Reviews", "Daily Proof")! */}
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "4px 2px" }}>
+              {myAssignableTasks.length === 0 ? (
+                <div
+                  style={{
+                    background: "rgba(16,21,23,0.04)",
+                    border: "2px dashed #94a3b8",
+                    borderRadius: "12px",
+                    padding: "36px 16px",
+                    textAlign: "center",
+                    color: "#64748b",
+                    margin: "12px 0",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: "1rem", color: "#101517" }}>
+                    No tasks assigned to you yet!
+                  </p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem" }}>
+                    All your active tasks will appear here. When you have tasks, click them to submit proof and damage the dragon.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: "14px",
+                  }}
+                >
+                  {myAssignableTasks.map((task) => {
+                    const isCompleted = task.status === "completed" || task.status === "verified";
+                    const isPendingReview = task.status === "review" || task.status === "submitted" || task.status === "awaiting_creator";
+                    const creator = workspace?.members.find((m) => m?.profileId === task.createdByProfileId);
+                    const creatorName = creator?.displayName || "Creator";
+
+                    return (
+                      <div
+                        key={task._id}
+                        onClick={() => {
+                          setSelectedTaskId(task._id);
+                          if (task.reviewerProfileId) {
+                            setSelectedReviewerId(task.reviewerProfileId);
+                          }
+                          setShowBossModal(true);
+                          setShowMyTasksModal(false);
+                        }}
+                        style={{
+                          background: "#ffffff",
+                          border: "2px solid #101517",
+                          borderRadius: "12px",
+                          padding: "14px",
+                          cursor: "pointer",
+                          boxShadow: "3px 3px 0 #101517",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                          gap: "10px",
+                          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow = "4px 4px 0 #101517";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "none";
+                          e.currentTarget.style.boxShadow = "3px 3px 0 #101517";
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "6px" }}>
+                            <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900, color: "#101517", lineHeight: 1.3 }}>
+                              {task.title}
+                            </h4>
+                            <span
+                              style={{
+                                fontSize: "0.68rem",
+                                fontWeight: 900,
+                                padding: "2px 6px",
+                                borderRadius: "6px",
+                                border: "1.5px solid #101517",
+                                background: isCompleted ? "#86efac" : isPendingReview ? "#fde047" : "#fed7aa",
+                                color: "#101517",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {isCompleted ? "Verified" : isPendingReview ? "In Review" : "In Progress"}
+                            </span>
+                          </div>
+
+                          {task.description && (
+                            <p style={{ margin: "4px 0 8px 0", fontSize: "0.8rem", color: "#475569", lineHeight: 1.35, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #cbd5e1", paddingTop: "8px" }}>
+                          <span>By: {creatorName}</span>
+                          <span style={{ fontWeight: 700, color: task.dueDate ? "#b91c1c" : "#64748b" }}>
+                            Due: {task.dueDate || "No deadline"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PEER REVIEW MODAL (Clean format, pending review tasks on user + dummy test task)
+         ========================================================================= */}
+      {showPeerReviewModal && (
+        <div className="rpg-modal-backdrop" onClick={() => setShowPeerReviewModal(false)}>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "680px",
+              width: "95vw",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              background: "#fffded",
+              border: "3px solid #101517",
+              boxShadow: "6px 6px 0 #101517",
+              borderRadius: "16px",
+              padding: "20px",
+            }}
+          >
+            {/* Header: Title "Peer Review" + badge, and Red Close Button. NO "+ New Task" button! */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h3 className="rpg-modern-title" style={{ fontSize: "1.35rem", margin: 0 }}>
+                  Peer Review
+                </h3>
+                <span
+                  style={{
+                    background: "#fff73f",
+                    color: "#101517",
+                    border: "2px solid #101517",
+                    borderRadius: "12px",
+                    padding: "2px 10px",
+                    fontSize: "0.78rem",
+                    fontWeight: 900,
+                  }}
+                >
+                  {pendingReviews.length + (dummyReviewTaskDone ? 0 : 1)} Pending
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPeerReviewModal(false);
+                  setSelectedReviewTask(null);
+                }}
+                style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "2px solid #101517",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontSize: "1rem",
+                  boxShadow: "2px 2px 0 #101517",
+                }}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable list of pending review tasks */}
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "4px 2px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* 1. Dummy Verification Task for immediate bug testing */}
+              <div
+                style={{
+                  background: dummyReviewTaskDone ? "#f0fdf4" : "#ffffff",
+                  border: "2px solid #101517",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  boxShadow: "3px 3px 0 #101517",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  transition: "transform 0.15s ease",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 900, background: "#e0e7ff", color: "#3730a3", border: "1.2px solid #101517", padding: "1px 6px", borderRadius: "4px" }}>
+                        TESTING TASK
+                      </span>
+                      <h4 style={{ margin: 0, fontSize: "0.98rem", fontWeight: 900, color: "#101517" }}>
+                        Implement API Authentication & Session Middleware
+                      </h4>
+                    </div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569", marginTop: "3px" }}>
+                      Submitted by: Alex Rivera (Teammate) · Due: Day 3
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 900,
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      border: "1.5px solid #101517",
+                      background: dummyReviewTaskDone ? "#86efac" : "#fde047",
+                      color: "#101517",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {dummyReviewTaskDone ? "✓ Verified" : "Needs Review"}
+                  </span>
+                </div>
+
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.4 }}>
+                  Added token verification, secure cookie validation, and session cleanup. Staging tested and verified.
+                </p>
+
+                {/* Proof preview snippet */}
+                <div style={{ background: "#f8fafc", border: "1.5px dashed #94a3b8", borderRadius: "8px", padding: "8px 10px", fontSize: "0.78rem", color: "#0f172a" }}>
+                  <div style={{ fontWeight: 800, marginBottom: "2px", color: "#0284c7" }}>Attached Evidence:</div>
+                  <div>📝 Note: &quot;Merged PR #18 with 100% test pass rate. Staging cookies validated.&quot;</div>
+                  <div style={{ marginTop: "3px" }}>🔗 Link: <a href="https://github.com/MayLamDi/pull/18" target="_blank" rel="noreferrer" style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 700 }}>https://github.com/MayLamDi/pull/18</a></div>
+                </div>
+
+                {!dummyReviewTaskDone ? (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
+                    <button
+                      type="button"
+                      className="rpg-modern-btn is-boss"
+                      style={{ padding: "6px 14px", fontSize: "0.8rem", background: "#22c55e", color: "#ffffff" }}
+                      onClick={() => {
+                        setDummyReviewTaskDone(true);
+                        gameAudio.playDragonRoar();
+                        gameAudio.playTing();
+                      }}
+                    >
+                      ⚔️ Approve Proof & Deal Boss Damage
+                    </button>
+                    <button
+                      type="button"
+                      className="rpg-modern-btn is-secondary"
+                      style={{ padding: "6px 12px", fontSize: "0.8rem", background: "#fee2e2", color: "#991b1b" }}
+                      onClick={() => {
+                        alert("Changes requested for dummy task: please add unit tests for expired tokens.");
+                      }}
+                    >
+                      Request Changes
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 800, color: "#16a34a" }}>
+                    <CheckCircle2 size={16} />
+                    <span>Approved & verified! Boss damage applied.</span>
+                    <button
+                      type="button"
+                      onClick={() => setDummyReviewTaskDone(false)}
+                      style={{ marginLeft: "auto", background: "none", border: "none", color: "#64748b", textDecoration: "underline", cursor: "pointer", fontSize: "0.72rem" }}
+                    >
+                      Reset test task
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Real Pending Reviews from Convex Tasks */}
+              {pendingReviews.map((task) => {
+                const isBeingReviewed = reviewingTaskId === task._id;
+                return (
+                  <div
+                    key={task._id}
+                    style={{
+                      background: "#ffffff",
+                      border: "2px solid #101517",
+                      borderRadius: "12px",
+                      padding: "14px",
+                      boxShadow: "3px 3px 0 #101517",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: "0.98rem", fontWeight: 900, color: "#101517" }}>
+                          {task.title}
+                        </h4>
+                        <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569", marginTop: "3px" }}>
+                          Submitted by: {task.assigneeName} · Due: {task.dueDate || "No deadline"}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          fontWeight: 900,
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          border: "1.5px solid #101517",
+                          background: task.isCreatorApproval ? "#fed7aa" : "#bae6fd",
+                          color: task.isCreatorApproval ? "#c2410c" : "#0369a1",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {task.isCreatorApproval ? "Creator Final Approval" : "Peer Review Required"}
+                      </span>
+                    </div>
+
+                    {task.description && (
+                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.4 }}>
+                        {task.description}
+                      </p>
+                    )}
+
+                    {!isBeingReviewed ? (
+                      <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
+                        <button
+                          className="rpg-modern-btn is-primary"
+                          type="button"
+                          style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+                          onClick={() => {
+                            setReviewingTaskId(task._id);
+                            setReviewComment("");
+                            setReviewError(null);
+                          }}
+                        >
+                          Review Proof & Decide
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px", paddingTop: "8px", borderTop: "1.5px solid #101517" }}>
+                        {reviewError && (
+                          <div style={{ padding: "6px 10px", background: "#fee2e2", border: "1.5px solid #ef4444", borderRadius: "6px", color: "#b91c1c", fontSize: "0.78rem", fontWeight: 800 }}>
+                            {reviewError}
+                          </div>
+                        )}
+                        <label style={{ fontSize: "0.76rem", fontWeight: 800 }}>
+                          Reviewer Feedback & Notes:
+                        </label>
+                        <textarea
+                          className="rpg-modern-textarea"
+                          rows={2}
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          placeholder="Add notes for your peer (required if requesting changes)..."
+                        />
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            className="rpg-modern-btn is-boss"
+                            type="button"
+                            disabled={isSubmittingReview}
+                            style={{ padding: "6px 12px", fontSize: "0.78rem", background: "#22c55e", color: "#fff" }}
+                            onClick={() => handleReviewDecision(task._id, "approved", Boolean(task.isCreatorApproval))}
+                          >
+                            {isSubmittingReview ? "Submitting..." : "Approve & Deal Boss Damage"}
+                          </button>
+                          <button
+                            className="rpg-modern-btn is-secondary"
+                            type="button"
+                            disabled={isSubmittingReview}
+                            style={{ padding: "6px 12px", fontSize: "0.78rem", background: "#fee2e2", color: "#991b1b" }}
+                            onClick={() => handleReviewDecision(task._id, "changes_requested", Boolean(task.isCreatorApproval))}
+                          >
+                            Request Changes
+                          </button>
+                          <button
+                            className="rpg-modern-btn is-secondary"
+                            type="button"
+                            disabled={isSubmittingReview}
+                            style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+                            onClick={() => {
+                              setReviewingTaskId(null);
+                              setReviewError(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           BOSS ATTACK QUEST PINNED BOARD MODAL (Modern Neo-Brutalist)
@@ -3088,21 +3913,30 @@ export function BattleScene({
             ) : (
               <form onSubmit={handleBossSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {(() => {
-                  const task = myAssignableTasks.find((t) => t._id === selectedTaskId);
+                  const task = workspace?.tasks?.find((t) => t._id === selectedTaskId) || myAssignableTasks.find((t) => t._id === selectedTaskId);
                   if (!task) return null;
                   const creatorName = workspace?.members.find((m) => m?.profileId === task.createdByProfileId)?.displayName ?? "Creator";
                   return (
-                    <div style={{ background: "#bae6fd", border: "2px solid #101517", borderRadius: "10px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ background: "#bae6fd", border: "2px solid #101517", borderRadius: "10px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
                       <div>
-                        <span style={{ fontSize: "0.68rem", fontWeight: 900, textTransform: "uppercase", color: "#0369a1" }}>Selected Quest</span>
-                        <h4 style={{ margin: "2px 0 0 0", fontSize: "0.92rem", fontWeight: 900, color: "#101517" }}>{task.title}</h4>
-                        <span style={{ fontSize: "0.74rem", color: "#0c4a6e" }}>📅 Due {task.dueDate} | Assigned by {creatorName}</span>
+                        <span style={{ fontSize: "0.68rem", fontWeight: 900, textTransform: "uppercase", color: "#0369a1" }}>Selected Task</span>
+                        <h4 style={{ margin: "2px 0 0 0", fontSize: "0.95rem", fontWeight: 900, color: "#101517" }}>{task.title}</h4>
+                        {task.description && (
+                          <p style={{ margin: "4px 0 6px 0", fontSize: "0.82rem", color: "#0c4a6e", lineHeight: 1.35 }}>
+                            {task.description}
+                          </p>
+                        )}
+                        <span style={{ fontSize: "0.74rem", color: "#075985", fontWeight: 700 }}>📅 Due {task.dueDate || "No deadline"} | Assigned by {creatorName}</span>
                       </div>
                       <button
                         className="rpg-modern-btn is-secondary"
                         type="button"
-                        style={{ padding: "4px 10px", fontSize: "0.74rem" }}
-                        onClick={() => setSelectedTaskId(null)}
+                        style={{ padding: "4px 10px", fontSize: "0.74rem", flexShrink: 0 }}
+                        onClick={() => {
+                          setSelectedTaskId(null);
+                          setShowBossModal(false);
+                          setShowMyTasksModal(true);
+                        }}
                       >
                         Change
                       </button>
@@ -3260,9 +4094,11 @@ export function BattleScene({
                     setEvidenceUrl("");
                     setEvidenceFile(null);
                     setSelectedReviewerId("");
+                    setShowBossModal(false);
+                    setShowMyTasksModal(true);
                   }}
                 >
-                  Back to Quest List
+                  Back to My Tasks
                 </button>
               </form>
             )}

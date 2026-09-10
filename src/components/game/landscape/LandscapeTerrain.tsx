@@ -1,17 +1,17 @@
 export function LandscapeTerrain() {
   return (
     <>
-      {/* Layer 3: Top Sky Horizon & Slate Blue Mountain Ridges */}
+      {/* Layer 3: Top Sky Horizon & Brighter Grey Mountain Ridges */}
       <div className="landscape-layer layer-3-hills" aria-hidden="true">
         <svg viewBox="0 0 1000 400" preserveAspectRatio="none" width="100%" height="100%">
           <polygon
             points="0,115 90,82 190,105 320,68 450,100 580,62 710,95 840,72 950,90 1000,78 1000,400 0,400"
-            fill="#334155"
+            fill="#64748b"
             opacity="0.85"
           />
           <polygon
             points="0,120 140,102 280,118 410,88 560,110 720,82 890,108 1000,98 1000,400 0,400"
-            fill="#1e293b"
+            fill="#475569"
           />
         </svg>
       </div>

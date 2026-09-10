@@ -14,13 +14,12 @@ describe("shared end-of-game result board", () => {
   });
 
   it("keeps the result content and actions while replacing result-board emoji with Lucide icons", () => {
-    expect(battleSource).toContain("YOU SUCCESSFULLY DEFENDED THE VILLAGE!");
+    expect(battleSource).toContain("Boss defeated");
     expect(battleSource).toContain("YOU FAILED TO PROTECT THE VILLAGE!");
     expect(battleSource).toContain("Village Status");
     expect(battleSource).toContain("Boss Remaining");
     expect(battleSource).toContain("Verified Quests");
-    expect(battleSource).toContain("Download Contribution Dossier (PDF)");
-    expect(battleSource).toContain("Final Leaderboard");
+    expect(battleSource).toContain("Download personal contribution");
     expect(battleSource).toContain("View Battle Canvas");
     expect(battleSource).toContain("Remove from my account");
     expect(battleSource).not.toContain("Delete Party Room");
