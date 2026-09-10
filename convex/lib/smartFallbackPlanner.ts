@@ -37,9 +37,19 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     offset: number;
   }> = [];
 
-  // Match Animation / Film / Narrative Briefs (e.g. 2D/3D Animated Narrative, Script, Shot List, Animatic)
-  if (/animation|animatic|script|narrative|shot list|storyboard|character design|2d|3d|greyscale|video|film|movie|narrative/.test(text)) {
-    if (/script|narrative|story|screenplay/.test(text)) {
+  // 1. Match Web / HTML / CSS / Deployment / Software Briefs FIRST
+  if (/html|css|\bjs\b|javascript|typescript|web|website|github pages|netlify|vercel|hosting|deploy|page|url|zip|submission|asset/.test(text)) {
+    deliverables.push(
+      { title: "HTML/CSS Layout & Responsive Webpage Implementation", desc: "Build self-contained, responsive HTML/CSS frontend page based on chosen ideation.", skills: ["HTML", "CSS", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 4 },
+      { title: "JavaScript Interactive Functionality & Asset Assembly", desc: "Program client-side interactive logic, asset loading, and local script handlers.", skills: ["JavaScript", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Live Hosting Deployment & Public URL Setup", desc: "Deploy webpage to live URL via GitHub Pages, Vercel, or Netlify and verify access.", skills: ["DevOps", "Web Hosting"], weight: 3, diff: 2, effort: 4, offset: 12 },
+      { title: "Project Technical Note & Asset Archive Packaging", desc: "Write technical exploration note (idea, target audience, future improvements) and package zip asset submission.", skills: ["Technical Writing", "Documentation"], weight: 3, diff: 2, effort: 4, offset: 16 }
+    );
+  }
+
+  // 2. Match Animation / Film / Narrative Briefs (using strict word boundaries)
+  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|\b2d\b|\b3d\b|greyscale|video|film|movie/.test(text)) {
+    if (/\bscript\b|screenplay|narrative|story/.test(text)) {
       deliverables.push({
         title: "Script & Narrative Screenplay",
         desc: "Draft full screenplay, character dialogues, and narrative story structure for target audience.",
