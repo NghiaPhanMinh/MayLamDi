@@ -79,8 +79,8 @@ export async function runFreeModelFallback<T>(input: {
   maximumBackoffMs?: number;
 }): Promise<{ value: T; modelUsed: string }> {
   const sleep = input.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
-  const baseBackoffMs = input.baseBackoffMs ?? 750;
-  const maximumBackoffMs = input.maximumBackoffMs ?? 8_000;
+  const baseBackoffMs = input.baseBackoffMs ?? 400;
+  const maximumBackoffMs = input.maximumBackoffMs ?? 2_000;
   const failures: Array<{ model: string; kind: AiRouteFailureKind }> = [];
   let mode: AiResponseMode = "structured";
   let retrySequence = 0;

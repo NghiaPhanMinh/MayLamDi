@@ -271,7 +271,7 @@ async function requestPlan(input: {
   userPrompt: string;
 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35_000);
+  const timeout = setTimeout(() => controller.abort(), 10_000);
 
   try {
     const response = await fetch(OPENROUTER_URL, {
@@ -297,7 +297,7 @@ async function requestPlan(input: {
         ...(input.mode === "structured"
           ? { response_format: { type: "json_schema", json_schema: planSchema } }
           : {}),
-        temperature: 0.2,
+        temperature: 0.1,
         max_tokens: 1_800,
         max_completion_tokens: 1_800,
       }),

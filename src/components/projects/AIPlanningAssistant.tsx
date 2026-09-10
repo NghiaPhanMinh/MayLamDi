@@ -68,13 +68,13 @@ export function AIPlanningAssistant({
 
   useEffect(() => {
     if (isGenerating) {
-      setLoadingProgress(8);
+      setLoadingProgress(10);
       setLoadingSeconds(0);
       const startTime = Date.now();
       loadingIntervalRef.current = setInterval(() => {
         const elapsed = (Date.now() - startTime) / 1000;
         setLoadingSeconds(Math.floor(elapsed));
-        setLoadingProgress(Math.min(94, Math.floor(100 * (1 - Math.exp(-elapsed / 2.0)))));
+        setLoadingProgress(Math.min(98, Math.floor(100 * (1 - Math.exp(-elapsed / 2.8)))));
       }, 100);
     } else {
       if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
@@ -376,7 +376,7 @@ export function AIPlanningAssistant({
               <Zap size={16} className="spinner-icon" style={{ color: "var(--color-yellow)" }} /> Building AI Project Plan...
             </strong>
             <small style={{ fontWeight: 700, opacity: 0.85 }}>
-              {loadingSeconds < 4 ? `~${Math.max(1, 4 - loadingSeconds)}s remaining` : "Finalizing..."} ({loadingSeconds}s elapsed)
+              {loadingSeconds < 8 ? `~${Math.max(1, 8 - loadingSeconds)}s remaining` : "<1s remaining"} ({loadingSeconds}s elapsed)
             </small>
           </div>
           <div className="loading-bar-track" style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(0,0,0,0.15)", overflow: "hidden", marginBottom: "0.75rem" }}>
@@ -392,11 +392,11 @@ export function AIPlanningAssistant({
             />
           </div>
           <p style={{ margin: 0, fontSize: "0.88rem", opacity: 0.9, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            {loadingSeconds < 1.5 ? (
+            {loadingSeconds < 2.5 ? (
               <><Search size={14} /> Analyzing brief requirements &amp; deliverables...</>
-            ) : loadingSeconds < 3.0 ? (
+            ) : loadingSeconds < 5.0 ? (
               <><Layers size={14} /> Structuring project phases &amp; task allocation...</>
-            ) : loadingSeconds < 4.5 ? (
+            ) : loadingSeconds < 7.5 ? (
               <><Scale size={14} /> Balancing effort hours, weights &amp; risk factors...</>
             ) : (
               <><Sparkles size={14} /> Finalizing draft plan for your review...</>
