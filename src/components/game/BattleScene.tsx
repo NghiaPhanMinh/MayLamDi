@@ -30,7 +30,7 @@ import { LandscapeSky } from "./landscape/LandscapeSky";
 import { LandscapeTerrain } from "./landscape/LandscapeTerrain";
 import { LandscapeVillage } from "./landscape/LandscapeVillage";
 import { LandscapeGoblins, getGoblinCoordinates } from "./landscape/LandscapeGoblins";
-import { LandscapePlayers, getMageTheme, getPlayerCoordinates } from "./landscape/LandscapePlayers";
+import { LandscapePlayers, getMageTheme, getPlayerCoordinates, getPlayerStaffTip } from "./landscape/LandscapePlayers";
 import { LandscapeDragon, DRAGON_ORIGINAL_SHAPES, parseCoordinates } from "./landscape/LandscapeDragon";
 import { LandscapeFX, type ActiveAttacker } from "./landscape/LandscapeFX";
 import { LandscapeQuestBoard, type QuestTask } from "./landscape/LandscapeQuestBoard";
@@ -1129,9 +1129,27 @@ export function BattleScene({
     localStorage.setItem("layer_transforms_config", JSON.stringify(layerTransforms));
   }, [layerTransforms]);
 
+  const [terrainOffsets, setTerrainOffsets] = useState<{
+    mountain: { x: number; y: number; scale: number };
+    island: { x: number; y: number; scale: number };
+    green: { x: number; y: number; scale: number };
+    cloud: { x: number; y: number; scale: number };
+  }>(() => {
+    try {
+      const saved = localStorage.getItem("terrain_elements_config");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      mountain: { x: 0, y: 130, scale: 1 },
+      island: { x: 0, y: 0, scale: 1 },
+      green: { x: 0, y: 0, scale: 1 },
+      cloud: { x: 0, y: 0, scale: 1 },
+    };
+  });
+
   useEffect(() => {
-    localStorage.setItem("pvz_bar_config", JSON.stringify(pvzBarOffset));
-  }, [pvzBarOffset]);
+    localStorage.setItem("terrain_elements_config", JSON.stringify(terrainOffsets));
+  }, [terrainOffsets]);
 
   // Personal room removal & end-game states
   const [showDeleteRoomModal, setShowDeleteRoomModal] = useState(false);
@@ -1982,6 +2000,58 @@ export function BattleScene({
       });
     }
 
+    // Communication & Daily Evidence Log Section (Team Chat)
+    yPos += 6;
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+    doc.text("COMMUNICATION & DAILY EVIDENCE LOG (TEAM CHAT)", 14, yPos);
+    yPos += 6;
+
+    if (!dailyPosts || dailyPosts.length === 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.text("No daily chat messages or daily evidence recorded for this project yet.", 14, yPos);
+      yPos += 8;
+    } else {
+      const sortedPosts = [...dailyPosts].sort((a: any, b: any) => (a.createdAt || 0) - (b.createdAt || 0));
+      sortedPosts.forEach((post: any) => {
+        if (yPos > 260) {
+          doc.addPage();
+          yPos = 20;
+        }
+        const isMyPost = post.authorProfileId === state.currentProfileId;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(isMyPost ? 22 : 71, isMyPost ? 101 : 85, isMyPost ? 52 : 105);
+        const timeStr = new Date(post.createdAt || Date.now()).toLocaleString();
+        doc.text(`${post.authorName || "Team Member"} (${timeStr})${isMyPost ? " [You]" : ""}:`, 14, yPos);
+        yPos += 4.5;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        if (post.content || post.text) {
+          const contentStr = String(post.content || post.text || "");
+          const splitContent = doc.splitTextToSize(contentStr, pageWidth - 32);
+          doc.text(splitContent, 18, yPos);
+          yPos += splitContent.length * 4;
+        }
+        if (post.imageUrls && post.imageUrls.length > 0) {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`[Attached ${post.imageUrls.length} evidence image(s)]`, 18, yPos);
+          yPos += 4;
+        }
+        yPos += 2;
+      });
+    }
+
     // Digital Security Verification Footer
     if (yPos > 255) {
       doc.addPage();
@@ -2113,16 +2183,16 @@ export function BattleScene({
 
   const players = useMemo(() => {
     if (!state) return [];
-    return state.members.map((member, idx) => ({
+    return state.members.map((member) => ({
       profileId: member.profileId,
       displayName: member.displayName,
       characterFill: member.characterFill,
       characterOutline: member.characterOutline,
       spellType: member.spellType,
       isActiveToday: member.hasSubmittedToday,
-      isAttacking: (combinedActiveEvent?.attackerName === member.displayName || activeEvent?.attackerProfileId === member.profileId),
+      isAttacking: true,
     }));
-  }, [state, activeEvent, combinedActiveEvent]);
+  }, [state]);
 
   // All Project Tasks for In-Canvas Quest Board (Active first, Completed sent to end)
   const questTasks: QuestTask[] = useMemo(() => {
@@ -2151,46 +2221,37 @@ export function BattleScene({
     return questTasks.filter((t) => t.isMine && !t.isCompleted).length;
   }, [questTasks]);
 
-  // Active attackers throwing elemental projectiles at the dragon
+  // Active attackers throwing elemental projectiles at the dragon from staff tip
   const activeAttackers: ActiveAttacker[] = useMemo(() => {
     const attackers: ActiveAttacker[] = [];
-    if (!state?.members) return attackers;
-
-    state.members.forEach((member, idx) => {
-      const memberHasSubmitted = workspace?.tasks?.some(
-        (t) =>
-          t.primaryOwnerProfileId === member.profileId &&
-          (t.status === "submitted" || t.status === "review" || t.status === "verified" || t.status === "completed")
-      );
-      const isCurrentPlayerDummy =
-        (isDummyTaskSubmitted || dummyReviewTaskDone) &&
-        (member.profileId === state.currentProfileId || idx === 0);
-
-      if (memberHasSubmitted || isCurrentPlayerDummy) {
-        const coords = getPlayerCoordinates(idx, state.members.length);
-        attackers.push({
-          profileId: member.profileId,
-          displayName: member.displayName,
-          spellType: member.spellType || (idx % 3 === 0 ? "fire" : idx % 3 === 1 ? "ice" : "lightning"),
+    if (!state?.members || state.members.length === 0) {
+      const coords = getPlayerStaffTip(0, 1, true);
+      return [
+        {
+          profileId: state?.currentProfileId || "hero",
+          displayName: "Hero",
+          spellType: "fire",
           startX: coords.x,
           startY: coords.y,
-        });
-      }
-    });
+        },
+      ];
+    }
 
-    if (attackers.length === 0 && (isDummyTaskSubmitted || dummyReviewTaskDone)) {
-      const coords = getPlayerCoordinates(0, 1);
+    const totalCount = state.members.length;
+    state.members.forEach((member, idx) => {
+      const coords = getPlayerStaffTip(idx, totalCount, true);
+      const mage = getMageTheme(member.spellType, member.profileId, idx);
       attackers.push({
-        profileId: state.currentProfileId || "hero",
-        displayName: "Hero",
-        spellType: "fire",
+        profileId: member.profileId,
+        displayName: member.displayName,
+        spellType: mage.type,
         startX: coords.x,
         startY: coords.y,
       });
-    }
+    });
 
     return attackers;
-  }, [state?.members, state?.currentProfileId, workspace?.tasks, isDummyTaskSubmitted, dummyReviewTaskDone]);
+  }, [state?.members, state?.currentProfileId]);
 
   // Auto-prompt for Browser Push Notifications if not decided yet
   useEffect(() => {
@@ -2900,12 +2961,16 @@ export function BattleScene({
 
         {/* Layer 0, 1, 2: Sky & Parallax Clouds */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0, transform: `translate(${layerTransforms.sky?.x || 0}px, ${layerTransforms.sky?.y || 0}px) scale(${layerTransforms.sky?.scale || 1})`, display: layerTransforms.sky?.visible !== false ? "block" : "none" }}>
-          <LandscapeSky />
+          <LandscapeSky cloudOffset={terrainOffsets.cloud} />
         </div>
 
         {/* Layer 3, 4: Top-Down 3/4 Perspective Grassland (Road pavement removed) */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 4, transform: `translate(${layerTransforms.terrain?.x || 0}px, ${layerTransforms.terrain?.y || 0}px) scale(${layerTransforms.terrain?.scale || 1})`, display: layerTransforms.terrain?.visible !== false ? "block" : "none" }}>
-          <LandscapeTerrain />
+          <LandscapeTerrain
+            mountainOffset={terrainOffsets.mountain}
+            islandOffset={terrainOffsets.island}
+            greenOffset={terrainOffsets.green}
+          />
         </div>
 
         {/* Layer 7: Party Members (Scaled Up and Positioned in Open Meadow) */}
@@ -3285,6 +3350,238 @@ export function BattleScene({
                   </div>
                 </div>
               </div>
+
+              {/* 4. Green Part (Grass Plateau) */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  🌱 Green Part (Grass Plateau)
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {terrainOffsets.green.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={terrainOffsets.green.x}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, green: { ...prev.green, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {terrainOffsets.green.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      value={terrainOffsets.green.y}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, green: { ...prev.green, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {terrainOffsets.green.scale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.05"
+                      value={terrainOffsets.green.scale}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setTerrainOffsets((prev) => ({ ...prev, green: { ...prev.green, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#16a34a" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Floating Island (Rock Base) */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  🏝️ Floating Island (Rock Base)
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {terrainOffsets.island.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={terrainOffsets.island.x}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, island: { ...prev.island, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#78350f" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {terrainOffsets.island.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      value={terrainOffsets.island.y}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, island: { ...prev.island, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#78350f" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {terrainOffsets.island.scale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.05"
+                      value={terrainOffsets.island.scale}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setTerrainOffsets((prev) => ({ ...prev, island: { ...prev.island, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#78350f" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. Mountains Behind */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  ⛰️ Mountains Behind
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {terrainOffsets.mountain.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={terrainOffsets.mountain.x}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, mountain: { ...prev.mountain, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#64748b" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {terrainOffsets.mountain.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-100"
+                      max="250"
+                      value={terrainOffsets.mountain.y}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, mountain: { ...prev.mountain, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#64748b" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {terrainOffsets.mountain.scale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.05"
+                      value={terrainOffsets.mountain.scale}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setTerrainOffsets((prev) => ({ ...prev, mountain: { ...prev.mountain, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#64748b" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 7. Clouds */}
+              <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
+                  ☁️ Clouds
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Horizontal X: {terrainOffsets.cloud.x}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-300"
+                      max="300"
+                      value={terrainOffsets.cloud.x}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, cloud: { ...prev.cloud, x: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#38bdf8" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Vertical Y: {terrainOffsets.cloud.y}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-150"
+                      max="150"
+                      value={terrainOffsets.cloud.y}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTerrainOffsets((prev) => ({ ...prev, cloud: { ...prev.cloud, y: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#38bdf8" }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 800, marginBottom: "4px" }}>
+                      Scale: {terrainOffsets.cloud.scale.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.05"
+                      value={terrainOffsets.cloud.scale}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 1;
+                        setTerrainOffsets((prev) => ({ ...prev, cloud: { ...prev.cloud, scale: val } }));
+                      }}
+                      style={{ width: "100%", accentColor: "#38bdf8" }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "2px solid #101517" }}>
@@ -3300,6 +3597,12 @@ export function BattleScene({
                     dragon: { x: 0, y: 0, scale: 1, visible: true },
                     players: { x: 0, y: 0, scale: 1, visible: true },
                   }));
+                  setTerrainOffsets({
+                    mountain: { x: 0, y: 130, scale: 1 },
+                    island: { x: 0, y: 0, scale: 1 },
+                    green: { x: 0, y: 0, scale: 1 },
+                    cloud: { x: 0, y: 0, scale: 1 },
+                  });
                 }}
                 style={{ fontSize: "0.78rem", padding: "6px 14px" }}
               >

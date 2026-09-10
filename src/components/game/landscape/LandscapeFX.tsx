@@ -90,26 +90,27 @@ export function LandscapeFX({
             const dx = tx - sx;
             const dy = ty - sy;
             const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI));
-            const flightDur = "0.95s";
-            const animDelay = `${(idx * 0.28).toFixed(2)}s`;
+            const flightDur = "5s";
+            const animDelay = `${(idx * 0.8).toFixed(2)}s`;
 
             return (
               <g key={`attacker-fx-${attacker.profileId}-${idx}`}>
                 {/* 1. Flying Projectile Group */}
                 <g>
-                  {/* Motion along path from player to dragon */}
+                  {/* Motion along path from player to dragon (travels for 1.9s then pauses until 5s) */}
                   <animateTransform
                     attributeName="transform"
                     type="translate"
-                    values={`${sx} ${sy}; ${tx} ${ty}`}
+                    values={`${sx} ${sy}; ${tx} ${ty}; ${tx} ${ty}`}
+                    keyTimes="0; 0.38; 1"
                     dur={flightDur}
                     begin={animDelay}
                     repeatCount="indefinite"
                   />
                   <animate
                     attributeName="opacity"
-                    values="0; 1; 1; 1; 0.2"
-                    keyTimes="0; 0.08; 0.85; 0.95; 1"
+                    values="0; 1; 1; 0; 0"
+                    keyTimes="0; 0.04; 0.36; 0.39; 1"
                     dur={flightDur}
                     begin={animDelay}
                     repeatCount="indefinite"
@@ -184,13 +185,13 @@ export function LandscapeFX({
                   </g>
                 </g>
 
-                {/* 2. Impact Blast on Dragon Chest (Triggers in rhythm with projectile landing) */}
+                {/* 2. Impact Blast on Dragon Chest (Triggers precisely on landing at 1.9s mark of the 5s cycle) */}
                 <g transform={`translate(${tx}, ${ty})`}>
                   <g>
                     <animate
                       attributeName="opacity"
                       values="0; 0; 1; 0.8; 0"
-                      keyTimes="0; 0.82; 0.90; 0.96; 1"
+                      keyTimes="0; 0.37; 0.40; 0.46; 1"
                       dur={flightDur}
                       begin={animDelay}
                       repeatCount="indefinite"
@@ -198,8 +199,8 @@ export function LandscapeFX({
                     <animateTransform
                       attributeName="transform"
                       type="scale"
-                      values="0.3; 0.3; 1.4; 1.8; 0"
-                      keyTimes="0; 0.82; 0.90; 0.96; 1"
+                      values="0.3; 0.3; 1.5; 1.8; 0"
+                      keyTimes="0; 0.37; 0.40; 0.46; 1"
                       dur={flightDur}
                       begin={animDelay}
                       repeatCount="indefinite"

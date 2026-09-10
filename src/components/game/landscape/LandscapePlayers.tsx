@@ -69,10 +69,26 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
 }
 
 export function getPlayerCoordinates(index: number = 0, _totalCount: number = 1) {
-  // Stack players vertically with subtle horizontal stagger so each hero and their projectile path are clearly visible
-  const x = 220 + (index % 2) * 16;
-  const y = 200 + index * 52;
+  // Stagger players in 2 columns across the lush floating island plateau
+  // Col 0 at x=185, Col 1 at x=265 (80px horizontal gap prevents overlapping)
+  // Row spacing of 68px ensures players and name tags never overlap vertically
+  const col = index % 2;
+  const row = Math.floor(index / 2);
+  const x = 185 + col * 80;
+  const y = 200 + row * 68 + col * 12;
   return { x, y };
+}
+
+export function getPlayerStaffTip(index: number = 0, totalCount: number = 1, isAttacking: boolean = true) {
+  const { x, y } = getPlayerCoordinates(index, totalCount);
+  // Group scale is 1.25
+  // When staff tilts 60 deg clockwise around hand (26, 32), the crystal tip (28, 5) moves to (49.5, 18.5)
+  const tipRelX = isAttacking ? 49.5 : 28;
+  const tipRelY = isAttacking ? 18.5 : 5;
+  return {
+    x: Math.round(x + tipRelX * 1.25),
+    y: Math.round(y + tipRelY * 1.25),
+  };
 }
 
 export function LandscapePlayers({ members }: LandscapePlayersProps) {
@@ -92,39 +108,40 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
             const { x: offsetX, y: offsetY } = getPlayerCoordinates(index, count);
             const active = member.isActiveToday;
             const mage = getMageTheme(member.spellType, member.profileId, index);
+            const isAttacking = Boolean(member.isAttacking);
 
             return (
               <g
                 key={member.profileId}
                 transform={`translate(${offsetX}, ${offsetY}) scale(1.25)`}
-                className={`player-character ${member.isAttacking ? "is-attacking" : ""}`}
+                className={`player-character ${isAttacking ? "is-attacking" : ""}`}
                 role="img"
                 aria-label={`${member.displayName} (${mage.name}, ${active ? "Active today" : "Idle"})`}>
                 {/* 1. Ground Shadow */}
                 <ellipse cx="15" cy="46" rx="14" ry="4.5" fill="rgba(0,0,0,0.22)" stroke="none" />
 
-                {/* 2. Game ID Tag Pill rendered directly above avatar */}
-                <g transform="translate(15, -16)">
+                {/* 2. Game ID Tag Pill (Positioned cleanly below the hero feet so it NEVER covers any hero) */}
+                <g transform="translate(15, 53)">
                   <rect
                     x="-24"
-                    y="-12"
+                    y="-6"
                     width="48"
-                    height="15"
-                    rx="7.5"
+                    height="13"
+                    rx="6.5"
                     fill="#0f172a"
                     stroke={mage.ribbon}
-                    strokeWidth="1.5"
+                    strokeWidth="1.2"
                   />
                   <text
                     x="0"
-                    y="-1.5"
+                    y="3"
                     textAnchor="middle"
                     fill="#fff"
-                    fontSize="9"
-                    fontWeight="700"
+                    fontSize="8"
+                    fontWeight="800"
                     fontFamily="sans-serif"
                   >
-                    {member.displayName.slice(0, 7)}
+                    {member.displayName.slice(0, 8)}
                   </text>
                 </g>
 
@@ -160,31 +177,36 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
                   {/* Hat Ribbon */}
                   <rect x="9" y="11.5" width="12" height="2.5" fill={mage.ribbon} stroke="none" />
 
-                  {/* Wizard Staff */}
-                  {/* Staff Wood Pole */}
-                  <line x1="28" y1="45" x2="28" y2="9" stroke="#78350f" strokeWidth="2" strokeLinecap="round" />
-                  {/* Crystal Claws */}
-                  <polygon points="26,11 28,7 30,11" fill="#b45309" stroke="none" />
+                  {/* Wizard Staff - Tilts 60 degrees pointing forward at the dragon when attacking */}
+                  <g
+                    transform={isAttacking ? "rotate(60, 26, 32)" : "rotate(0, 26, 32)"}
+                    style={{ transition: "transform 0.4s ease-in-out" }}
+                  >
+                    {/* Staff Wood Pole */}
+                    <line x1="28" y1="45" x2="28" y2="9" stroke="#78350f" strokeWidth="2" strokeLinecap="round" />
+                    {/* Crystal Claws */}
+                    <polygon points="26,11 28,7 30,11" fill="#b45309" stroke="none" />
 
-                  {/* Elemental Staff Crystal Head */}
-                  {mage.type === "lightning" && (
-                    <g>
-                      <circle cx="28" cy="5" r="4" fill={mage.orbCore} stroke="none" />
-                      <polygon points="28,1 26.5,5 29.5,5 28,9" fill="#eab308" stroke="none" />
-                    </g>
-                  )}
-                  {mage.type === "fire" && (
-                    <g>
-                      <polygon points="28,0 24,7 32,7" fill={mage.orbCore} stroke="none" />
-                      <circle cx="28" cy="5.5" r="2" fill={mage.orbAccent} stroke="none" />
-                    </g>
-                  )}
-                  {mage.type === "ice" && (
-                    <g>
-                      <polygon points="28,0 24,5 28,10 32,5" fill={mage.orbCore} stroke="none" />
-                      <polygon points="28,2 26,5 28,8 30,5" fill="#ffffff" stroke="none" />
-                    </g>
-                  )}
+                    {/* Elemental Staff Crystal Head */}
+                    {mage.type === "lightning" && (
+                      <g>
+                        <circle cx="28" cy="5" r="4" fill={mage.orbCore} stroke="none" />
+                        <polygon points="28,1 26.5,5 29.5,5 28,9" fill="#eab308" stroke="none" />
+                      </g>
+                    )}
+                    {mage.type === "fire" && (
+                      <g>
+                        <polygon points="28,0 24,7 32,7" fill={mage.orbCore} stroke="none" />
+                        <circle cx="28" cy="5.5" r="2" fill={mage.orbAccent} stroke="none" />
+                      </g>
+                    )}
+                    {mage.type === "ice" && (
+                      <g>
+                        <polygon points="28,0 24,5 28,10 32,5" fill={mage.orbCore} stroke="none" />
+                        <polygon points="28,2 26,5 28,8 30,5" fill="#ffffff" stroke="none" />
+                      </g>
+                    )}
+                  </g>
                 </g>
               </g>
             );

@@ -1039,7 +1039,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               </button>
             </div>
             <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "#475569", fontWeight: 700 }}>
-              Communicate and collaborate with your teammates in real-time.
+              Everything in this chat will be recorded and put into the PDF download. Post daily updates to see proof and have your contribution recorded.
             </p>
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
               <TeamMessengerChat projectId={workspace.project._id} />

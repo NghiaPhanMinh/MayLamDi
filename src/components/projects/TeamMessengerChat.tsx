@@ -163,6 +163,24 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
         </span>
       </div>
 
+      {/* Permanent Contribution PDF Notice */}
+      <div
+        style={{
+          background: "#eff6ff",
+          borderBottom: "1px solid #bfdbfe",
+          padding: "6px 12px",
+          fontSize: "0.72rem",
+          color: "#1e40af",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <span>📄</span>
+        <span>Everything in this chat will be recorded and put into the PDF download. Post daily updates to see proof and have your contribution recorded.</span>
+      </div>
+
       {/* Scrollable Messenger Bubble Feed */}
       <div
         style={{
