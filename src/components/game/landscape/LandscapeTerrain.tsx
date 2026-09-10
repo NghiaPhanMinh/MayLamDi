@@ -49,43 +49,6 @@ export function LandscapeTerrain() {
           <path d="M0,158 Q300,146 600,162 T1000,154 L1000,400 L0,400 Z" fill="#17a738" />
           <rect x="0" y="165" width="1000" height="235" fill="#17a738" />
 
-          {/* --- Curvy Winding Dirt / Cobblestone Pathway --- */}
-          <path
-            d="M960,335 Q740,345 550,305 Q430,282 340,290 Q210,295 125,265"
-            stroke="#78350f"
-            strokeWidth="24"
-            strokeLinecap="round"
-            fill="none"
-            opacity="0.75"
-          />
-          <path
-            d="M960,335 Q740,345 550,305 Q430,282 340,290 Q210,295 125,265"
-            stroke="#92400e"
-            strokeWidth="16"
-            strokeLinecap="round"
-            fill="none"
-            opacity="0.65"
-          />
-          <path
-            d="M960,335 Q740,345 550,305 Q430,282 340,290 Q210,295 125,265"
-            stroke="#b45309"
-            strokeWidth="8"
-            strokeLinecap="round"
-            fill="none"
-            opacity="0.5"
-          />
-
-          {/* Decorative Slate Rocks along the Pathway and Edges */}
-          <use href="#slate-pebble" x="150" y="280" />
-          <use href="#slate-pebble" x="180" y="272" />
-          <use href="#slate-pebble" x="290" y="302" />
-          <use href="#slate-pebble" x="315" y="278" />
-          <use href="#slate-pebble" x="480" y="318" />
-          <use href="#slate-pebble" x="520" y="292" />
-          <use href="#slate-pebble" x="680" y="338" />
-          <use href="#slate-pebble" x="720" y="325" />
-          <use href="#slate-pebble" x="870" y="355" />
-
           {/* Decorative Grass Tufts */}
           <use href="#grass-tuft-dark" x="80" y="160" />
           <use href="#grass-tuft-dark" x="220" y="185" />

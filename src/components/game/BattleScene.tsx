@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { jsPDF } from "jspdf";
 import {
+  Check,
   ClipboardCheck,
   FileDown,
+  Flag,
   Gamepad2,
   Shield,
   ShieldCheck,
@@ -13,6 +15,8 @@ import {
   Trash2,
   TriangleAlert,
   Trophy,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
@@ -2499,15 +2503,16 @@ export function BattleScene({
   const damageClearedFraction = (100 - hpPercent) / 100;
   const dragonX = 730 + damageClearedFraction * 60;
 
-  // Post-Deadline End-Game Screen (Overrides active game scene when deadline is reached)
-  if ((testOverdueOverride !== null ? testOverdueOverride : state.isOverdue) && !viewBattleSceneOverride) {
+  // Collaborative End-Game Screen: Game only ends after all tasks are completed and Dragon is defeated
+  const allTasksCompleted = workspace?.tasks && workspace.tasks.length > 0 && workspace.tasks.every(t => t.status === "completed" || t.status === "verified");
+  if ((defeated || allTasksCompleted || testOverdueOverride === true) && !viewBattleSceneOverride) {
     const isVillageDefended = effectiveVillageHp >= 50;
     const resultVariant = isVillageDefended ? "success" : "failed";
     const resultTitle = isVillageDefended
       ? "YOU SUCCESSFULLY DEFENDED THE VILLAGE!"
       : "YOU FAILED TO PROTECT THE VILLAGE!";
     const resultDescription = isVillageDefended
-      ? `The deadline has passed and the realm stands triumphant! ${funnyVillageName} was saved with ${effectiveVillageHp}% HP intact.`
+      ? `All project tasks have been successfully completed and the dragon defeated! Your team earned verifiable proof of contribution.`
       : `The deadline has expired before sufficient task quests were completed. ${funnyBossName} and the goblin horde overwhelmed the defenses.`;
     const verifiedQuestCount = workspace?.tasks.filter(t => t.status === "verified" || t.status === "completed").length ?? 0;
 
@@ -2631,7 +2636,7 @@ export function BattleScene({
 
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
       <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
-        {/* Top Control Bar Overlay (Flex row - prevents any collision across all screen dimensions) */}
+        {/* Top Control Bar Overlay (Flex row - compact & clean) */}
         <div
           className="rpg-top-bar-controls"
           style={{
@@ -2657,20 +2662,32 @@ export function BattleScene({
             Tutorial
           </button>
 
-          {/* Sound & Notifications Controls Button */}
+          {/* Sound & Notifications Controls Button (Compact Icon Button) */}
           <button
-            className="rpg-btn-leaderboard rpg-btn-sound-controls"
-            style={{ position: "relative", top: 0, right: 0 }}
+            className="rpg-btn-icon-sound"
+            style={{
+              width: "36px",
+              height: "36px",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "8px",
+              background: "#fffded",
+              border: "2px solid #101517",
+              boxShadow: "2px 2px 0 #101517",
+              cursor: "pointer",
+              color: "#101517",
+            }}
             onClick={() => setShowSoundSettingsModal(true)}
             type="button"
+            title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
+            aria-label="Sound and music settings"
           >
-            <span className="rpg-control-icon rpg-sound-icon" aria-hidden="true">
-              <i /><i /><i />
-            </span>
-            {isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Heroic BGM: On" : "Sound & Music")}
+            {isAudioMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
 
-          {/* Admin Edit Dragon Layout Overlay Button (Hidden from normal UI, preserved for admin access) */}
+          {/* Admin Edit Dragon Layout Overlay Button */}
           {(showDragonEditor || adminAuthenticated) && (
             <button
               className="rpg-btn-leaderboard rpg-btn-layout-admin"
@@ -2691,29 +2708,9 @@ export function BattleScene({
               Layout Admin
             </button>
           )}
-
-          {/* Leaderboard Overlay Button */}
-          <button
-            className="rpg-btn-leaderboard"
-            style={{ position: "relative", top: 0, right: 0 }}
-            onClick={() => setShowLeaderboardModal(true)}
-            type="button"
-          >
-            <span className="rpg-control-icon rpg-rank-icon" aria-hidden="true"><i /><i /><i /></span>
-            Leaderboard
-          </button>
         </div>
 
-        {/* Attack Circular Action Button */}
-        <button
-          className="rpg-btn-attack-circle"
-          onClick={() => setShowAttackChoiceModal(true)}
-          type="button"
-        >
-          Attack
-        </button>
-
-        {/* Floating Mob-Style Boss HP Bar (With Humorous Boss Name Above, HP % Inside, Adjustable Size) */}
+        {/* Floating Mob-Style Boss HP Bar (No Name Float, Scaled Down) */}
         <div
           className="boss-hp-container"
           style={{
@@ -2724,28 +2721,12 @@ export function BattleScene({
             flexDirection: "column",
             alignItems: "center",
             zIndex: 35,
-            transform: `scale(${dragonHpBarScale})`,
+            transform: `scale(${dragonHpBarScale * 0.85})`,
             transformOrigin: "center center",
             pointerEvents: "none",
           }}
         >
-          {/* Name Text Float ABOVE Boss Health Bar (No Emoji, No Shadow) */}
-          <div
-            style={{
-              fontSize: "0.68rem",
-              fontWeight: 800,
-              fontFamily: "var(--font-heading), sans-serif",
-              color: "#ffffff",
-              letterSpacing: "0.02em",
-              whiteSpace: "nowrap",
-              marginBottom: "2px",
-              textAlign: "center",
-            }}
-          >
-            {funnyBossName}
-          </div>
-
-          {/* Flat Boss Health Bar with HP % INSIDE (No Shadow, No Outline) */}
+          {/* Flat Boss Health Bar with HP % INSIDE (No Name Float, Scaled Down) */}
           <div
             className="boss-hp-mob-style"
             role="progressbar"
@@ -2754,8 +2735,8 @@ export function BattleScene({
             aria-valuemax={computedMaxBossHp}
             aria-valuenow={rawRemainingHp}
             style={{
-              width: `${dragonHpBarWidth}px`,
-              height: `${dragonHpBarHeight}px`,
+              width: `${Math.min(125, dragonHpBarWidth)}px`,
+              height: `${Math.min(14, dragonHpBarHeight)}px`,
               position: "relative",
               background: "#1e293b",
               borderRadius: "3px",
@@ -2785,7 +2766,7 @@ export function BattleScene({
               style={{
                 position: "relative",
                 zIndex: 2,
-                fontSize: "0.6rem",
+                fontSize: "0.58rem",
                 fontWeight: 800,
                 color: "#ffffff",
                 whiteSpace: "nowrap",
@@ -2802,49 +2783,17 @@ export function BattleScene({
           <LandscapeSky />
         </div>
 
-        {/* Layer 3, 4: Section 4 - Top-Down 3/4 Perspective Grassland */}
+        {/* Layer 3, 4: Top-Down 3/4 Perspective Grassland (Road pavement removed) */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 4, transform: `translate(${layerTransforms.terrain?.x || 0}px, ${layerTransforms.terrain?.y || 0}px) scale(${layerTransforms.terrain?.scale || 1})`, display: layerTransforms.terrain?.visible !== false ? "block" : "none" }}>
           <LandscapeTerrain />
         </div>
 
-        {/* Layer 4.5: In-Canvas Medieval Quest Board (Directly Clickable) */}
-        <LandscapeQuestBoard
-          tasksCount={questTasks.length}
-          hasNotification={userIncompleteTasksCount > 0}
-          notificationCount={userIncompleteTasksCount}
-          onOpenBoard={() => {
-            setQuestBoardTab("all");
-            setShowQuestBoardModal(true);
-          }}
-        />
-
-        {/* Layer 5: Section 3 & 5 - Grounded Village & Anchored Village HP Bar with Humorous Town Name */}
-        <div
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 5, transform: `translate(${layerTransforms.village?.x || 0}px, ${layerTransforms.village?.y || 0}px) scale(${layerTransforms.village?.scale || 1})`, display: layerTransforms.village?.visible !== false ? "block" : "none" }}
-        >
-          <LandscapeVillage
-            villageHpPercent={effectiveVillageHp}
-            villageName={funnyVillageName}
-            villageHpBarPos={villageHpBarPos}
-            villageHpBarWidth={villageHpBarWidth}
-            villageHpBarHeight={villageHpBarHeight}
-            villageHpBarScale={villageHpBarScale}
-          />
-        </div>
-
-        {/* Layer 6: Section 8 - Daily Goblins Wave System (1 per active player) */}
-        <div
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 6, transform: `translate(${layerTransforms.goblins?.x || 0}px, ${layerTransforms.goblins?.y || 0}px) scale(${layerTransforms.goblins?.scale || 1})`, display: layerTransforms.goblins?.visible !== false ? "block" : "none" }}
-        >
-          <LandscapeGoblins goblins={goblins} />
-        </div>
-
-        {/* Layer 7: Section 6 - Party Members & Deterministic Game ID Tags */}
+        {/* Layer 7: Party Members (Scaled Up and Positioned in Open Meadow) */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 7, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
           <LandscapePlayers members={players} />
         </div>
 
-        {/* Layer 8: Section 1 - Medieval Dragon Visuals & Wings */}
+        {/* Layer 8: Dragon Boss (Scaled Up by 1.2) */}
         <div
           style={{
             position: "absolute",
@@ -2853,7 +2802,7 @@ export function BattleScene({
             height: "100%",
             pointerEvents: adminAuthenticated && showDragonEditor ? "auto" : "none",
             zIndex: 8,
-            transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${layerTransforms.dragon?.scale || 1})`,
+            transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${(layerTransforms.dragon?.scale || 1) * 1.2})`,
             display: layerTransforms.dragon?.visible !== false ? "block" : "none",
           }}
         >
@@ -2874,7 +2823,7 @@ export function BattleScene({
           />
         </div>
 
-        {/* Layer 9: Section 2 - Cosmetic Combat Exchange & Elemental Attacks (Flying on Top at zIndex 25) */}
+        {/* Layer 9: Combat Exchange & Elemental VFX */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 25, transform: `translate(${layerTransforms.fx?.x || 0}px, ${layerTransforms.fx?.y || 0}px) scale(${layerTransforms.fx?.scale || 1})`, display: layerTransforms.fx?.visible !== false ? "block" : "none" }}>
           <LandscapeFX
             activeEvent={combinedActiveEvent}
@@ -2882,35 +2831,35 @@ export function BattleScene({
           />
         </div>
 
-        {/* Layer 10: Bottom-Middle Plant vs Zombies Style Deadline Progress Bar */}
+        {/* Layer 10: Task Progress Bar with Equal Flags across all Tasks (Replacing Deadline Bar) */}
         <div
-          className="pvz-deadline-progress-container"
+          className="pvz-deadline-progress-container project-task-progress-container"
           style={{
             position: "absolute",
             bottom: "12px",
             left: `calc(50% + ${pvzBarOffset.x}px)`,
             transform: `translateX(-50%) scale(${pvzBarOffset.scale})`,
             zIndex: 25,
-            width: `clamp(240px, ${pvzBarOffset.width}px, 600px)`,
+            width: `clamp(320px, ${Math.max(pvzBarOffset.width, 480)}px, 680px)`,
             background: "#fffded",
             border: "3px solid #101517",
             boxShadow: "4px 4px 0 rgba(16, 21, 23, 0.72)",
-            borderRadius: "12px",
-            padding: "6px 14px 8px 14px",
+            borderRadius: "14px",
+            padding: "8px 14px 10px 14px",
             display: pvzBarOffset.visible ? "flex" : "none",
             flexDirection: "column",
             alignItems: "center",
-            gap: "4px",
+            gap: "6px",
             userSelect: "none",
             pointerEvents: "auto",
           }}
           role="progressbar"
-          aria-valuenow={progressPercent}
+          aria-valuenow={questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`Project timeline: ${daysRemaining} days remaining`}
+          aria-label="Project task completion progress"
         >
-          {/* Top Info Header (No Emoji) */}
+          {/* Top Info Header */}
           <div
             style={{
               width: "100%",
@@ -2924,73 +2873,110 @@ export function BattleScene({
               color: "#101517",
             }}
           >
-            <span>DAY {daysPassed} / {totalDays}</span>
-            <span style={{ color: daysRemaining <= 3 ? "#dc2626" : "#17a738", fontWeight: 900 }}>
-              {daysRemaining === 0 ? "DEADLINE TODAY" : `${daysRemaining} DAYS REMAINING`}
+            <span>
+              DAY {daysPassed} {totalDays > 0 ? `· TARGET ${totalDays}D` : ""}
+              {daysRemaining <= 0 ? (
+                <span style={{ color: "#d97706", marginLeft: "6px", fontWeight: 700 }}>
+                  (Target passed · No penalty)
+                </span>
+              ) : null}
+            </span>
+            <span style={{ color: "#16a34a", fontWeight: 900 }}>
+              {questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length}/{questTasks.length} TASKS COMPLETED ({questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}%)
             </span>
           </div>
 
-          {/* Progress Bar Track */}
+          {/* Progress Bar Track with Segment Flags */}
           <div
             style={{
               position: "relative",
               width: "100%",
-              height: "12px",
+              height: "20px",
               background: "#e2e8f0",
               border: "2px solid #101517",
-              borderRadius: "6px",
+              borderRadius: "8px",
               overflow: "visible",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            {/* Flat Solid Green Fill */}
+            {/* Smooth Emerald Task Progress Fill */}
             <div
               style={{
-                width: `${progressPercent}%`,
+                width: `${questTasks.length > 0 ? Math.round((questTasks.filter(t => t.isCompleted || t.status === "completed" || t.status === "verified").length / questTasks.length) * 100) : 0}%`,
                 height: "100%",
-                background: "#17a738",
-                borderRadius: "4px",
+                background: "linear-gradient(90deg, #15803d, #22c55e)",
+                borderRadius: "6px",
                 transition: "width 0.4s ease",
               }}
             />
 
-            {/* Checkpoint notches for each day */}
-            {totalDays > 1 && totalDays <= 45 && Array.from({ length: totalDays - 1 }).map((_, idx) => {
-              const dayPct = ((idx + 1) / totalDays) * 100;
+            {/* Equal Segment Dividers & Task Flags */}
+            {questTasks.length > 0 && questTasks.map((task, idx) => {
+              const segPct = ((idx + 1) / questTasks.length) * 100;
+              const flagPct = ((idx + 0.5) / questTasks.length) * 100;
+              const isTaskDone = Boolean(task.isCompleted || task.status === "completed" || task.status === "verified");
+              const isTaskInReview = Boolean(task.status === "review" || task.status === "submitted" || task.status === "awaiting_creator");
+
               return (
-                <div
-                  key={`day-tick-${idx}`}
-                  style={{
-                    position: "absolute",
-                    left: `${dayPct}%`,
-                    top: "0px",
-                    width: "1px",
-                    height: "100%",
-                    background: "rgba(0, 0, 0, 0.2)",
-                    pointerEvents: "none",
-                  }}
-                />
+                <div key={task.id || `task-flag-${idx}`}>
+                  {/* Segment boundary tick (except last) */}
+                  {idx < questTasks.length - 1 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: `${segPct}%`,
+                        top: "0px",
+                        width: "1.5px",
+                        height: "100%",
+                        background: "rgba(16, 21, 23, 0.25)",
+                        zIndex: 2,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+
+                  {/* Task Flag Marker */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTaskId(task._id);
+                      setShowBossModal(true);
+                    }}
+                    title={`Task ${idx + 1}: ${task.title}\nStatus: ${task.status}\nOwner: ${task.assigneeName || "Unassigned"}\nClick to view details & evidence`}
+                    style={{
+                      position: "absolute",
+                      left: `${flagPct}%`,
+                      top: "-10px",
+                      transform: "translateX(-50%)",
+                      zIndex: 10,
+                      background: isTaskDone ? "#16a34a" : isTaskInReview ? "#f59e0b" : "#475569",
+                      color: "#ffffff",
+                      border: "1.5px solid #101517",
+                      borderRadius: "5px",
+                      padding: "2px 4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "2px",
+                      cursor: "pointer",
+                      boxShadow: "1px 2px 0 rgba(0,0,0,0.3)",
+                      fontSize: "0.6rem",
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      transition: "transform 0.15s ease",
+                    }}
+                  >
+                    {isTaskDone ? (
+                      <Check size={10} strokeWidth={3} />
+                    ) : (
+                      <Flag size={9} strokeWidth={2.5} fill={isTaskInReview ? "#fff" : "none"} />
+                    )}
+                    <span>{idx + 1}</span>
+                  </button>
+                </div>
               );
             })}
-
-            {/* Milestone Waves Checkpoints */}
-            {milestoneCheckpoints.map((mc) => (
-              <div
-                key={mc.id}
-                title={`Wave Milestone: ${mc.title} (Due: ${mc.dueDate})`}
-                style={{
-                  position: "absolute",
-                  left: `${mc.percent}%`,
-                  top: "-4px",
-                  width: "4px",
-                  height: "18px",
-                  background: "#dc2626",
-                  borderRadius: "2px",
-                  transform: "translateX(-50%)",
-                  cursor: "help",
-                  zIndex: 2,
-                }}
-              />
-            ))}
           </div>
         </div>
 
@@ -3010,263 +2996,6 @@ export function BattleScene({
           />
         )}
       </div>
-
-      {/* =========================================================================
-          LEADERBOARD MODAL
-         ========================================================================= */}
-      {showLeaderboardModal && (
-        <div className="rpg-modal-backdrop rpg-leaderboard-backdrop" onClick={() => setShowLeaderboardModal(false)}>
-          <div className="rpg-wood-board rpg-leaderboard-board" onClick={(e) => e.stopPropagation()}>
-            <div className="rpg-wood-board-bottom-caps" />
-            <h3 className="rpg-board-title rpg-leaderboard-title">Quest Leaderboard</h3>
-            <div className="rpg-parchment-sheet rpg-leaderboard-sheet">
-              {leaderboardData === undefined ? (
-                <p style={{ textAlign: "center" }}>Gathering scrolls...</p>
-              ) : leaderboardData.length === 0 ? (
-                <p style={{ textAlign: "center" }}>No adventurers have stepped forward yet.</p>
-              ) : (
-                <table className="rpg-leaderboard-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Adventurer</th>
-                      <th style={{ textAlign: "center" }}>Goblins Slayed</th>
-                      <th style={{ textAlign: "center" }}>Quests Completed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboardData.map((item, idx) => (
-                      <tr key={item.profileId}>
-                        <td className="rank">
-                          <span>{String(idx + 1).padStart(2, "0")}</span>
-                        </td>
-                        <td style={{ fontWeight: 700 }}>{item.displayName}</td>
-                        <td className="rpg-leaderboard-stat is-goblins">
-                          {item.goblinsKilled}
-                        </td>
-                        <td className="rpg-leaderboard-stat is-quests">
-                          {item.tasksCompleted}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {/* Dedicated Scrollable Combat & Kill Log Box */}
-              <div className="rpg-leaderboard-log">
-                <h4 className="rpg-leaderboard-log-title">
-                  Combat &amp; Kill Activity Log
-                </h4>
-                <div
-                  className="rpg-leaderboard-events"
-                >
-                  {!state?.events || state.events.length === 0 ? (
-                    <p className="rpg-leaderboard-empty">
-                      No registered attacks yet. Slay goblins or strike the dragon to log damage!
-                    </p>
-                  ) : (
-                    [...state.events].reverse().map((ev) => {
-                      const isGoblin = (ev.damage ?? 0) >= 100 || ev.taskTitle.toLowerCase().includes("goblin") || ev.taskTitle.toLowerCase().includes("daily");
-                      const spellName = ev.spellType === "fire" ? "Fire" : ev.spellType === "lightning" || ev.spellType === "spark" ? "Lightning" : "Ice";
-                      return (
-                        <div
-                          key={ev._id}
-                          className="rpg-leaderboard-event"
-                        >
-                          <div className="rpg-leaderboard-event-copy">
-                            <strong>{ev.attackerName}</strong>
-                            <span>
-                              cast {spellName} on <strong>{isGoblin ? "Goblin" : "Dragon"}</strong> ({ev.taskTitle})
-                            </span>
-                          </div>
-                          <div className="rpg-leaderboard-event-meta">
-                            <span className="rpg-leaderboard-damage">
-                              -{ev.damage} HP
-                            </span>
-                            <span className="rpg-leaderboard-time">
-                              {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric", month: "short", day: "numeric" }).format(ev.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-            <button className="rpg-btn-close rpg-leaderboard-close" type="button" onClick={() => setShowLeaderboardModal(false)}>
-              Close Board
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          ATTACK TARGET SELECTION CHOICE MODAL (Modern Neo-Brutalist)
-         ========================================================================= */}
-      {showAttackChoiceModal && (
-        <div className="rpg-modal-backdrop" onClick={() => setShowAttackChoiceModal(false)}>
-          <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "420px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 className="rpg-modern-title">⚔️ Choose Target</h3>
-              <button
-                type="button"
-                onClick={() => setShowAttackChoiceModal(false)}
-                style={{ background: "#ef4444", color: "#fff", border: "2px solid #101517", borderRadius: "8px", width: "28px", height: "28px", display: "grid", placeItems: "center", cursor: "pointer", fontWeight: 900 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p style={{ margin: 0, fontSize: "0.86rem", color: "inherit", opacity: 0.9 }}>
-              Select a combat target to record work proof and defend your project.
-            </p>
-
-            <div className="rpg-modern-grid">
-              <button
-                className="rpg-modern-btn is-goblin"
-                type="button"
-                style={{ padding: "16px 12px", flexDirection: "column", gap: "6px" }}
-                onClick={() => {
-                  setShowAttackChoiceModal(false);
-                  setShowGoblinModal(true);
-                }}
-              >
-                <span style={{ fontSize: "1.35rem" }}>👺</span>
-                <span style={{ fontSize: "0.95rem" }}>Daily Goblin</span>
-                <span style={{ fontSize: "0.68rem", opacity: 0.85, fontWeight: 700 }}>Log daily effort</span>
-              </button>
-              <button
-                className="rpg-modern-btn is-boss"
-                type="button"
-                style={{ padding: "16px 12px", flexDirection: "column", gap: "6px" }}
-                onClick={() => {
-                  setShowAttackChoiceModal(false);
-                  setShowBossModal(true);
-                }}
-              >
-                <span style={{ fontSize: "1.35rem" }}>🐉</span>
-                <span style={{ fontSize: "0.95rem" }}>The Dragon</span>
-                <span style={{ fontSize: "0.68rem", opacity: 0.85, fontWeight: 700 }}>Submit task evidence</span>
-              </button>
-            </div>
-
-            <button className="rpg-modern-btn is-secondary" type="button" onClick={() => setShowAttackChoiceModal(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          SLAY GOBLIN EVIDENCE FLOW MODAL (Modern Neo-Brutalist)
-         ========================================================================= */}
-      {showGoblinModal && (
-        <div className="rpg-modal-backdrop" onClick={() => setShowGoblinModal(false)}>
-          <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 className="rpg-modern-title">👺 Slay Daily Goblin</h3>
-              <button
-                type="button"
-                onClick={() => setShowGoblinModal(false)}
-                style={{ background: "#ef4444", color: "#fff", border: "2px solid #101517", borderRadius: "8px", width: "28px", height: "28px", display: "grid", placeItems: "center", cursor: "pointer", fontWeight: 900 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleGoblinSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {goblinError && (
-                <div style={{ padding: "8px 12px", background: "#fee2e2", border: "2px solid #ef4444", borderRadius: "8px", color: "#b91c1c", fontSize: "0.82rem", fontWeight: 800 }}>
-                  {goblinError}
-                </div>
-              )}
-
-              {state?.members.find((m) => m.profileId === state.currentProfileId)?.hasSubmittedToday && (
-                <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "2px solid #22c55e", borderRadius: "8px", color: "#166534", fontSize: "0.8rem", fontWeight: 700 }}>
-                  Your daily goblin is already slayed for today! Extra logs can still be recorded, but only 1 goblin kill is awarded per day.
-                </div>
-              )}
-
-              <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9 }}>
-                Provide proof of today's work to defeat your daily goblin. Requirement: <strong>at least 10 words of notes OR 2 image links</strong>.
-              </p>
-
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                  Work Accomplishment Details
-                </label>
-                <textarea
-                  className="rpg-modern-textarea"
-                  rows={4}
-                  value={goblinText}
-                  onChange={(e) => setGoblinText(e.target.value)}
-                  placeholder="Enter details of your work today..."
-                  required={goblinImageUrls.length === 0}
-                />
-              </div>
-
-              {/* Validation Badges */}
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <span style={{ padding: "3px 8px", borderRadius: "6px", fontSize: "0.74rem", fontWeight: 800, border: "1.5px solid #101517", background: goblinWordCount >= 10 ? "#86efac" : "#f1f5f9", color: "#101517" }}>
-                  📝 {goblinWordCount}/10 words {goblinWordCount >= 10 ? "✓" : ""}
-                </span>
-                <span style={{ padding: "3px 8px", borderRadius: "6px", fontSize: "0.74rem", fontWeight: 800, border: "1.5px solid #101517", background: goblinImageCount >= 2 ? "#86efac" : "#f1f5f9", color: "#101517" }}>
-                  🖼️ {goblinImageCount}/2 images {goblinImageCount >= 2 ? "✓" : ""}
-                </span>
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                  Attach Image Link
-                </label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <input
-                    type="url"
-                    className="rpg-modern-input"
-                    value={goblinImageInput}
-                    onChange={(e) => setGoblinImageInput(e.target.value)}
-                    placeholder="Paste image URL..."
-                  />
-                  <button
-                    className="rpg-modern-btn is-accent"
-                    style={{ whiteSpace: "nowrap", padding: "6px 14px", fontSize: "0.8rem" }}
-                    type="button"
-                    onClick={handleAddGoblinImage}
-                  >
-                    Attach
-                  </button>
-                </div>
-              </div>
-
-              {goblinImageUrls.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                  {goblinImageUrls.map((url, idx) => (
-                    <div key={idx} style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#bae6fd", border: "1.5px solid #101517", padding: "2px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 800 }}>
-                      <span>Image {idx + 1}</span>
-                      <button type="button" style={{ border: "none", background: "transparent", cursor: "pointer", fontWeight: 900 }} onClick={() => handleRemoveGoblinImage(idx)}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <button
-                className="rpg-modern-btn is-goblin"
-                type="submit"
-                disabled={isSlaying || (!goblinText && goblinImageUrls.length === 0)}
-                style={{ marginTop: "4px" }}
-              >
-                {isSlaying ? "Slaying..." : isGoblinValid ? "⚡ Slay Goblin!" : "Log Evidence (Needs 10 words or 2 images)"}
-              </button>
-
-              <button className="rpg-modern-btn is-secondary" type="button" onClick={() => setShowGoblinModal(false)}>
-                Cancel
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* =========================================================================
           BOSS ATTACK QUEST PINNED BOARD MODAL (Modern Neo-Brutalist)

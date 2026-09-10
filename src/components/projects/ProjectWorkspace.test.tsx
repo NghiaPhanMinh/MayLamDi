@@ -91,14 +91,15 @@ vi.mock("./AIPlanningAssistant", () => ({ AIPlanningAssistant: () => null }));
 describe("ProjectWorkspace information hierarchy", () => {
   afterEach(cleanup);
 
-  it("renders Progress as default tab with Brief Summary, BattleScene, and Next Action", () => {
+  it("renders Progress as default tab with Brief Summary, BattleScene, and Action Deck (My Tasks and Peer Review)", () => {
     render(<ProjectWorkspace projectId={"project-1" as Id<"projects">} onClose={vi.fn()} initialTab="progress" />);
 
     expect(screen.getByRole("button", { name: "Progress" })).toHaveClass("is-active");
     expect(screen.getByRole("heading", { name: "Campaign" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Project Brief" })).toBeInTheDocument();
     expect(screen.getByText("Realtime Battle")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Final illustration" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /My Tasks/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Peer Review/i })).toBeInTheDocument();
   });
 
   it("switches smoothly between tabs", () => {

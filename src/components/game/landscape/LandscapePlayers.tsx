@@ -70,15 +70,15 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
 
 export function getPlayerCoordinates(index: number = 0, totalCount: number = 1) {
   if (totalCount <= 2) {
-    const x = 285 + index * 40;
-    const y = 265 + (index % 2) * 10;
+    const x = 210 + index * 65;
+    const y = 250 + (index % 2) * 12;
     return { x, y };
   }
-  // Staggered 2-column vertical stacking for 3+ members
-  const col = index % 2;
-  const row = Math.floor(index / 2);
-  const x = 278 + col * 38;
-  const y = 246 + row * 26;
+  // Staggered spacing across the open meadow with village removed
+  const col = index % 3;
+  const row = Math.floor(index / 3);
+  const x = 180 + col * 55;
+  const y = 236 + row * 34;
   return { x, y };
 }
 
@@ -103,11 +103,10 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
             return (
               <g
                 key={member.profileId}
-                transform={`translate(${offsetX}, ${offsetY})`}
+                transform={`translate(${offsetX}, ${offsetY}) scale(1.25)`}
                 className={`player-character ${member.isAttacking ? "is-attacking" : ""}`}
                 role="img"
-                aria-label={`${member.displayName} (${mage.name}, ${active ? "Active today" : "Idle"})`}
-              >
+                aria-label={`${member.displayName} (${mage.name}, ${active ? "Active today" : "Idle"})`}>
                 {/* 1. Ground Shadow */}
                 <ellipse cx="15" cy="46" rx="14" ry="4.5" fill="rgba(0,0,0,0.22)" stroke="none" />
 

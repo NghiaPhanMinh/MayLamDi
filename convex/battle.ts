@@ -69,75 +69,9 @@ export const getState = query({
     const damageDealt = Math.min(maximumHp, rawDamageDealt);
     const remainingHp = Math.max(0, maximumHp - damageDealt);
 
-    // 3. Village Max HP scales with team size: 100 + (10 * number of players)
-    const villageMaxHp = 100 + (10 * userCount);
-
-    const nowMs = Date.now();
-    let missedTasksDamage = 0;
-    let overdueTaskCount = 0;
-
-    for (const task of taskList) {
-      const isCompleted = task.status === "completed" || task.status === "verified";
-      const isMissed = !isCompleted && task.dueDate && new Date(`${task.dueDate}T23:59:59Z`).getTime() < nowMs;
-      if (isMissed) {
-        missedTasksDamage += (task.damage ?? TASK_BASE_HP);
-        overdueTaskCount++;
-      }
-    }
-
-    const startOfToday = new Date().setHours(0, 0, 0, 0);
-    const isOverdue = project.deadline ? new Date(`${project.deadline}T23:59:59Z`).getTime() < nowMs : false;
-
-    // Goblin Deduction System Rework:
-    // goblinDamagePerMiss = (50% of Village Max HP) ÷ (total project days × total active players)
-    // Recalculates automatically any time the player count changes (someone joins or leaves),
-    // so the "worst case = exactly 50% HP lost if every goblin is ever missed" guarantee always stays accurate.
-    const launchTime = project.launchedAt
-      ? new Date(project.launchedAt).getTime()
-      : (project.startDate ? new Date(project.startDate).getTime() : nowMs);
-    const deadlineTime = project.deadline
-      ? new Date(`${project.deadline}T23:59:59Z`).getTime()
-      : (launchTime + 14 * 24 * 60 * 60 * 1000);
-    const msPerDay = 24 * 60 * 60 * 1000;
-
-    // Total duration of project in days (minimum 1 day)
-    const totalProjectDays = Math.max(1, Math.ceil((deadlineTime - launchTime) / msPerDay));
-
-    // Total active players in project (recalculates automatically whenever player count changes)
-    const totalActivePlayers = Math.max(1, memberships.length);
-
-    // Dynamic goblin damage per miss
-    const goblinDamagePerMiss = (0.50 * villageMaxHp) / (totalProjectDays * totalActivePlayers);
-
-    const daysSinceLaunch = Math.max(0, Math.floor((startOfToday - new Date(launchTime).setHours(0, 0, 0, 0)) / msPerDay));
-    
-    let totalMissedGoblinDays = 0;
-    if (daysSinceLaunch > 0) {
-      for (const member of memberships) {
-        const memberPostDays = new Set(
-          dailyPosts
-            .filter((p) => p.authorProfileId === member.profileId && p.createdAt < startOfToday)
-            .map((p) => new Date(p.createdAt).toISOString().split("T")[0])
-        );
-        const memberDaysActive = Math.min(
-          daysSinceLaunch,
-          Math.max(0, Math.floor((startOfToday - new Date(member.joinedAt || launchTime).setHours(0, 0, 0, 0)) / msPerDay))
-        );
-        const missedDays = Math.max(0, memberDaysActive - memberPostDays.size);
-        totalMissedGoblinDays += missedDays;
-      }
-    }
-    const goblinDamagePenalty = Math.round(totalMissedGoblinDays * goblinDamagePerMiss);
-
-    // Deflect missed task damage & unslayed goblin penalties to Village HP pool
-    let villageCurrentHp = villageMaxHp - missedTasksDamage - goblinDamagePenalty;
-    if (isOverdue) {
-      villageCurrentHp = Math.min(villageCurrentHp, Math.round(villageMaxHp * 0.2));
-    }
-    villageCurrentHp = Math.max(0, Math.min(villageMaxHp, villageCurrentHp));
-    const villageHpPercent = (maximumHp === 0 || remainingHp === 0)
-      ? 100
-      : Math.round((villageCurrentHp / villageMaxHp) * 100);
+    // Village and goblin mechanics removed per collaborative design overhaul
+    const villageHpPercent = 100;
+    const isOverdue = project.deadline ? new Date(`${project.deadline}T23:59:59Z`).getTime() < Date.now() : false;
 
     const profileIds = new Set([
       ...memberships.map((member) => member.profileId),
@@ -167,33 +101,20 @@ export const getState = query({
         (task) => task.status !== "verified" && task.status !== "completed",
       ).length,
       members: memberships.map((member) => {
-        // Goblin kill is STRICTLY from submitting Daily Proof today (1 per day)
-        const hasSubmittedToday = dailyPosts.some(
-          (p) => p.authorProfileId === member.profileId && p.createdAt >= startOfToday,
-        );
         const memberDamage = memberDamageMap.get(member.profileId) ?? 0;
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const lastActivityAt = Math.max(
-          member.joinedAt ?? 0,
-          ...dailyPosts.filter((p) => p.authorProfileId === member.profileId && p.isValid).map((p) => p.createdAt),
-          ...uniqueEvents.filter((e) => e.attackerProfileId === member.profileId).map((e) => e.createdAt),
-          ...tasks.filter((t) => t.primaryOwnerProfileId === member.profileId).map((t) => t.updatedAt ?? 0),
-        );
-        const isInactive7Days = lastActivityAt > 0 && lastActivityAt < sevenDaysAgo;
-
         return {
           profileId: member.profileId,
           displayName: profileById.get(member.profileId)?.displayName ?? "Team member",
           characterFill: member.characterFill,
           characterOutline: member.characterOutline,
           spellType: member.spellType ?? "spark",
-          hasSubmittedToday,
-          hasPendingGoblin: !hasSubmittedToday,
+          hasSubmittedToday: false,
+          hasPendingGoblin: false,
           damageDealt: memberDamage,
           targetHpShare: hpSharePerPlayer,
           isShareComplete: memberDamage >= hpSharePerPlayer,
-          lastActivityAt,
-          isInactive7Days,
+          lastActivityAt: member.joinedAt ?? 0,
+          isInactive7Days: false,
         };
       }),
       events: uniqueEvents.map((event) => ({

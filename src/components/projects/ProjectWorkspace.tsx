@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { AlertTriangle, Check, Clipboard, Clock, Crown, Key, Lock, Megaphone, PencilLine, User, Users, Zap } from "lucide-react";
+import { AlertTriangle, Check, CheckSquare, Clipboard, Clock, Crown, FileCheck, Key, Lock, Megaphone, PencilLine, User, Users, Zap } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -16,7 +16,6 @@ import { ProjectTeamMembers } from "./ProjectTeamMembers";
 import { TaskEvidencePanel } from "./TaskEvidencePanel";
 import { TaskTradePanel } from "./TaskTradePanel";
 import { REVIEW_WAITING_MESSAGE } from "./reviewCopy";
-import { DailyEvidenceFeed } from "./DailyEvidenceFeed";
 
 type ProjectWorkspaceProps = {
   projectId: Id<"projects">;
@@ -655,29 +654,6 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         ) : null}
       </nav>
 
-      {overdueTasks.length > 0 || inactiveMembers.length > 0 ? (
-        <aside className="room-risk-banner" style={{ margin: "0.5rem 0 0.75rem", padding: "0.65rem 1rem", borderRadius: "12px", background: "color-mix(in srgb, #ef4444 12%, var(--color-surface))", border: "1.5px solid #ef4444", color: "var(--color-text)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <AlertTriangle size={18} style={{ flexShrink: 0, color: "#ef4444" }} />
-            <div>
-              <strong style={{ fontSize: "0.9rem", display: "block" }}>
-                Attention Required: {overdueTasks.length ? `${overdueTasks.length} overdue task(s)` : ""} {overdueTasks.length && inactiveMembers.length ? " · " : ""} {inactiveMembers.length ? `${inactiveMembers.length} member(s) inactive (7+ days)` : ""}
-              </strong>
-              <small style={{ opacity: 0.85, fontSize: "0.8rem" }}>Overdue tasks reduce Village Defense HP by 25% each.</small>
-            </div>
-          </div>
-          {workspace.canManageProject && overdueTasks.length > 0 ? (
-            <button
-              className="quiet-button"
-              type="button"
-              style={{ fontWeight: 800, textDecoration: "underline", fontSize: "0.85rem" }}
-              onClick={() => setActiveTab("tasks")}
-            >
-              Manage Overdue Tasks
-            </button>
-          ) : null}
-        </aside>
-      ) : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {activeTab === "plan" ? (
         <div className="project-overview-flow project-plan-view">
@@ -888,37 +864,111 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             />
           </section>
 
-          <section
-            className="next-action-card project-next-action"
-            aria-labelledby="next-action-title"
-            style={{ cursor: nextAction ? "pointer" : "default" }}
-            onClick={() => {
-              if (nextAction) handleNextAction();
+          {/* Collaborative Action Deck: My Tasks & Peer Review */}
+          <div
+            className="project-action-deck"
+            style={{
+              display: "flex",
+              gap: "0.85rem",
+              width: "100%",
+              flexWrap: "wrap",
+              marginTop: "0.4rem",
             }}
           >
-            <div>
-              <p className="card-eyebrow">Your next action</p>
-              <h2 id="next-action-title">{nextAction ? nextAction.task.title : "You are up to date"}</h2>
-              <p>{nextAction ? `${nextAction.actionType} · Due ${nextAction.task.dueDate}` : "No action is waiting for you right now. Check the project progress or help with an open task."}</p>
-            </div>
-            {nextAction ? (
-              <button
-                className="primary-button next-action-cta"
-                type="button"
-                disabled={isSaving}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextAction();
+            <button
+              type="button"
+              className="primary-button project-deck-btn"
+              style={{
+                flex: "1 1 220px",
+                padding: "0.9rem 1.25rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.75rem",
+                borderRadius: "14px",
+                fontSize: "1rem",
+                fontWeight: 800,
+                border: "3px solid #101517",
+                boxShadow: "4px 4px 0 #101517",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                const pending = workspace.tasks.find(
+                  (t) => t.primaryOwnerProfileId === workspace.currentProfileId && !["completed", "verified"].includes(t.status)
+                );
+                if (pending) {
+                  setOpenBattleTaskId(pending._id);
+                } else {
+                  setActiveTab("tasks");
+                }
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <CheckSquare size={22} strokeWidth={2.5} />
+                <span>My Tasks</span>
+              </div>
+              <span
+                style={{
+                  background: "#101517",
+                  color: "#ffffff",
+                  padding: "3px 10px",
+                  borderRadius: "999px",
+                  fontSize: "0.82rem",
+                  fontWeight: 900,
                 }}
               >
-                {nextAction.label}
-              </button>
-            ) : (
-              <button className="secondary-button" type="button" onClick={() => setActiveTab("tasks")}>
-                View Task Board
-              </button>
-            )}
-          </section>
+                {workspace.tasks.filter((t) => t.primaryOwnerProfileId === workspace.currentProfileId && !["completed", "verified"].includes(t.status)).length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="secondary-button project-deck-btn"
+              style={{
+                flex: "1 1 220px",
+                padding: "0.9rem 1.25rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.75rem",
+                borderRadius: "14px",
+                fontSize: "1rem",
+                fontWeight: 800,
+                border: "3px solid #101517",
+                boxShadow: "4px 4px 0 #101517",
+                background: needsMyReviewCount > 0 ? "var(--color-yellow, #fff73f)" : "var(--color-surface, #ffffff)",
+                color: "#101517",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                const reviewTask = workspace.tasks.find(
+                  (t) => t.reviewerProfileId === workspace.currentProfileId && ["submitted", "review"].includes(t.status)
+                );
+                if (reviewTask) {
+                  setOpenBattleTaskId(reviewTask._id);
+                } else {
+                  setActiveTab("tasks");
+                }
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <FileCheck size={22} strokeWidth={2.5} />
+                <span>Peer Review</span>
+              </div>
+              <span
+                style={{
+                  background: needsMyReviewCount > 0 ? "#ef4444" : "#101517",
+                  color: "#ffffff",
+                  padding: "3px 10px",
+                  borderRadius: "999px",
+                  fontSize: "0.82rem",
+                  fontWeight: 900,
+                }}
+              >
+                {needsMyReviewCount}
+              </span>
+            </button>
+          </div>
 
         </div>
       ) : null}
@@ -941,10 +991,6 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             onDecline={(taskId) => void runAction(() => declineTask({ taskId: taskId as Id<"tasks"> }), "The request could not be declined.")}
             onReleaseOverdue={(taskId) => void runAction(() => releaseOverdueTask({ taskId: taskId as Id<"tasks"> }), "The task could not be released.")}
           />
-
-          <section className="progress-feed-section">
-            <DailyEvidenceFeed projectId={workspace.project._id} />
-          </section>
 
           {requestTasks.length > 0 ? <section className="task-request-panel"><p className="card-eyebrow">Task requests</p>{requestTasks.map((task) => <article key={task._id}><div><strong>{task.title}</strong><span>Requested by the room creator · weight {task.weight}</span></div><div><button className="primary-button" type="button" onClick={() => void runAction(() => acceptTask({ taskId: task._id }), "The task request could not be accepted.")}>Accept</button><button className="quiet-button" type="button" onClick={() => void runAction(() => declineTask({ taskId: task._id }), "The task request could not be declined.")}>Decline</button></div></article>)}</section> : null}
 
