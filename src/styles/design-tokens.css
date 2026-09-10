@@ -4016,21 +4016,26 @@ body:has(.marketing-about-transition-scene) {
   color: #fffdec;
 }
 
+.marketing-final-cta-lockup {
+  align-self: flex-start;
+  display: grid;
+  width: max-content;
+  margin-left: calc(-1 * clamp(16px, 5vw, 64px));
+}
+
 .marketing-final-cta-action-row {
   position: relative;
   z-index: 4;
   display: flex;
-  width: calc(100% + clamp(16px, 5vw, 64px));
+  width: 100%;
+  min-height: 52px;
   align-items: center;
-  gap: clamp(24px, 4vw, 64px);
-  margin-left: calc(-1 * clamp(16px, 5vw, 64px));
   margin-bottom: clamp(28px, 5vh, 72px);
 }
 
 .marketing-final-cta-arrow {
   display: flex;
-  min-width: 0;
-  flex: 1;
+  width: 100%;
   align-items: center;
   color: #1dd851;
 }
@@ -4058,7 +4063,9 @@ body:has(.marketing-about-transition-scene) {
 }
 
 .marketing-final-cta-explore {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + clamp(16px, 2vw, 32px));
   z-index: 5;
   display: inline-flex;
   min-width: clamp(138px, 12vw, 210px);
@@ -4077,20 +4084,20 @@ body:has(.marketing-about-transition-scene) {
   pointer-events: auto;
   cursor: pointer;
   opacity: 0;
-  transform: translateX(64px);
+  transform: translate(64px, -50%);
 }
 
 .marketing-final-cta-explore:hover,
 .marketing-final-cta-explore:focus-visible {
   background: #fffdec;
   color: #17a738;
-  transform: translateX(0) scale(1.04);
+  transform: translate(0, -50%) scale(1.04);
 }
 
 .marketing-final-cta h2 {
   align-self: flex-start;
-  width: calc(100% + clamp(16px, 5vw, 64px));
-  margin: 0 0 0 calc(-1 * clamp(16px, 5vw, 64px));
+  width: max-content;
+  margin: 0;
   color: #1dd851;
   font-size: clamp(96px, 18vw, 340px);
   font-weight: 900;
@@ -4211,8 +4218,8 @@ body:has(.marketing-about-transition-scene) {
 }
 
 @keyframes marketing-final-explore-in {
-  from { opacity: 0; transform: translateX(64px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translate(64px, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
 }
 
 @keyframes marketing-final-nav-in {
@@ -4339,6 +4346,10 @@ body:has(.marketing-about-transition-scene) {
 
   .how-works-visual {
     box-shadow: 8px 8px 0 #fffdec;
+  }
+
+  .marketing-final-cta h2 {
+    font-size: clamp(68px, 15vw, 136px);
   }
 }
 
@@ -4618,10 +4629,6 @@ body:has(.marketing-about-transition-scene) {
     font-size: 16px;
   }
 
-  .marketing-final-cta-action-row {
-    gap: 16px;
-  }
-
   .marketing-final-cta-explore {
     min-width: 116px;
     padding-inline: 16px;
@@ -4629,7 +4636,7 @@ body:has(.marketing-about-transition-scene) {
   }
 
   .marketing-final-cta h2 {
-    font-size: clamp(60px, 19vw, 136px);
+    font-size: clamp(44px, 12vw, 74px);
   }
 
   .how-works-visual {
@@ -4801,10 +4808,15 @@ body:has(.marketing-about-transition-scene) {
   .marketing-final-cta h2,
   .marketing-final-cta-nav,
   .marketing-final-cta-arrow-line,
-  .marketing-final-cta-arrow-head,
-  .marketing-final-cta-explore {
+  .marketing-final-cta-arrow-head {
     opacity: 1;
     transform: none;
+    animation: none;
+  }
+
+  .marketing-final-cta-explore {
+    opacity: 1;
+    transform: translate(0, -50%);
     animation: none;
   }
 
