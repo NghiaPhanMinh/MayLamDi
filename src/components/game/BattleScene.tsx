@@ -2919,7 +2919,7 @@ export function BattleScene({
               const isTaskInReview = Boolean(task.status === "review" || task.status === "submitted" || task.status === "awaiting_creator");
 
               return (
-                <div key={task.id || `task-flag-${idx}`}>
+                <div key={task._id || `task-flag-${idx}`}>
                   {/* Segment boundary tick (except last) */}
                   {idx < questTasks.length - 1 && (
                     <div
