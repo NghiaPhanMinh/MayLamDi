@@ -2151,6 +2151,47 @@ export function BattleScene({
     return questTasks.filter((t) => t.isMine && !t.isCompleted).length;
   }, [questTasks]);
 
+  // Active attackers throwing elemental projectiles at the dragon
+  const activeAttackers: ActiveAttacker[] = useMemo(() => {
+    const attackers: ActiveAttacker[] = [];
+    if (!state?.members) return attackers;
+
+    state.members.forEach((member, idx) => {
+      const memberHasSubmitted = workspace?.tasks?.some(
+        (t) =>
+          t.primaryOwnerProfileId === member.profileId &&
+          (t.status === "submitted" || t.status === "review" || t.status === "verified" || t.status === "completed")
+      );
+      const isCurrentPlayerDummy =
+        (isDummyTaskSubmitted || dummyReviewTaskDone) &&
+        (member.profileId === state.currentProfileId || idx === 0);
+
+      if (memberHasSubmitted || isCurrentPlayerDummy) {
+        const coords = getPlayerCoordinates(idx, state.members.length);
+        attackers.push({
+          profileId: member.profileId,
+          displayName: member.displayName,
+          spellType: member.spellType || (idx % 3 === 0 ? "fire" : idx % 3 === 1 ? "ice" : "lightning"),
+          startX: coords.x,
+          startY: coords.y,
+        });
+      }
+    });
+
+    if (attackers.length === 0 && (isDummyTaskSubmitted || dummyReviewTaskDone)) {
+      const coords = getPlayerCoordinates(0, 1);
+      attackers.push({
+        profileId: state.currentProfileId || "hero",
+        displayName: "Hero",
+        spellType: "fire",
+        startX: coords.x,
+        startY: coords.y,
+      });
+    }
+
+    return attackers;
+  }, [state?.members, state?.currentProfileId, workspace?.tasks, isDummyTaskSubmitted, dummyReviewTaskDone]);
+
   // Auto-prompt for Browser Push Notifications if not decided yet
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
@@ -2482,47 +2523,6 @@ export function BattleScene({
       : (computedMaxBossHp === 0 ? 100 : Math.round((Math.max(0, Math.min(computedMaxBossHp, baseRemainingHp)) / computedMaxBossHp) * 100));
   const rawRemainingHp = Math.round((hpPercent / 100) * computedMaxBossHp);
   const defeated = (computedMaxBossHp > 0 && (rawRemainingHp === 0 || hpPercent === 0));
-
-  // Active attackers throwing elemental projectiles at the dragon
-  const activeAttackers: ActiveAttacker[] = useMemo(() => {
-    const attackers: ActiveAttacker[] = [];
-    if (!state?.members) return attackers;
-
-    state.members.forEach((member, idx) => {
-      const memberHasSubmitted = workspace?.tasks?.some(
-        (t) =>
-          t.primaryOwnerProfileId === member.profileId &&
-          (t.status === "submitted" || t.status === "review" || t.status === "verified" || t.status === "completed")
-      );
-      const isCurrentPlayerDummy =
-        (isDummyTaskSubmitted || dummyReviewTaskDone) &&
-        (member.profileId === state.currentProfileId || idx === 0);
-
-      if (memberHasSubmitted || isCurrentPlayerDummy) {
-        const coords = getPlayerCoordinates(idx, state.members.length);
-        attackers.push({
-          profileId: member.profileId,
-          displayName: member.displayName,
-          spellType: member.spellType || (idx % 3 === 0 ? "fire" : idx % 3 === 1 ? "ice" : "lightning"),
-          startX: coords.x,
-          startY: coords.y,
-        });
-      }
-    });
-
-    if (attackers.length === 0 && (isDummyTaskSubmitted || dummyReviewTaskDone)) {
-      const coords = getPlayerCoordinates(0, 1);
-      attackers.push({
-        profileId: state.currentProfileId || "hero",
-        displayName: "Hero",
-        spellType: "fire",
-        startX: coords.x,
-        startY: coords.y,
-      });
-    }
-
-    return attackers;
-  }, [state?.members, state?.currentProfileId, workspace?.tasks, isDummyTaskSubmitted, dummyReviewTaskDone]);
 
   // Village Max HP scales with team size: 100 + (10 * number of players)
   const teamMemberCount = Math.max(1, (state.members?.length ?? 1) + testExtraPlayerCount);
