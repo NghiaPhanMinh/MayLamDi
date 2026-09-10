@@ -193,21 +193,20 @@ function planningPrompts(brief: string, context: AiPlanningContext) {
     .join("\n");
 
   const systemPrompt = [
-    "You are MayLamDi's Lead AI Technical Architect.",
-    "DUAL-ALIGNMENT TASK GENERATION:",
-    "1. FRAMEWORK ALIGNMENT: You MUST map every generated task into the exact framework phases provided below in sequential order.",
-    "Distribute tasks logically across ALL active framework phases (from early concept/discovery phases to mid-tier execution and final delivery phases).",
-    "2. BRIEF DECONSTRUCTION: Every task title and description MUST be a concrete, real-world deliverable derived directly from the user's raw 'brief' text.",
-    "3. NO GENERIC PLACEHOLDERS: Do NOT use generic titles like 'Research', 'UI Design', 'Backend', 'Testing'. Combine the specific project deliverable with its framework phase context (e.g. 'Coffee Brand Logo Concept Sheet' in Discovery phase, 'Interactive 3D Cup Viewer' in Execution phase).",
-    "4. SKILL ALLOCATION: Assign each task to the team member profile ID whose self-reported skills match the deliverable best. Explain your choice in 'allocationExplanation'.",
-    "5. TASK DESCRIPTIONS: For each task, write a concise 2-sentence description specifying (1) exact deliverable specs from the brief and (2) verification / definition of done criteria.",
+    "You are MayLamDi's Lead AI Technical Architect & Academic Assignment Analyzer.",
+    "DECONSTRUCTING LONG ASSIGNMENT BRIEFS (3-LAYER ANALYZER):",
+    "1. SUBMISSION REQUIREMENTS: Extract all mandatory deliverables specified in the brief (e.g., live URLs, hosted deployments, asset zip packages, technical reflection notes). Create explicit tasks for each.",
+    "2. ASSESSMENT FOCUS & DEFINITION OF DONE: Incorporate evaluation criteria (e.g. technical exploration, originality, accessibility, responsive design) as definition-of-done criteria in task descriptions.",
+    "3. FRAMEWORK PHASE MAPPING: Map every generated task into the exact framework phases provided below in sequential order (Phase 1 Ideation -> Phase 2 Design -> Phase 3 Implementation -> Phase 4 Deployment & Reflection).",
+    "4. NO GENERIC PLACEHOLDERS: Do NOT output generic titles like 'Research', 'UI Design', 'Testing'. Write specific titles reflecting the actual assignment requirements.",
+    "5. SKILL ALLOCATION: Assign each deliverable task to the team member profile ID whose self-reported skills match best. Explain your choice in 'allocationExplanation'.",
+    "6. TASK DESCRIPTIONS: Write a concise 2-sentence description for each task specifying (1) exact deliverable specs and (2) verification / definition of done criteria.",
     "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Parse the project brief into concrete deliverables mapped sequentially across the selected framework phases, and assign them to team members based on skills and workload balance.",
+    request: "Analyze this assignment brief across all 3 layers (Submission Requirements, Assessment Criteria, Framework Sequence) to generate a complete project task plan.",
     rawProjectBrief: brief,
-    project: context.project,
     selectedFramework: {
       name: context.project.frameworkName,
       phasesSequence: frameworkPhasesText,
@@ -227,9 +226,9 @@ function cleanBrief(value: string) {
       "Please enter a project brief answering what you are making, who it is for, and what needs to be delivered (at least 20 characters).",
     );
   }
-  if (brief.length > 500) {
+  if (brief.length > 8000) {
     throw new ConvexError(
-      "Keep the AI project brief to 500 characters or fewer for optimal AI generation.",
+      "Keep the AI project brief to 8,000 characters or fewer for optimal AI generation.",
     );
   }
   return brief;
