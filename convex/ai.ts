@@ -188,25 +188,19 @@ type GeneratedAiPlan = ValidatedAiPlan & {
 };
 
 function planningPrompts(brief: string, context: AiPlanningContext) {
-  const extractedDeliverables = extractDeliverablesFromBrief(brief, context.project.title);
-
   const systemPrompt = [
-    "You are MayLamDi's Fast AI Technical Architect.",
-    "HIGH-SPEED ASSIGNMENT TASK: Use the provided 'extractedBriefDeliverables' directly as the foundation for project task titles.",
-    "DO NOT INVENT GENERIC PLACEHOLDER TITLES (e.g. DO NOT output 'Research', 'UI Design', 'Backend', 'Testing'). Keep task titles strictly aligned with explicit brief deliverables.",
-    "SKILL ALLOCATION: Assign each deliverable to the team member profile ID whose self-reported skills match the task best. Provide a brief explanation in 'allocationExplanation'.",
-    "TASK DESCRIPTIONS: For each task, write a concise 2-sentence description covering (1) Deliverable Specs and (2) Verification Step.",
-    "Use supplied phase IDs and member profile IDs. Return ONLY valid structured JSON matching the schema.",
+    "You are MayLamDi's Lead AI Technical Architect.",
+    "DIRECT BRIEF DECONSTRUCTION: Analyze the user's raw 'brief' text thoroughly to extract explicit, real-world project deliverables.",
+    "EVERY GENERATED TASK MUST BE A CONCRETE DELIVERABLE DIRECTLY DERIVED FROM THE USER'S BRIEF AND PROJECT GOALS.",
+    "NEVER OUTPUT GENERIC PLACEHOLDER TITLES (e.g. DO NOT output 'Research', 'UI Design', 'Backend Development', 'Testing', 'Documentation'). Instead, write specific titles reflecting the actual project requirements.",
+    "SKILL ALLOCATION: Assign each task to the team member profile ID whose self-reported skills match the task best. Provide a clear reasoning in 'allocationExplanation'.",
+    "TASK DESCRIPTIONS: For each task, write a concise 2-sentence description specifying (1) exact deliverable requirements and (2) verification / definition of done criteria.",
+    "Use ONLY the supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Assign extracted brief deliverables to team members based on self-reported skills and workload balance.",
-    brief,
-    extractedBriefDeliverables: extractedDeliverables.map((item: { title: string; desc: string; skills: string[] }) => ({
-      title: item.title,
-      suggestedDescription: item.desc,
-      requiredSkills: item.skills,
-    })),
+    request: "Parse the project brief into concrete deliverables and assign them to team members based on skills and workload balance.",
+    rawProjectBrief: brief,
     project: context.project,
     currentFramework: context.project.frameworkName,
     phases: context.phases,
