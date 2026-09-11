@@ -1730,19 +1730,21 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
             )}
           </nav>
 
-          <div className="marketing-final-cta-action-row">
-            <div className="marketing-final-cta-arrow" aria-hidden="true">
-              <span className="marketing-final-cta-arrow-line" />
-              <span className="marketing-final-cta-arrow-head">→</span>
+          <div className="marketing-final-cta-lockup">
+            <div className="marketing-final-cta-action-row">
+              <div className="marketing-final-cta-arrow" aria-hidden="true">
+                <span className="marketing-final-cta-arrow-line" />
+                <span className="marketing-final-cta-arrow-head">→</span>
+              </div>
+              {isAuthenticated ? (
+                <Link className="marketing-final-cta-explore" to="/home">Go to Projects</Link>
+              ) : (
+                <Link className="marketing-final-cta-explore" to="/projects/create">Explore</Link>
+              )}
             </div>
-            {isAuthenticated ? (
-              <Link className="marketing-final-cta-explore" to="/home">Go to Projects</Link>
-            ) : (
-              <Link className="marketing-final-cta-explore" to="/projects/create">Explore</Link>
-            )}
-          </div>
 
-          <h2 id="marketing-final-title">MayLamDi</h2>
+            <h2 id="marketing-final-title">MayLamDi</h2>
+          </div>
         </div>
       </section>
 

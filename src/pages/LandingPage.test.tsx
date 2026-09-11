@@ -205,11 +205,14 @@ describe("MayLamDi landing page", () => {
     const subscription = container.querySelector("#subscription");
     const transitionStage = container.querySelector(".marketing-final-reveal-stage");
     const finalCta = container.querySelector("#final-cta");
+    const finalLockup = finalCta?.querySelector(".marketing-final-cta-lockup");
 
     expect(subscription?.nextElementSibling).toBe(transitionStage);
     expect(transitionStage?.nextElementSibling).toBe(finalCta);
     expect(transitionStage?.querySelector(".marketing-final-reveal-circle")).toBeInTheDocument();
     expect(container.querySelector(".marketing-final-word-transition-word")).not.toBeInTheDocument();
+    expect(finalLockup?.querySelector(".marketing-final-cta-action-row")).toBeInTheDocument();
+    expect(finalLockup?.querySelector("#marketing-final-title")).toHaveTextContent("MayLamDi");
     expect(finalCta).toHaveTextContent("Sign up");
     expect(finalCta).toHaveTextContent("Log in");
     expect(finalCta).toHaveTextContent("Explore");
