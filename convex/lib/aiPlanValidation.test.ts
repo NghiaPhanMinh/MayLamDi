@@ -96,14 +96,21 @@ describe("AI plan validation", () => {
 
   it("rejects excessive output and invalid numeric ranges", () => {
     const tooMany = validPlan();
-    tooMany.tasks = Array.from({ length: 13 }, (_, index) => ({
+    tooMany.tasks = Array.from({ length: 16 }, (_, index) => ({
       ...tooMany.tasks[0],
       tempId: `task-${index}`,
     }));
-    expect(() => validateAiPlan(tooMany, context)).toThrow(/1–12/i);
+    expect(() => validateAiPlan(tooMany, context)).toThrow(/1–15/i);
 
     const invalidDifficulty = validPlan();
     invalidDifficulty.tasks[0].difficulty = 9;
     expect(() => validateAiPlan(invalidDifficulty, context)).toThrow(/outside the allowed range/i);
+  });
+
+  it("sanitizes generic task titles into actionable outcome-oriented task titles", () => {
+    const plan = validPlan();
+    plan.tasks[0].title = "Do research";
+    const validated = validateAiPlan(plan, context);
+    expect(validated.tasks[0].title).toBe("Conduct target research analysis and synthesize core findings");
   });
 });

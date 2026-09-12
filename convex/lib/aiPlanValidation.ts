@@ -89,7 +89,7 @@ function dateInProject(value: unknown, label: string, context: PlanningContext) 
   return date;
 }
 
-const GENERIC_TITLE_REGEX = /^(research|testing|ui design|ux analysis|backend|frontend|build frontend|build backend|implementation|setup|task \d+|overview|project setup|development|design|testing & qa|ai development|ai testing|technical note|project technical note|asset archive packaging)$/i;
+const GENERIC_TITLE_REGEX = /^(research|testing|ui design|ux analysis|backend|frontend|build frontend|build backend|implementation|setup|task \d+|overview|project setup|development|design|testing & qa|ai development|ai testing|technical note|project technical note|asset archive packaging|do research|build website|create content|write paper|make design|do analysis)$/i;
 
 function sanitizeTaskTitle(rawTitle: string): string {
   const trimmed = rawTitle.trim();
@@ -109,6 +109,12 @@ function sanitizeTaskTitle(rawTitle: string): string {
     if (/note|documentation|setup|packaging/i.test(trimmed)) {
       return "Document architecture, security fallbacks, and technical presentation package";
     }
+    if (/research|analysis|study/i.test(trimmed)) {
+      return "Conduct target research analysis and synthesize core findings";
+    }
+    if (/content|paper|write|script/i.test(trimmed)) {
+      return "Draft core asset content and detailed project documentation";
+    }
     return `Refine ${trimmed} — specific deliverables and verification steps`;
   }
   return trimmed;
@@ -124,8 +130,8 @@ export function validateAiPlan(value: unknown, context: PlanningContext): Valida
   if (!Array.isArray(rawMilestones) || rawMilestones.length > 6) {
     throw new Error("AI milestones must contain at most 6 items.");
   }
-  if (!Array.isArray(rawTasks) || rawTasks.length === 0 || rawTasks.length > 12) {
-    throw new Error("AI tasks must contain 1–12 items.");
+  if (!Array.isArray(rawTasks) || rawTasks.length === 0 || rawTasks.length > 15) {
+    throw new Error("AI tasks must contain 1–15 items.");
   }
 
   const milestones = rawMilestones.map((value) => {

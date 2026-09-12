@@ -60,7 +60,7 @@ const planSchema = {
       tasks: {
         type: "array",
         minItems: 1,
-        maxItems: 12,
+        maxItems: 15,
         items: {
           type: "object",
           additionalProperties: false,
@@ -193,25 +193,20 @@ function planningPrompts(brief: string, context: AiPlanningContext) {
     .join("\n");
 
   const systemPrompt = [
-    "You are MayLamDi's Senior Project Architect & Academic Assignment Strategist.",
-    "GOAL: Convert the raw project brief into an actionable, context-aware project plan using the selected project framework as the structural skeleton.",
-    "FRAMEWORK AS SKELETON: Use the provided framework phases as your structural skeleton. Do NOT invent a new structure or ignore framework phases. You MUST generate at least 1–2 actionable tasks for EVERY single phase in context.phases. Map tasks sequentially across all phases from Phase 1 through the final Phase, covering the full project lifecycle (target 6–10 tasks total). Do not reduce a complex project to only 2–5 generic tasks.",
-    "BRIEF-DRIVEN TASK GENERATION: For each phase, generate concrete, actionable tasks based on: (1) project brief requirements & deliverables, (2) team members and their skills, (3) project deadline, and (4) strict task dependencies.",
-    "CORE PLANNING PRINCIPLE: Do NOT simply copy text or output generic implementation steps (e.g. NEVER output 'Build frontend', 'HTML/CSS Layout', 'Testing', 'UX Analysis', 'Technical Note'). Instead, create outcome-oriented tasks describing real project deliverables.",
-    "WORK CATEGORIES TO INCLUDE WHERE RELEVANT TO BRIEF:",
-    "1. Product / Creative Development: Define concrete feature or creative asset workflows.",
-    "2. Problem Context & Audience Research: Understand user needs, constraints, or story theme.",
-    "3. Usability & Quality Testing: Test core features, playability, or animatic pacing.",
-    "4. Evidence-Based Iteration: When a brief requires iteration, structure a logical sequence (Analyse MVP -> Identify problems -> Implement fixes -> Compare before/after evidence).",
-    "5. Technical Architecture & Documentation: Document system design, APIs, script breakdowns, or visual style guides.",
-    "6. Presentation & Submission: Package defensible solution and final submission deliverables.",
-    "TASK TITLE FORMAT: Every task title MUST start with an active outcome verb describing a specific tangible result (e.g. 'Analyse...', 'Refine...', 'Implement...', 'Test...', 'Document...', 'Draft...', 'Compose...').",
-    "SKILL ALLOCATION & TASK SPECS: Assign each task to the team member profile ID whose skills match best. Write a concise 2-sentence description for each task specifying (1) exact work specs and (2) definition-of-done / verification criteria.",
+    "You are MayLamDi's Senior General-Purpose Project Architect.",
+    "GOAL: Convert the raw project brief into an actionable, context-aware project plan for any domain including creative, design, animation, research, business, marketing, product, software, and academic projects.",
+    "TARGET PLANNING FLOW:",
+    "1. Understand Context: Reason about project domain, stage, goals, deliverables, constraints, deadline timeframe, team skills, and dependencies.",
+    "2. Framework Skeleton Adaptation: Use context.phases as your structural skeleton. Map deliverables into relevant phases. Preserve relevant framework phases across the project lifecycle without forcing irrelevant steps or inventing unnecessary structures.",
+    "3. Actionable Task Quality: Every task MUST be specific, actionable, and outcome-oriented, starting with an active verb (e.g. 'Prototype onboarding flow...', 'Draft script screenplay...', 'Conduct market analysis...', 'Implement backend API...', 'Formulate thesis hypothesis...'). NEVER output generic placeholders like 'Build website', 'Do research', 'Create content', 'Testing', or 'Setup'.",
+    "4. Task Count: Generate enough tasks to cover the project's meaningful lifecycle based on complexity, team size, deliverables, and deadline (typically 4–15 tasks total). Do not truncate complex multi-week projects into 2 generic tasks.",
+    "5. Team & Skill Allocation: Assign each task to the team member profile ID whose skills match best. Distribute work equitably across available members.",
+    "6. Dependencies & Feasibility: Respect logical dependencies between tasks. Upstream tasks must be completed before downstream tasks. All task dates (startDate and dueDate) MUST be within project.startDate and project.deadline.",
     "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Analyze project brief and generate a context-aware, outcome-oriented project plan with clear dependencies and team allocation.",
+    request: "Analyze project brief and generate a context-aware, outcome-oriented general-purpose project plan with clear dependencies and team allocation.",
     rawProjectBrief: brief,
     project: {
       title: context.project.title,
@@ -224,7 +219,7 @@ function planningPrompts(brief: string, context: AiPlanningContext) {
     phases: context.phases,
     members: context.members,
     existingTasks: context.existingTasks,
-    limits: { milestones: 4, tasks: 10 },
+    limits: { milestones: 6, tasks: 15 },
   });
   return { systemPrompt, userPrompt };
 }

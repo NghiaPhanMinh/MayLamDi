@@ -38,7 +38,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }> = [];
 
   // 1. Match Web / HTML / CSS / Deployment / Software Briefs FIRST
-  if (/html|css|\bjs\b|javascript|typescript|web|website|github pages|netlify|vercel|hosting|deploy|page|url|zip|submission|asset/.test(text)) {
+  if (/html|css|\bjs\b|javascript|typescript|github pages|netlify|vercel|hosting|deploy|page|url|zip|submission|asset/.test(text)) {
     deliverables.push(
       { title: "Ideation Selection & Project Scope Framing", desc: "Select project ideation, define target audience, and map out technical requirements.", skills: ["Research", "UI/UX"], weight: 3, diff: 2, effort: 4, offset: 3 },
       { title: "HTML/CSS Layout & Responsive Webpage Implementation", desc: "Build self-contained, responsive HTML/CSS frontend page based on chosen ideation.", skills: ["HTML", "CSS", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 7 },
@@ -49,7 +49,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 2. Match Animation / Film / Narrative Briefs (using strict word boundaries)
-  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|\b2d\b|\b3d\b|greyscale|video|film|movie/.test(text)) {
+  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|greyscale|video|film|movie|3d animation|2d animation/.test(text)) {
     deliverables.push(
       {
         title: "Script & Narrative Screenplay",
@@ -84,7 +84,51 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // Match Web / Software Briefs
+  // 3. Match Marketing & Campaign Briefs
+  if (deliverables.length === 0 && /campaign|marketing|brand|advertising|\bpr\b|social media|promotional|launch strategy/.test(text)) {
+    deliverables.push(
+      { title: "Audience Persona & Competitor Benchmark Matrix", desc: "Research target demographic, analyze competitor positioning, and define audience personas.", skills: ["Market Research", "Audience Insights"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Campaign Strategy & Value Proposition Statement", desc: "Formulate central campaign theme, key message framework, and communication channels.", skills: ["Campaign Strategy", "Copywriting"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Creative Visual Asset & Copy Deck Production", desc: "Design social media banners, promotional video cut-downs, and ad copy deck.", skills: ["Graphic Design", "Content Creation"], weight: 4, diff: 3, effort: 10, offset: 13 },
+      { title: "Multi-Channel Launch Execution & Content Scheduling", desc: "Deploy media placements, schedule social posts, and launch promotional outreach.", skills: ["Media Planning", "Marketing Operations"], weight: 4, diff: 3, effort: 8, offset: 16 },
+      { title: "Campaign Analytics Audit & Performance Report", desc: "Measure engagement metrics, conversion ROI, and optimize post-launch performance.", skills: ["Analytics", "Reporting"], weight: 3, diff: 2, effort: 5, offset: 19 }
+    );
+  }
+
+  // 4. Match Business & Strategy Briefs
+  if (deliverables.length === 0 && /business|startup|opportunity|market|business model|finance|pitch|revenue|investor|operating/.test(text)) {
+    deliverables.push(
+      { title: "Market Problem & Value Opportunity Definition", desc: "Analyze market gap, stakeholder needs, and define the core problem statement.", skills: ["Business Analysis", "Problem Framing"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Customer Validation & Competitor Landscape Matrix", desc: "Conduct target customer interviews, review competitors, and map market fit.", skills: ["Market Research", "Customer Insights"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Business Model Canvas & Value Unit Economics", desc: "Formulate revenue streams, cost structure, key partners, and pricing strategy.", skills: ["Financial Modeling", "Strategy"], weight: 4, diff: 3, effort: 10, offset: 13 },
+      { title: "Operational Execution Roadmap & Risk Register", desc: "Build milestone implementation timeline, key metrics, and mitigation plans.", skills: ["Operations", "Risk Management"], weight: 4, diff: 3, effort: 8, offset: 16 },
+      { title: "Executive Pitch Deck & Investor Presentation", desc: "Synthesize executive summary deck, financial forecast slides, and present proposal.", skills: ["Pitching", "Executive Communication"], weight: 3, diff: 2, effort: 6, offset: 19 }
+    );
+  }
+
+  // 5. Match Architecture & Spatial Design Briefs
+  if (deliverables.length === 0 && /architecture|spatial|building|site|floorplan|blueprint|landscape|interior|zoning/.test(text)) {
+    deliverables.push(
+      { title: "Site Context & Topographical Analysis Report", desc: "Document site contours, environmental orientation, regulatory constraints, and circulation.", skills: ["Site Analysis", "Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Spatial Programme & Adjacency Diagram Spec", desc: "Define space requirements, user flow adjacencies, and volumetric zoning.", skills: ["Spatial Design", "Architectural Programming"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Schematic Floor Plans & 3D Massing Model", desc: "Develop conceptual floor plans, building elevations, and massing models.", skills: ["3D CAD/BIM", "Drafting"], weight: 5, diff: 4, effort: 12, offset: 13 },
+      { title: "Material Strategy & Technical Detailing Specs", desc: "Specify structural materials, environmental systems, and detail assembly sections.", skills: ["Technical Detailing", "Material Research"], weight: 4, diff: 3, effort: 10, offset: 17 },
+      { title: "Architectural Renders & Review Presentation Package", desc: "Render high-quality perspective views, physical/digital model boards, and review deck.", skills: ["Visualisation", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 20 }
+    );
+  }
+
+  // 6. Match Creative & UX Design Briefs
+  if (deliverables.length === 0 && /design|prototype|wireframe|user journey|usability|figma|interface|creative|user experience/.test(text)) {
+    deliverables.push(
+      { title: "User Persona & Journey Map Discovery", desc: "Interview target users, map behavioral pain points, and define design principles.", skills: ["UX Research", "Persona Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Low-Fidelity Wireframes & Information Architecture", desc: "Sketch layout wireframes, navigation taxonomy, and component hierarchy.", skills: ["Wireframing", "UI Design"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "High-Fidelity Interactive Prototype & Design Tokens", desc: "Create interactive Figma prototype with visual design tokens and typography system.", skills: ["Figma", "Interaction Design"], weight: 5, diff: 4, effort: 12, offset: 13 },
+      { title: "Usability Testing & Feedback Refinement", desc: "Run usability test sessions with target users and iterate on friction points.", skills: ["Usability Testing", "Design Iteration"], weight: 4, diff: 3, effort: 8, offset: 17 },
+      { title: "Design Handoff Spec & Presentation Deck", desc: "Prepare component specs, asset redlines, and showcase presentation deck.", skills: ["Design Handoff", "Presentation"], weight: 3, diff: 2, effort: 5, offset: 20 }
+    );
+  }
+
+  // 7. Match Software & Web Briefs
   if (deliverables.length === 0 && /web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex/.test(text)) {
     deliverables.push(
       { title: "System Architecture & Database Schema", desc: "Design data entities, Convex/SQL schema, and API specification.", skills: ["Backend", "Database"], weight: 4, diff: 3, effort: 8, offset: 4 },
@@ -95,7 +139,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // Match Mobile App Briefs
+  // 8. Match Mobile App Briefs
   if (deliverables.length === 0 && /mobile|app|flutter|react native|ios|android|swift|kotlin/.test(text)) {
     deliverables.push(
       { title: "User Journey & Mobile Navigation Stack", desc: "Outline screen hierarchy, user flows, and navigation stack.", skills: ["UI/UX", "Mobile"], weight: 3, diff: 2, offset: 4, effort: 6 },
@@ -105,7 +149,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // Match Game & 3D Briefs
+  // 9. Match Game & 3D Briefs
   if (deliverables.length === 0 && /game|unity|unreal|godot|gamedev|2d|3d|physics|graphics/.test(text)) {
     deliverables.push(
       { title: "Game Design Document & Mechanics Spec", desc: "Define core loop, player controls, win/loss rules, and UI HUD layout.", skills: ["Game Design"], weight: 3, diff: 2, offset: 4, effort: 6 },
@@ -116,7 +160,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // Match Research & Writing Briefs
+  // 10. Match Research & Writing Briefs
   if (deliverables.length === 0 && /research|thesis|study|survey|paper|analysis|report|essay|literature/.test(text)) {
     deliverables.push(
       { title: "Literature Review & Thesis Hypothesis Outline", desc: "Gather academic sources, analyze prior work, and formulate core research questions.", skills: ["Research", "Academic Writing"], weight: 3, diff: 2, offset: 4, effort: 6 },
@@ -126,7 +170,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // Fallback for general briefs
+  // 11. Fallback for general briefs
   if (deliverables.length === 0) {
     const rawTitle = projectTitle.trim() || "Project";
     deliverables.push(
@@ -146,18 +190,24 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
 
   const rawTasks = extractDeliverablesFromBrief(brief, context.project.title);
 
-  const milestones = phases.slice(0, Math.min(3, phases.length)).map((phase, index) => ({
+  const milestones = phases.slice(0, Math.min(6, phases.length)).map((phase, index) => ({
     tempId: `milestone_${index + 1}`,
     title: `Milestone ${index + 1}: ${phase.title}`,
     description: `Completion check for ${phase.title} deliverables.`,
     phaseId: phase.phaseId,
-    dueDate: formatIsoDate((index + 1) * 6),
+    dueDate: context.project.deadline || formatIsoDate((index + 1) * 5),
   }));
 
   const tasks = rawTasks.map((task, index) => {
     const assignedPhase = phases[Math.floor((index / rawTasks.length) * phases.length)] || phases[0];
     const assignedOwner = members[index % members.length];
     const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
+
+    const startDate = context.project.startDate || formatIsoDate(0);
+    const calculatedDueDate = formatIsoDate(task.offset);
+    const dueDate = context.project.deadline && calculatedDueDate > context.project.deadline
+      ? context.project.deadline
+      : calculatedDueDate;
 
     return {
       tempId: `task_${index + 1}`,
@@ -172,8 +222,8 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
       difficulty: task.diff,
       weight: task.weight,
       required: true,
-      startDate: context.project.startDate || formatIsoDate(0),
-      dueDate: formatIsoDate(task.offset),
+      startDate,
+      dueDate,
       dependencyTempIds: index > 0 ? [`task_${index}`] : [],
       requiresReview: true,
       reviewerProfileId: assignedReviewer ? assignedReviewer.profileId : null,

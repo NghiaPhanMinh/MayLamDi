@@ -37,4 +37,25 @@ describe("smartFallbackPlanner", () => {
     expect(taskTitles.some((t) => t.includes("Design Document"))).toBe(true);
     expect(taskTitles.some((t) => t.includes("Animatic"))).toBe(true);
   });
+
+  it("generates marketing campaign deliverables for marketing briefs", () => {
+    const mktContext = { ...mockContext, project: { ...mockContext.project, title: "Brand Launch" } };
+    const plan = generateSmartFallbackPlan(mktContext, "Design social media campaign and launch strategy for new beverage brand");
+    const taskTitles = plan.tasks.map((t) => t.title);
+    expect(taskTitles.some((t) => t.includes("Persona") || t.includes("Campaign"))).toBe(true);
+  });
+
+  it("generates business strategy deliverables for business briefs", () => {
+    const bizContext = { ...mockContext, project: { ...mockContext.project, title: "Startup Pitch" } };
+    const plan = generateSmartFallbackPlan(bizContext, "Build a startup business model, financial revenue forecast, and investor pitch deck");
+    const taskTitles = plan.tasks.map((t) => t.title);
+    expect(taskTitles.some((t) => t.includes("Business Model") || t.includes("Pitch Deck"))).toBe(true);
+  });
+
+  it("generates spatial architectural deliverables for architecture briefs", () => {
+    const archContext = { ...mockContext, project: { ...mockContext.project, title: "Civic Centre" } };
+    const plan = generateSmartFallbackPlan(archContext, "Architectural spatial design proposal including site analysis, schematic floor plans, and 3D renders");
+    const taskTitles = plan.tasks.map((t) => t.title);
+    expect(taskTitles.some((t) => t.includes("Site") || t.includes("Schematic") || t.includes("Floor Plans"))).toBe(true);
+  });
 });
