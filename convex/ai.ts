@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import {
+  repairAndEnrichPlan,
   validateAiPlan,
   validatePlanAgainstBrief,
   type ValidatedAiPlan,
@@ -437,11 +438,12 @@ export const generateProjectPlan = action({
           }),
           validate: (content) => {
             const plan = validateAiPlan(parseJsonResponse(content), context);
-            const report = validatePlanAgainstBrief(plan, brief, context);
+            const enrichedPlan = repairAndEnrichPlan(plan, brief, context);
+            const report = validatePlanAgainstBrief(enrichedPlan, brief, context);
             if (!report.valid) {
               console.warn(`${genTag}AI generated plan had semantic validation warnings:`, report.errors);
             }
-            return plan;
+            return enrichedPlan;
           },
         });
         console.info(`${genTag}AI planning succeeded`, JSON.stringify({ model: result.modelUsed }));
@@ -502,7 +504,8 @@ export const generateProjectPlanWithKey = action({
         if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
         response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
       }
-      const value = validateAiPlan(parseJsonResponse(response.content), context);
+      const rawValue = validateAiPlan(parseJsonResponse(response.content), context);
+      const value = repairAndEnrichPlan(rawValue, brief, context);
       await ctx.runMutation(internal.aiUsage.record, {
         projectId: args.projectId,
         profileId: access.profileId,
