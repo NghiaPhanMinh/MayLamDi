@@ -1,8 +1,8 @@
-export const DEFAULT_PRIMARY_FREE_MODEL = "google/gemini-2.0-flash-lite-001";
-export const DEFAULT_FIRST_FREE_FALLBACK = "google/gemini-2.5-flash-lite:free";
+export const DEFAULT_PRIMARY_FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+export const DEFAULT_FIRST_FREE_FALLBACK = "google/gemini-2.0-flash-lite-001";
 export const DEFAULT_ADDITIONAL_FREE_FALLBACKS = [
-  "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen-2.5-coder-32b-instruct:free",
+  "google/gemini-2.5-flash-lite:free",
   "openrouter/free",
 ] as const;
 
