@@ -148,7 +148,7 @@ export function ProfileCenter({
   const initialByok = getByokSession();
   const [useOwnKey, setUseOwnKey] = useState(initialByok !== null);
   const [apiKey, setApiKey] = useState(initialByok?.apiKey ?? "");
-  const [model, setModel] = useState(initialByok?.model ?? "openrouter/free");
+  const [model, setModel] = useState(initialByok?.model ?? "anthropic/claude-3.5-sonnet");
 
   /* Realtime profile data arrives after the first render; hydrate once without
      overwriting edits made while the save request is in flight. */
@@ -287,6 +287,25 @@ export function ProfileCenter({
                   <input disabled={!useOwnKey} value={model} onChange={(event) => setModel(event.target.value)} />
                 </label>
               </div>
+              {useOwnKey ? (
+                <div className="profile-skill-options" style={{ marginTop: "0.5rem" }}>
+                  {[
+                    { id: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet (Recommended)" },
+                    { id: "deepseek/deepseek-r1", label: "DeepSeek R1 (Reasoning)" },
+                    { id: "deepseek/deepseek-chat", label: "DeepSeek V3 (Fast & Cheap)" },
+                    { id: "google/gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={model === preset.id ? "is-selected" : ""}
+                      onClick={() => setModel(preset.id)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <p className="ai-security-note">This key stays in this browser session and is never stored with your profile.</p>
             </section>
           </details>
