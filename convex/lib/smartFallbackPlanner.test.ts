@@ -108,4 +108,117 @@ describe("smartFallbackPlanner", () => {
     expect(planA.tasks.length).toBeGreaterThanOrEqual(5);
     expect(planB.tasks.length).toBeGreaterThanOrEqual(5);
   });
+
+  it("PROJECT TYPE 1 — Exhibition/Event: synthesizes workstreams, fixes 'post-event' parsing bug, assigns team roles, and creates actionable descriptions", () => {
+    const exhibitionContext = {
+      ...mockContext,
+      members: [
+        { profileId: "curator_1", displayName: "Curator Lead" },
+        { profileId: "coord_1", displayName: "Event Coordinator" },
+        { profileId: "designer_1", displayName: "Graphic Designer" },
+        { profileId: "dev_1", displayName: "Technical Developer" },
+        { profileId: "photo_1", displayName: "Photographer & Doc" },
+      ],
+    };
+    const brief = "Plan a 5-week university art exhibition showcasing student digital media projects. The team has 5 members: curator, event coordinator, graphic designer, technical developer, and photographer. The exhibition will feature 12 interactive and audiovisual artworks for approximately 150 visitors. Deliverables include exhibition concept and theme, artist/project selection, venue layout, promotional materials, interactive installation setup, event logistics, visitor documentation, and a post-event evaluation.";
+
+    const plan = generateSmartFallbackPlan(exhibitionContext, brief);
+    const titles = plan.tasks.map((t) => t.title);
+    const descriptions = plan.tasks.map((t) => t.description);
+
+    // 1. Check string parsing bug fix: MUST NOT contain "Deliver A post" or "Execute Event evaluation"
+    expect(titles.some((t) => /deliver a post|execute event evaluation/i.test(t))).toBe(false);
+
+    // 2. Check "post-event evaluation" is intact in a synthesized task
+    expect(titles.some((t) => /post-event evaluation/i.test(t)) || descriptions.some((d) => /post-event evaluation/i.test(d))).toBe(true);
+
+    // 3. Check workstream synthesis: "exhibition concept" and "theme" MUST be combined into a single task title
+    expect(titles.some((t) => /concept.*theme|theme.*concept/i.test(t))).toBe(true);
+
+    // 4. Check actionable descriptions: NO generic "Complete X according to project requirements"
+    for (const desc of descriptions) {
+      expect(desc).not.toContain("Complete venue layout according to project requirements.");
+      expect(desc).not.toMatch(/^Complete .* according to project requirements/i);
+      expect(desc.length).toBeGreaterThan(25);
+    }
+
+    // 5. Check role mapping: Graphic Designer assigned to design task, Technical Developer assigned to tech task
+    const designTask = plan.tasks.find((t) => /promotional|design/i.test(t.title));
+    expect(designTask?.primaryOwnerProfileId).toBe("designer_1");
+
+    const techTask = plan.tasks.find((t) => /installation|setup|layout/i.test(t.title));
+    expect(techTask?.primaryOwnerProfileId).toBe("dev_1");
+  });
+
+  it("PROJECT TYPE 2 — Software Product: synthesizes multi-tier web development deliverables into workstream tasks", () => {
+    const softwareContext = {
+      ...mockContext,
+      members: [
+        { profileId: "pm_1", displayName: "Product Owner" },
+        { profileId: "fe_1", displayName: "Frontend Engineer" },
+        { profileId: "be_1", displayName: "Backend Developer" },
+        { profileId: "qa_1", displayName: "QA Tester" },
+      ],
+    };
+    const brief = "Build a web-based SaaS analytics platform. Team has 4 members: product owner, frontend engineer, backend developer, QA tester. Deliverables include PostgreSQL database schema design, user authentication service, RESTful API endpoints, responsive analytics dashboard UI, automated integration testing, and cloud hosting deployment.";
+
+    const plan = generateSmartFallbackPlan(softwareContext, brief);
+    const titles = plan.tasks.map((t) => t.title);
+
+    // Grouping checks: Database, API, and Frontend are synthesized into distinct, non-fragmented workstream tasks
+    expect(titles.some((t) => /database|schema|api|endpoint/i.test(t))).toBe(true);
+    expect(titles.some((t) => /dashboard|ui|frontend|responsive/i.test(t))).toBe(true);
+    expect(titles.some((t) => /testing|qa|integration|cloud|deployment/i.test(t))).toBe(true);
+
+    // Task count should reflect medium complexity (4-7 workstream tasks)
+    expect(plan.tasks.length).toBeGreaterThanOrEqual(4);
+    expect(plan.tasks.length).toBeLessThanOrEqual(10);
+  });
+
+  it("PROJECT TYPE 3 — Creative / Animation: synthesizes narrative short film deliverables into cohesive workstream tasks", () => {
+    const animationContext = {
+      ...mockContext,
+      members: [
+        { profileId: "dir_1", displayName: "Director & Lead" },
+        { profileId: "anim_1", displayName: "Character Animator" },
+        { profileId: "art_1", displayName: "Background Visual Artist" },
+        { profileId: "sound_1", displayName: "Sound Designer" },
+      ],
+    };
+    const brief = "Create a 3-minute 2D animated narrative short film. Team of 4 members: director, character animator, background visual artist, sound designer. Deliverables include screenplay script, character art direction, timed greyscale animatic, color background rendering, 2D character animation frames, multi-channel sound design, and final video render export.";
+
+    const plan = generateSmartFallbackPlan(animationContext, brief);
+    const titles = plan.tasks.map((t) => t.title);
+
+    // Grouping checks: screenplay + character art direction grouped, animatic + backgrounds grouped, sound + render grouped
+    expect(titles.some((t) => /script|screenplay|art direction/i.test(t))).toBe(true);
+    expect(titles.some((t) => /animatic|background|animation/i.test(t))).toBe(true);
+    expect(titles.some((t) => /sound|audio|render|export/i.test(t))).toBe(true);
+
+    // Descriptions must contain non-generic detailed text
+    for (const task of plan.tasks) {
+      expect(task.description).not.toContain("according to project requirements");
+      expect(task.description.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("VERIFICATION — Dynamic task count scaling across all 3 project types (Simple vs Complex)", () => {
+    // Simple brief (< 150 chars, simple portfolio)
+    const simpleEvent = "Plan a simple 1-day workshop for 10 students. Deliverables: agenda and slide deck.";
+    const simpleSoftware = "Build a simple single-page HTML contact form. Deliverables: contact form HTML and CSS.";
+    const simpleAnim = "Create a simple 5-second 2D logo animation. Deliverables: story sketch and GIF render.";
+
+    // Complex briefs (detailed multi-week team briefs)
+    const complexEvent = "Plan a 5-week university art exhibition showcasing student digital media projects. The team has 5 members: curator, event coordinator, graphic designer, technical developer, and photographer. Deliverables include exhibition concept and theme, artist/project selection, venue layout, promotional materials, interactive installation setup, event logistics, visitor documentation, and a post-event evaluation.";
+
+    const planSimpleEvent = generateSmartFallbackPlan(mockContext, simpleEvent);
+    const planSimpleSoftware = generateSmartFallbackPlan(mockContext, simpleSoftware);
+    const planSimpleAnim = generateSmartFallbackPlan(mockContext, simpleAnim);
+    const planComplexEvent = generateSmartFallbackPlan(mockContext, complexEvent);
+
+    expect(planSimpleEvent.tasks.length).toBeLessThan(planComplexEvent.tasks.length);
+    expect(planSimpleSoftware.tasks.length).toBeLessThan(planComplexEvent.tasks.length);
+    expect(planSimpleAnim.tasks.length).toBeLessThan(planComplexEvent.tasks.length);
+  });
 });
+

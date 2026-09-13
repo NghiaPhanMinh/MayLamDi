@@ -175,31 +175,11 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   const userText = userBriefText.toLowerCase();
 
   // Extract explicit deliverables listed after "deliverables include", "deliverables:", etc.
-  const explicitDeliverablesMatch = userBriefText.match(/deliverables\s*(?:include|:|\s)\s*([^.]+)/i);
-  if (explicitDeliverablesMatch) {
-    const rawItems = explicitDeliverablesMatch[1]
-      .split(/,|\band\b|;|\n|•|-/i)
-      .map((item) => item.trim())
-      .filter((item) => item.length > 2 && !/^\d+$/.test(item));
-
-    if (rawItems.length >= 3) {
-      const dynamicDeliverables = rawItems.map((item, idx) => {
-        // Clean title
-        const cleanTitle = item.charAt(0).toUpperCase() + item.slice(1);
-        const activeVerbTitle = /^(research|concept|curation|venue|promotional|interactive|event|visitor|post|design|setup|draft|build|implement|create)/i.test(cleanTitle)
-          ? `Execute ${cleanTitle}`
-          : `Deliver ${cleanTitle}`;
-        return {
-          title: activeVerbTitle,
-          desc: `Complete ${item} according to project requirements and team specifications.`,
-          skills: [idx % 2 === 0 ? "Execution" : "Planning"],
-          weight: Math.min(5, Math.max(2, Math.round(10 / rawItems.length))),
-          diff: idx % 3 === 0 ? 3 : 2,
-          effort: Math.max(3, Math.round(30 / rawItems.length)),
-          offset: Math.min(30, (idx + 1) * Math.max(2, Math.round(25 / rawItems.length))),
-        };
-      });
-      return dynamicDeliverables;
+  const explicitItems = parseExplicitDeliverables(userBriefText);
+  if (explicitItems.length >= 3) {
+    const synthesized = synthesizeWorkstreamTasks(explicitItems, userBriefText);
+    if (synthesized.length >= 2) {
+      return synthesized;
     }
   }
 
@@ -224,6 +204,197 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   return deliverables;
 }
 
+export function parseExplicitDeliverables(userBriefText: string): string[] {
+  const explicitMatch = userBriefText.match(/deliverables\s*(?:include|:|\s)\s*([^.]+)/i);
+  if (!explicitMatch) return [];
+
+  const rawSegmentText = explicitMatch[1];
+  // Split strictly by commas, semicolons, newlines, bullet points, pipes (NEVER hyphens)
+  const segments = rawSegmentText
+    .split(/[,;\n•|]/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  const items: string[] = [];
+  for (const seg of segments) {
+    // Strip leading conjunctive clutter (e.g. "and a ", "and ", "a ")
+    let cleaned = seg.replace(/^(?:and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "").trim();
+    cleaned = cleaned.replace(/\.$/, "").trim();
+    if (cleaned.length > 2 && !/^\d+$/.test(cleaned)) {
+      items.push(cleaned);
+    }
+  }
+
+  return items;
+}
+
+export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: string): Array<{
+  title: string;
+  desc: string;
+  skills: string[];
+  weight: number;
+  diff: number;
+  effort: number;
+  offset: number;
+}> {
+  if (rawItems.length === 0) return [];
+
+  // Semantic Categories for Domain-Agnostic Workstream Synthesis
+  type Category = "concept" | "design" | "backend" | "services" | "ops" | "evaluation";
+
+  const buckets: Record<Category, string[]> = {
+    concept: [],
+    design: [],
+    backend: [],
+    services: [],
+    ops: [],
+    evaluation: [],
+  };
+
+  const conceptKeywords = /concept|theme|curation|selection|strategy|research|requirements|scope|persona|hypothesis|screenplay|script|wireframe|framing|literature|ideation/i;
+  const designKeywords = /design|promotional|materials|asset|brand|visual|copy|art|graphics|ui|ux|content|media|social|character|background|campaign|dashboard/i;
+  const backendKeywords = /database|schema|backend|architecture|installation|setup|venue|layout|infrastructure|environment|spatial|model|3d/i;
+  const serviceKeywords = /api|endpoint|service|authentication|auth|integration|code|sound|audio|mixing|animatic/i;
+  const opsKeywords = /logistics|event|execution|deployment|hosting|launch|operations|scheduling|coordination|release|testing|qa|automated/i;
+  const evalKeywords = /documentation|evaluation|post-event|review|analytics report|analytics audit|performance analytics|report|audit|verification|final|export|pitch|presentation|deck|post-project/i;
+
+  for (const item of rawItems) {
+    if (evalKeywords.test(item)) {
+      buckets.evaluation.push(item);
+    } else if (backendKeywords.test(item)) {
+      buckets.backend.push(item);
+    } else if (opsKeywords.test(item)) {
+      buckets.ops.push(item);
+    } else if (serviceKeywords.test(item)) {
+      buckets.services.push(item);
+    } else if (designKeywords.test(item)) {
+      buckets.design.push(item);
+    } else if (conceptKeywords.test(item)) {
+      buckets.concept.push(item);
+    } else {
+      if (/plan|spec|frame/i.test(item)) buckets.concept.push(item);
+      else buckets.ops.push(item);
+    }
+  }
+
+  const categoryConfigs: Array<{
+    cat: Category;
+    activeVerb: string;
+    skills: string[];
+    weight: number;
+    diff: number;
+    effort: number;
+  }> = [
+    { cat: "concept", activeVerb: "Develop", skills: ["Strategy", "Planning"], weight: 3, diff: 2, effort: 6 },
+    { cat: "design", activeVerb: "Design & Produce", skills: ["Creative Design", "Visual Arts"], weight: 4, diff: 3, effort: 8 },
+    { cat: "backend", activeVerb: "Plan & Configure", skills: ["Technical Development", "Infrastructure"], weight: 4, diff: 3, effort: 10 },
+    { cat: "services", activeVerb: "Implement", skills: ["API Development", "System Integration"], weight: 4, diff: 3, effort: 8 },
+    { cat: "ops", activeVerb: "Coordinate", skills: ["Operations", "Logistics"], weight: 4, diff: 3, effort: 8 },
+    { cat: "evaluation", activeVerb: "Compile", skills: ["QA & Evaluation", "Documentation"], weight: 3, diff: 2, effort: 5 },
+  ];
+
+  // Extract contextual numbers and scope from user brief for rich descriptions
+  const artworkMatch = userBriefText.match(/(\d+)\s*(?:interactive|audiovisual|digital|artworks|projects|items|screens|features)/i);
+  const visitorMatch = userBriefText.match(/(\d+)\s*(?:visitors|users|attendees|customers|members)/i);
+  const timeframeMatch = userBriefText.match(/(\d+)\s*-?\s*(?:week|month)/i);
+
+  const scopeDetail = [
+    artworkMatch ? `${artworkMatch[1]} project deliverables` : null,
+    visitorMatch ? `${visitorMatch[1]} target audience/visitors` : null,
+    timeframeMatch ? `${timeframeMatch[1]}-week project timeline` : null,
+  ].filter(Boolean).join(", ");
+
+  const synthesizedTasks: Array<{
+    title: string;
+    desc: string;
+    skills: string[];
+    weight: number;
+    diff: number;
+    effort: number;
+    offset: number;
+  }> = [];
+
+  let offsetCounter = 4;
+
+  for (const cfg of categoryConfigs) {
+    const items = buckets[cfg.cat];
+    if (items.length === 0) continue;
+
+    const formattedItems = items.map((it) => it.charAt(0).toUpperCase() + it.slice(1));
+    let combinedTitleStr = formattedItems.join(" & ");
+    if (formattedItems.length > 2) {
+      combinedTitleStr = `${formattedItems.slice(0, -1).join(", ")} & ${formattedItems[formattedItems.length - 1]}`;
+    }
+
+    const title = `${cfg.activeVerb} ${combinedTitleStr}`;
+    const scopeClause = scopeDetail ? ` in support of ${scopeDetail}` : "";
+    const desc = `Synthesize and execute ${combinedTitleStr} according to brief specifications${scopeClause}, ensuring all quality checkpoints are verified.`;
+
+    synthesizedTasks.push({
+      title,
+      desc,
+      skills: cfg.skills,
+      weight: cfg.weight,
+      diff: cfg.diff,
+      effort: cfg.effort,
+      offset: offsetCounter,
+    });
+
+    offsetCounter += 6;
+  }
+
+  if (synthesizedTasks.length < 3 && rawItems.length >= 3) {
+    return rawItems.map((item, idx) => {
+      const cleanTitle = item.charAt(0).toUpperCase() + item.slice(1);
+      const verb = /^(research|concept|curation|venue|promotional|interactive|event|visitor|post|design|setup|draft|build|implement|create)/i.test(cleanTitle)
+        ? "Coordinate"
+        : "Execute";
+      return {
+        title: `${verb} ${cleanTitle}`,
+        desc: `Perform ${item} according to project goals${scopeDetail ? ` (${scopeDetail})` : ""}, ensuring all deliverables meet team standards.`,
+        skills: [idx % 2 === 0 ? "Execution" : "Planning"],
+        weight: 3,
+        diff: 2,
+        effort: 6,
+        offset: (idx + 1) * 5,
+      };
+    });
+  }
+
+  return synthesizedTasks;
+}
+
+function findBestMember(
+  members: Array<{ profileId: string; displayName: string; skills?: string[] }>,
+  task: { title: string; skills: string[] },
+  fallbackIndex: number
+) {
+  if (members.length === 0) return { profileId: "member_1", displayName: "Team Member" };
+  const taskTitle = task.title.toLowerCase();
+
+  for (const m of members) {
+    const memberName = m.displayName.toLowerCase();
+
+    if (/developer|tech|engineer|coder/i.test(memberName) && /installation|setup|layout|technical|database|backend|schema|api|endpoint|services/i.test(taskTitle)) {
+      return m;
+    }
+    if (/designer|graphic|artist|visual|ui|ux/i.test(memberName) && /design|promotional|visual|art|ui|ux|dashboard/i.test(taskTitle)) {
+      return m;
+    }
+    if (/curator|lead|manager|director|owner/i.test(memberName) && /concept|theme|curation|strategy|develop|draft/i.test(taskTitle)) {
+      return m;
+    }
+    if (/coordinator|event|logistics|ops/i.test(memberName) && /logistics|event|operations|coordinate/i.test(taskTitle)) {
+      return m;
+    }
+    if (/photographer|qa|tester|writer/i.test(memberName) && /documentation|evaluation|visitor|review|compile|testing/i.test(taskTitle)) {
+      return m;
+    }
+  }
+
+  return members[fallbackIndex % members.length];
+}
+
 export function generateSmartFallbackPlan(context: PlanningContext, brief: string): ValidatedAiPlan {
   const phases = context.phases.length > 0 ? context.phases : [{ phaseId: "phase_1", title: "Project Execution" }];
   const members = context.members.length > 0 ? context.members : [{ profileId: "member_1", displayName: "Team Member" }];
@@ -240,7 +411,7 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
 
   const tasks = rawTasks.map((task, index) => {
     const assignedPhase = phases[Math.floor((index / rawTasks.length) * phases.length)] || phases[0];
-    const assignedOwner = members[index % members.length];
+    const assignedOwner = findBestMember(members, task, index);
     const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
 
     const startDate = context.project.startDate || formatIsoDate(0);
