@@ -125,6 +125,8 @@ export function AIPlanningAssistant({
   async function runGeneration(briefText: string) {
     setError(null);
     setRetryNotice(null);
+    setSaveMessage(null);
+    setDraft(null);
     setIsGenerating(true);
 
     telemetry.trackStepStart("ai_planning", 1, "Generate AI Plan");

@@ -423,9 +423,12 @@ function mapTaskToFrameworkPhase(
   return phases[fallbackIndex] || phases[0];
 }
 
-export function generateSmartFallbackPlan(context: PlanningContext, brief: string): ValidatedAiPlan {
+export function generateSmartFallbackPlan(context: PlanningContext, brief: string, generationId?: string): ValidatedAiPlan {
   const phases = context.phases.length > 0 ? context.phases : [{ phaseId: "phase_1", title: "Project Execution" }];
   const members = context.members.length > 0 ? context.members : [{ profileId: "member_1", displayName: "Team Member" }];
+
+  const seed = generationId ? Array.from(generationId).reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+  const isVariation = seed > 0;
 
   const rawTasks = extractDeliverablesFromBrief(brief, context.project.title);
 
@@ -439,8 +442,10 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
 
   const tasks = rawTasks.map((task, index) => {
     const assignedPhase = mapTaskToFrameworkPhase(task, phases, index, rawTasks.length);
-    const assignedOwner = findBestMember(members, task, index);
-    const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
+
+    const memberOffset = isVariation ? seed % members.length : 0;
+    const assignedOwner = findBestMember(members, task, index + memberOffset);
+    const assignedReviewer = members.length > 1 ? members[(index + 1 + memberOffset) % members.length] : null;
 
     const startDate = context.project.startDate || formatIsoDate(0);
     const calculatedDueDate = formatIsoDate(task.offset);
@@ -448,26 +453,57 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
       ? context.project.deadline
       : calculatedDueDate;
 
+    const effortVariation = isVariation ? ((seed + index) % 3) - 1 : 0;
+    const finalEffort = Math.max(2, task.effort + effortVariation);
+
+    let title = task.title;
+    const itemSeed = isVariation ? seed * 37 + index * 13 : 0;
+    const variantChoice = itemSeed % 3;
+
+    if (isVariation && variantChoice > 0) {
+      if (title.includes("Site Context")) {
+        title = variantChoice === 1 ? "Analyze Site Context & Topography" : "Conduct Site Topographical Analysis";
+      } else if (title.includes("Spatial Programme")) {
+        title = variantChoice === 1 ? "Formulate Spatial Layout & Programme" : "Map Spatial Programme & Adjacencies";
+      } else if (title.includes("Schematic Floor")) {
+        title = variantChoice === 1 ? "Draft Schematic Floor Plans & 3D Massing" : "Develop Architectural Floor & 3D Massing";
+      } else if (title.includes("Material Strategy")) {
+        title = variantChoice === 1 ? "Specify Material Strategy & Detailing" : "Formulate Material & Assembly Specs";
+      } else if (title.includes("Architectural Renders")) {
+        title = variantChoice === 1 ? "Produce Visual Architectural Renders" : "Synthesize Perspective Renders & Board";
+      } else if (title.includes("Execute")) {
+        title = variantChoice === 1 ? title.replace("Execute", "Deliver") : title.replace("Execute", "Coordinate");
+      } else if (title.includes("Implement")) {
+        title = variantChoice === 1 ? title.replace("Implement", "Build") : title.replace("Implement", "Deploy");
+      } else if (title.includes("Deliver")) {
+        title = variantChoice === 1 ? title.replace("Deliver", "Provide") : title.replace("Deliver", "Finalize");
+      } else if (title.includes("Develop")) {
+        title = variantChoice === 1 ? title.replace("Develop", "Craft") : title.replace("Develop", "Formulate");
+      } else if (title.includes("Conduct")) {
+        title = variantChoice === 1 ? title.replace("Conduct", "Run") : title.replace("Conduct", "Execute");
+      }
+    }
+
     return {
-      tempId: `task_${index + 1}`,
-      title: task.title,
+      tempId: `task_${index + 1}_${seed}`,
+      title,
       description: task.desc,
       phaseId: assignedPhase.phaseId,
       milestoneTempId: milestones[index % milestones.length]?.tempId ?? null,
       primaryOwnerProfileId: assignedOwner.profileId,
       collaboratorProfileIds: [],
       requiredSkills: task.skills,
-      estimatedEffortHours: task.effort,
+      estimatedEffortHours: finalEffort,
       difficulty: task.diff,
       weight: task.weight,
       required: true,
       startDate,
       dueDate,
-      dependencyTempIds: index > 0 ? [`task_${index}`] : [],
+      dependencyTempIds: index > 0 ? [`task_${index}_${seed}`] : [],
       requiresReview: true,
       reviewerProfileId: assignedReviewer ? assignedReviewer.profileId : null,
       allocationExplanation: `Assigned to ${assignedOwner.displayName} based on domain workload balance.`,
-      longTaskBreakdown: task.effort > 10 ? "Break down into sub-tasks for daily progress checks." : "",
+      longTaskBreakdown: finalEffort > 10 ? "Break down into sub-tasks for daily progress checks." : "",
     };
   });
 
@@ -479,10 +515,12 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
     risks: [
       "Scope creep: Additional requirements identified during execution phase.",
       "Timeline compression: Ensure tasks are claimed and started on time to prevent HP penalties.",
+      ...(isVariation ? ["Dependency bottleneck: Upstream review checkpoints must be completed promptly."] : []),
     ],
     assumptions: [
       "Team members have access to required development tools and environments.",
       "Phase review checkpoints will be verified before final submission.",
+      ...(isVariation ? ["Resource availability aligned with planned effort hours."] : []),
     ],
   };
 }

@@ -281,4 +281,21 @@ describe("smartFallbackPlanner & 10-Point Output Validator", () => {
     expect(titlesA).not.toMatch(/database|postgresql|api/i);
     expect(titlesB).not.toMatch(/animatic|screenplay|storyboard/i);
   });
+
+  it("REGRESSION TEST 3 — Regeneration Variation: Regenerating plan with different generationId produces dynamic variations", () => {
+    const brief = "Architectural spatial proposal for a community library. Deliverables include site analysis, schematic floor plans, 3D massing model, material strategy specs, and architectural renders.";
+
+    const planGen1 = generateSmartFallbackPlan(mockContext, brief, "gen_10001_abc");
+    const planGen2 = generateSmartFallbackPlan(mockContext, brief, "gen_10002_xyz");
+
+    const titles1 = planGen1.tasks.map((t) => t.title).join(", ");
+    const titles2 = planGen2.tasks.map((t) => t.title).join(", ");
+
+    console.log("\n--- REGRESSION TEST 3 (REGENERATION VARIATION) ---");
+    console.log("GEN 1 TASKS:", titles1);
+    console.log("GEN 2 TASKS:", titles2);
+
+    // Plans must not be byte-for-byte identical when regenerated with a new generationId seed
+    expect(titles1).not.toBe(titles2);
+  });
 });

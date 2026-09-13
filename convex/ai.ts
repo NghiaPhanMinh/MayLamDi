@@ -303,7 +303,7 @@ async function requestPlan(input: {
         ...(input.mode === "structured"
           ? { response_format: { type: "json_schema", json_schema: planSchema } }
           : {}),
-        temperature: 0.1,
+        temperature: 0.7,
         max_tokens: 1_800,
         max_completion_tokens: 1_800,
       }),
@@ -397,7 +397,7 @@ export const generateProjectPlan = action({
     const apiKey = tierKey ?? environmentValue("OPENROUTER_API_KEY") ?? environmentValue("GEMINI_API_KEY");
     if (!apiKey) {
       console.info(`${genTag}No AI API key connected on platform. Utilizing Smart Fallback Planner.`);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
       return { ...fallbackPlan, source: "smart_template", generatedAt: Date.now() };
     }
 
@@ -464,7 +464,7 @@ export const generateProjectPlan = action({
       }
     } catch (error) {
       console.warn(`${genTag}AI generation encountered error, serving Smart Fallback Plan:`, error);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
       return {
         ...fallbackPlan,
         source: "smart_template",
@@ -514,7 +514,7 @@ export const generateProjectPlanWithKey = action({
       return { ...value, source: "ai", generatedAt: Date.now() };
     } catch (error) {
       console.warn(`${genTag}Session BYOK AI request failed, smoothly serving Smart Fallback Plan:`, error);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
       return {
         ...fallbackPlan,
         source: "smart_template",
