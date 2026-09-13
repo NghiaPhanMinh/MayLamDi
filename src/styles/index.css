@@ -4912,7 +4912,7 @@ footer {
 .guided-stepper li.is-current { color: var(--color-text); }
 .guided-stepper li.is-current span { background: var(--color-yellow); color: var(--color-navy); }
 .guided-stepper li.is-complete span { background: var(--color-green); color: var(--color-navy); }
-.guided-card { min-height: min(650px, calc(100vh - 220px)); }
+.guided-card { min-height: auto; }
 .guided-card .display-heading { margin: .25rem 0 1.25rem; }
 .guided-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .guided-field-grid label { display: grid; gap: .4rem; font-weight: 800; }
@@ -4922,8 +4922,11 @@ footer {
 .guided-advanced { padding: .8rem 0; border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent); }
 .guided-advanced summary { cursor: pointer; font-weight: 900; }
 .guided-advanced[open] .guided-field-grid { margin-top: 1rem; }
-.framework-choice-grid, .allocation-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
-.framework-choice, .allocation-mode-card { display: grid; align-content: start; gap: .55rem; min-height: 130px; padding: 1rem; border: 2px solid var(--color-text); border-radius: 16px; background: var(--color-surface); color: var(--color-text); text-align: left; cursor: pointer; }
+.framework-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; margin-top: .5rem; }
+.allocation-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.framework-choice { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 64px; padding: 1.15rem 1.35rem; border: 2.5px solid var(--color-text); border-radius: 16px; background: var(--color-surface); color: var(--color-text); text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.framework-choice strong { font-size: clamp(1.15rem, 1.35vw, 1.4rem); font-weight: 900; line-height: 1.25; letter-spacing: -0.01em; }
+.allocation-mode-card { display: grid; align-content: start; gap: .55rem; min-height: 130px; padding: 1rem; border: 2px solid var(--color-text); border-radius: 16px; background: var(--color-surface); color: var(--color-text); text-align: left; cursor: pointer; }
 .framework-choice.is-selected, .allocation-mode-card.is-selected { background: var(--color-yellow); color: var(--color-navy); box-shadow: 4px 4px 0 var(--color-text); }
 .allocation-mode-card.ai-mode.is-selected { background: var(--color-pink); }
 .framework-choice small { color: inherit; opacity: .72; }
