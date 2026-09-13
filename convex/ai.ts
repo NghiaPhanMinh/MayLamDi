@@ -382,8 +382,11 @@ export const generateProjectPlan = action({
   args: {
     projectId: v.id("projects"),
     brief: v.string(),
+    generationId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
+    const genTag = args.generationId ? `[${args.generationId}] ` : "";
+    console.info(`${genTag}generateProjectPlan received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
     const access = await ctx.runQuery(internal.aiUsage.getProjectAccess, { projectId: args.projectId });
     const brief = cleanBrief(args.brief);
     const context: AiPlanningContext = await ctx.runQuery(internal.aiContext.getProjectPlanningContext, {
@@ -393,13 +396,14 @@ export const generateProjectPlan = action({
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
     const apiKey = tierKey ?? environmentValue("OPENROUTER_API_KEY") ?? environmentValue("GEMINI_API_KEY");
     if (!apiKey) {
-      console.info("No AI API key connected on platform. Utilizing Smart Fallback Planner.");
+      console.info(`${genTag}No AI API key connected on platform. Utilizing Smart Fallback Planner.`);
       const fallbackPlan = generateSmartFallbackPlan(context, brief);
       return { ...fallbackPlan, source: "smart_template", generatedAt: Date.now() };
     }
 
     try {
       const { systemPrompt, userPrompt } = planningPrompts(brief, context);
+      console.info(`${genTag}Prompts constructed. User prompt length: ${userPrompt.length}`);
       const configuredTierModel = access.tier === "free"
         ? environmentValue("OPENROUTER_MODEL_FREE")
         : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
@@ -420,6 +424,7 @@ export const generateProjectPlan = action({
       });
 
       try {
+        console.info(`${genTag}Requesting plan from models:`, models);
         const result = await runFreeModelFallback({
           models,
           attempt: ({ model, mode }) => requestPlan({
@@ -433,12 +438,12 @@ export const generateProjectPlan = action({
             const plan = validateAiPlan(parseJsonResponse(content), context);
             const report = validatePlanAgainstBrief(plan, brief, context);
             if (!report.valid) {
-              console.warn("AI generated plan had semantic validation warnings:", report.errors);
+              console.warn(`${genTag}AI generated plan had semantic validation warnings:`, report.errors);
             }
             return plan;
           },
         });
-        console.info("AI planning succeeded", JSON.stringify({ model: result.modelUsed }));
+        console.info(`${genTag}AI planning succeeded`, JSON.stringify({ model: result.modelUsed }));
         await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
           usageId,
           model: result.modelUsed,
@@ -458,7 +463,7 @@ export const generateProjectPlan = action({
         throw innerError;
       }
     } catch (error) {
-      console.warn("AI generation encountered error, serving Smart Fallback Plan:", error);
+      console.warn(`${genTag}AI generation encountered error, serving Smart Fallback Plan:`, error);
       const fallbackPlan = generateSmartFallbackPlan(context, brief);
       return {
         ...fallbackPlan,
@@ -475,8 +480,11 @@ export const generateProjectPlanWithKey = action({
     brief: v.string(),
     apiKey: v.string(),
     model: v.string(),
+    generationId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
+    const genTag = args.generationId ? `[${args.generationId}] ` : "";
+    console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
     const apiKey = args.apiKey.trim();
     const model = args.model.trim();
     if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session OpenRouter key does not look valid.");
@@ -502,9 +510,10 @@ export const generateProjectPlanWithKey = action({
         model: response.modelUsed,
         success: true,
       });
+      console.info(`${genTag}Session BYOK AI request succeeded using model: ${response.modelUsed}`);
       return { ...value, source: "ai", generatedAt: Date.now() };
     } catch (error) {
-      console.warn("Session BYOK AI request failed, smoothly serving Smart Fallback Plan:", error);
+      console.warn(`${genTag}Session BYOK AI request failed, smoothly serving Smart Fallback Plan:`, error);
       const fallbackPlan = generateSmartFallbackPlan(context, brief);
       return {
         ...fallbackPlan,

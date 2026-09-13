@@ -64,7 +64,7 @@ export function AIPlanningAssistant({
     setSaveMessage(null);
     setRetryNotice(null);
     hasAutoStartedRef.current = false;
-  }, [workspace.project._id, workspace.project.description, workspace.project.title]);
+  }, [workspace.project._id]);
 
   useEffect(() => {
     trackEvent("ai_assistant_opened", {
@@ -95,13 +95,16 @@ export function AIPlanningAssistant({
   async function generateDraft(nextBrief: string) {
     const byok = getByokSession();
     let retryCount = 0;
+    const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.info(`[${generationId}] Submitting generation payload:`, { projectId: workspace.project._id, briefLength: nextBrief.length });
 
     while (true) {
       try {
         const result = byok
-          ? await generateProjectPlanWithKey({ projectId: workspace.project._id, brief: nextBrief, apiKey: byok.apiKey, model: byok.model })
-          : await generateProjectPlan({ projectId: workspace.project._id, brief: nextBrief });
+          ? await generateProjectPlanWithKey({ projectId: workspace.project._id, brief: nextBrief, apiKey: byok.apiKey, model: byok.model, generationId })
+          : await generateProjectPlan({ projectId: workspace.project._id, brief: nextBrief, generationId });
         setRetryNotice(null);
+        console.info(`[${generationId}] Received generation result:`, { taskCount: result.tasks.length, source: result.source });
         return result;
       } catch (caughtError) {
         if (byok || !isRetryablePlatformAiError(caughtError) || retryCount >= AI_RETRY_DELAYS_MS.length) throw caughtError;

@@ -205,4 +205,80 @@ describe("smartFallbackPlanner & 10-Point Output Validator", () => {
     expect(validatePlanAgainstBrief(planMkt, mktBrief, designThinkingFrameworkContext).valid).toBe(true);
     expect(validatePlanAgainstBrief(planAnim, animBrief, designThinkingFrameworkContext).valid).toBe(true);
   });
+
+  it("REGRESSION TEST 1 — Same Project with 3 Sequential Changing Briefs: current brief strictly overrides stored project title/description", () => {
+    // Project metadata initially stored as animation project
+    const staleAnimationProjectContext = {
+      ...mockContext,
+      project: {
+        projectId: "proj_anim_123",
+        title: "A3 Narrative Animation",
+        description: "2D animation short film project",
+        frameworkName: "Design Thinking",
+        startDate: "2026-09-01",
+        deadline: "2026-10-01",
+      },
+    };
+
+    // Gen 1: Animation brief
+    const gen1Brief = "Create a 3-minute 2D animated narrative short film in 3 weeks. Deliverables include screenplay script, character art direction, timed greyscale animatic, and final render.";
+    const gen1Plan = generateSmartFallbackPlan(staleAnimationProjectContext, gen1Brief);
+    const gen1Titles = gen1Plan.tasks.map((t) => t.title).join(" ");
+
+    expect(gen1Titles).toMatch(/screenplay|animatic|script/i);
+
+    // Gen 2: User changes brief to Mobile Study App in the same project!
+    const gen2Brief = "Build a mobile app for university students to track study sessions in 3 weeks. Deliverables include user journey navigation, mobile views state management, server API sync, and device store release audit.";
+    const gen2Plan = generateSmartFallbackPlan(staleAnimationProjectContext, gen2Brief);
+    const gen2Titles = gen2Plan.tasks.map((t) => t.title).join(" ");
+
+    console.log("\n--- REGRESSION TEST 1 (Gen 2 - Mobile App on Stale Animation Project) ---");
+    console.log("GEN 2 TASKS:", gen2Plan.tasks.map((t) => t.title));
+
+    // MUST NOT contain animation tasks
+    expect(gen2Titles).not.toMatch(/screenplay|animatic|storyboard|character design|film/i);
+    // MUST contain mobile app tasks
+    expect(gen2Titles).toMatch(/mobile|journey|navigation|state|api|store/i);
+
+    // Gen 3: User changes brief to Coffee Shop Marketing Campaign in the same project!
+    const gen3Brief = "Design a 4-week marketing campaign for a local coffee shop grand opening. Deliverables include audience persona research, campaign strategy, visual banners and ad deck, promotional video cut-downs, and performance analytics report.";
+    const gen3Plan = generateSmartFallbackPlan(staleAnimationProjectContext, gen3Brief);
+    const gen3Titles = gen3Plan.tasks.map((t) => t.title).join(" ");
+
+    console.log("\n--- REGRESSION TEST 1 (Gen 3 - Coffee Shop Campaign on Stale Animation Project) ---");
+    console.log("GEN 3 TASKS:", gen3Plan.tasks.map((t) => t.title));
+
+    // MUST NOT contain animation OR mobile app tasks
+    expect(gen3Titles).not.toMatch(/screenplay|animatic|storyboard|mobile navigation|flutter/i);
+    // MUST contain coffee shop campaign tasks
+    expect(gen3Titles).toMatch(/campaign|audience|ad deck|banners|analytics/i);
+  });
+
+  it("REGRESSION TEST 2 — Same Brief across Different Projects: brief is authoritative, stored project title/metadata never contaminates tasks", () => {
+    const projectA_SaaS = {
+      ...mockContext,
+      project: { projectId: "proj_saas", title: "Enterprise SaaS Analytics", description: "PostgreSQL database and API", frameworkName: "Agile", startDate: "2026-09-01", deadline: "2026-10-01" },
+    };
+
+    const projectB_Animation = {
+      ...mockContext,
+      project: { projectId: "proj_anim", title: "A3 Narrative Animation", description: "2D animated short film", frameworkName: "Agile", startDate: "2026-09-01", deadline: "2026-10-01" },
+    };
+
+    const sharedBrief = "Plan a 4-week promotional marketing campaign for a coffee shop opening. Deliverables include audience persona research, campaign strategy and value proposition, visual banners and ad deck, promotional video cut-downs, and performance analytics report.";
+
+    const planA = generateSmartFallbackPlan(projectA_SaaS, sharedBrief);
+    const planB = generateSmartFallbackPlan(projectB_Animation, sharedBrief);
+
+    const titlesA = planA.tasks.map((t) => t.title).join(" ");
+    const titlesB = planB.tasks.map((t) => t.title).join(" ");
+
+    // Both plans MUST generate coffee shop campaign tasks
+    expect(titlesA).toMatch(/campaign|audience|ad deck|banners/i);
+    expect(titlesB).toMatch(/campaign|audience|ad deck|banners/i);
+
+    // Neither plan MUST bleed stored project title domains
+    expect(titlesA).not.toMatch(/database|postgresql|api/i);
+    expect(titlesB).not.toMatch(/animatic|screenplay|storyboard/i);
+  });
 });

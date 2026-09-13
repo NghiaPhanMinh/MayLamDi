@@ -185,7 +185,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
 
   // 11. Fallback for general briefs
   if (deliverables.length === 0) {
-    const rawTitle = projectTitle.trim() || "Project";
+    const rawTitle = userBriefText.length > 0 ? "Project" : (projectTitle.trim() || "Project");
     deliverables.push(
       { title: `${rawTitle} — Requirement Spec & Scope Outline`, desc: "Detailed breakdown of project scope, milestone goals, and team roles.", skills: ["Planning"], weight: 2, diff: 2, effort: 4, offset: 3 },
       { title: `${rawTitle} — Core Component 1 Deliverable`, desc: "Build and verify the first primary deliverable specified in the brief.", skills: ["Execution"], weight: 4, diff: 3, effort: 8, offset: 8 },
