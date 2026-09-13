@@ -1,6 +1,16 @@
 import { v } from "convex/values";
 
 const BUILT_IN_FRAMEWORK_IDS = new Set([
+  "software-web-app",
+  "ui-ux-product-strategy",
+  "game-dev-3d-art",
+  "data-science-ai",
+  "creative-animation-video",
+  "architecture-interior",
+  "event-exhibition-mgmt",
+  "digital-marketing-growth",
+  "ecommerce-storefront",
+  "academic-research-thesis",
   "design-nonlinear",
   "marketing-campaign",
   "business-project",

@@ -1,6 +1,16 @@
 import { ConvexError } from "convex/values";
 
 const BUILT_IN_FRAMEWORK_IDS = new Set([
+  "software-web-app",
+  "ui-ux-product-strategy",
+  "game-dev-3d-art",
+  "data-science-ai",
+  "creative-animation-video",
+  "architecture-interior",
+  "event-exhibition-mgmt",
+  "digital-marketing-growth",
+  "ecommerce-storefront",
+  "academic-research-thesis",
   "design-nonlinear",
   "marketing-campaign",
   "business-project",
@@ -152,7 +162,7 @@ export function validateFrameworkSelection(input: {
       !input.builtInFrameworkId ||
       !BUILT_IN_FRAMEWORK_IDS.has(input.builtInFrameworkId)
     ) {
-      throw new ConvexError("Select a supported built-in framework template.");
+      throw new ConvexError("Select a supported project specialization.");
     }
   }
 
@@ -170,7 +180,7 @@ export function validateBuiltInFramework(
   phases?: ProjectPhaseInput[],
 ) {
   if (!builtInFrameworkId || !BUILT_IN_FRAMEWORK_IDS.has(builtInFrameworkId)) {
-    throw new ConvexError("Select a supported built-in framework template.");
+    throw new ConvexError("Select a supported project specialization.");
   }
   const validatedPhases = phases ? validateProjectPhases(phases) : [];
   return {
