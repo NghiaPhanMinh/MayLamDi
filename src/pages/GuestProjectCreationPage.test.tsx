@@ -25,7 +25,7 @@ describe("GuestProjectCreationPage", () => {
   it("shows the five-step project planner with a compact guest header", () => {
     render(<MemoryRouter><GuestProjectCreationPage /></MemoryRouter>);
 
-    expect(screen.getByRole("heading", { name: /select your project domain specialization/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /project specialization/i })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
     expect(screen.getByAltText("MayLamDi logo")).toHaveAttribute("width", "48");
     expect(screen.getByText("Plan first. Sign in when you create.")).toBeInTheDocument();

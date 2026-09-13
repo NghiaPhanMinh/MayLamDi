@@ -339,46 +339,25 @@ export function ProjectOnboarding({
       <form className="guided-card" onSubmit={handleCreate} ref={formRef}>
         {step === 1 ? <>
           <p className="kicker">Step 1 · Project Specialization</p>
-          <h1 className="display-heading" id="create-flow-title">Select your project domain specialization</h1>
-          <p className="guided-helper">Select your project specialization domain in English to structure workstreams and AI context.</p>
+          <h1 className="display-heading" id="create-flow-title">Project Specialization</h1>
+          <p className="guided-helper">Select your project specialization domain.</p>
           <div className="framework-choice-grid">
-            {BUILT_IN_FRAMEWORKS.slice(0, showAllFrameworks ? BUILT_IN_FRAMEWORKS.length : 3).map((framework, index) => (
+            {BUILT_IN_FRAMEWORKS.map((framework, index) => (
               <button
                 key={framework.id}
-                className={frameworkChoice === framework.id ? `framework-choice ${index === 0 ? "is-recommended " : ""}is-selected` : `framework-choice ${index === 0 ? "is-recommended" : ""}`}
+                className={frameworkChoice === framework.id ? "framework-choice is-selected" : "framework-choice"}
                 style={{ "--mld-framework-color": paletteColorAt(MAYLAMDI_FRAMEWORK_COLORS, index) } as CSSProperties}
                 type="button"
                 onClick={() => setFrameworkChoice(framework.id)}
               >
-                <strong>{index === 0 ? "Recommended · " : ""}{framework.name}</strong>
-                <span>{framework.description.split(".")[0]}.</span>
-                <small>{framework.phases.length} phases</small>
+                <strong>{framework.name}</strong>
                 {frameworkChoice === framework.id ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
               </button>
             ))}
-            <button
-              className={frameworkChoice === "custom" ? "framework-choice is-selected" : "framework-choice"}
-              style={{ "--mld-framework-color": paletteColorAt(MAYLAMDI_FRAMEWORK_COLORS, BUILT_IN_FRAMEWORKS.length) } as CSSProperties}
-              type="button"
-              onClick={() => setFrameworkChoice("custom")}
-            >
-              <strong>Custom Framework</strong><span>Name your own phase sequence.</span><small>Saved to the new room</small>
-              {frameworkChoice === "custom" ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
-            </button>
-            <button
-              className={frameworkChoice === "none" ? "framework-choice is-selected" : "framework-choice"}
-              style={{ "--mld-framework-color": paletteColorAt(MAYLAMDI_FRAMEWORK_COLORS, BUILT_IN_FRAMEWORKS.length + 1) } as CSSProperties}
-              type="button"
-              onClick={() => setFrameworkChoice("none")}
-            >
-              <strong>Simple / skip framework</strong><span>Use one flexible project phase.</span><small>Editable after creation</small>
-              {frameworkChoice === "none" ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
-            </button>
           </div>
-          {frameworkChoice === "custom" ? <div className="guided-field-grid custom-framework-quick-form"><label><span>Framework name</span><input value={customFrameworkName} onChange={(event) => setCustomFrameworkName(event.target.value)} /></label><label className="guided-field-wide"><span>Phase names, separated by commas</span><input value={customPhaseNames} onChange={(event) => setCustomPhaseNames(event.target.value)} /></label></div> : null}
         </> : null}
 
-        {step === 2 ? <><p className="kicker">Step 2 · Brief</p><h1 className="display-heading" id="create-flow-title">Tell us about your project</h1><div className="guided-field-grid"><label className="guided-field-wide brief-primary"><span>Project brief</span><small>Paste your assignment requirements or project goals (up to 8,000 characters).</small><textarea required minLength={20} maxLength={8000} value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="Paste your full assignment requirements, submission criteria, or project brief here..." /><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", fontWeight: 700, color: brief.length > 8000 || (brief.length > 0 && brief.length < 20) ? "var(--color-orange, #feaa01)" : "var(--color-muted)", marginTop: "0.35rem" }}><span>Paste assignment requirements, deliverables, or goals (20 - 8,000 chars).</span><span>{brief.length} / 8,000 chars</span></div></label><label><span>Project name</span><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label className="deadline-inline-field"><span>Deadline</span><div className="deadline-input-preset-row"><input required type="date" min={dateAfter(1)} value={deadline} onChange={(event) => { setDeadline(event.target.value); setDraftDueDate(event.target.value); }} /><div className="deadline-preset-buttons"><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(7))}>7 days</button><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(14))}>14 days</button></div></div></label><label><span>Team size</span><select value={targetMemberCount} onChange={(event) => setTargetMemberCount(event.target.value)}>{Array.from({ length: 10 }, (_, index) => index + 1).map((size) => <option key={size} value={size}>{size === 1 ? "1 person" : `${size} people`}</option>)}</select></label><label><span>Framework</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}><option value="none">Simple project</option><option value="custom">Custom Framework</option>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}</select></label></div></> : null}
+        {step === 2 ? <><p className="kicker">Step 2 · Brief</p><h1 className="display-heading" id="create-flow-title">Tell us about your project</h1><div className="guided-field-grid"><label className="guided-field-wide brief-primary"><span>Project brief</span><small>Paste your assignment requirements or project goals (up to 8,000 characters).</small><textarea required minLength={20} maxLength={8000} value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="Paste your full assignment requirements, submission criteria, or project brief here..." /><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", fontWeight: 700, color: brief.length > 8000 || (brief.length > 0 && brief.length < 20) ? "var(--color-orange, #feaa01)" : "var(--color-muted)", marginTop: "0.35rem" }}><span>Paste assignment requirements, deliverables, or goals (20 - 8,000 chars).</span><span>{brief.length} / 8,000 chars</span></div></label><label><span>Project name</span><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label className="deadline-inline-field"><span>Deadline</span><div className="deadline-input-preset-row"><input required type="date" min={dateAfter(1)} value={deadline} onChange={(event) => { setDeadline(event.target.value); setDraftDueDate(event.target.value); }} /><div className="deadline-preset-buttons"><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(7))}>7 days</button><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(14))}>14 days</button></div></div></label><label><span>Team size</span><select value={targetMemberCount} onChange={(event) => setTargetMemberCount(event.target.value)}>{Array.from({ length: 10 }, (_, index) => index + 1).map((size) => <option key={size} value={size}>{size === 1 ? "1 person" : `${size} people`}</option>)}</select></label><label><span>Specialization</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}</select></label></div></> : null}
 
         {step === 3 ? <><p className="kicker">Step 3 · Plan</p><h1 className="display-heading" id="create-flow-title">Build your project plan</h1><div className="allocation-mode-grid"><button className={taskCreationMode === "ai" ? "allocation-mode-card ai-mode is-recommended is-selected" : "allocation-mode-card ai-mode is-recommended"} type="button" onClick={() => setTaskCreationMode("ai")}><strong>AI-assisted plan · Recommended</strong><span>Start with an editable plan of phases, tasks, descriptions, skills, weights, and due dates. Generate it after the room opens.</span></button><button className={taskCreationMode === "manual" ? "allocation-mode-card is-selected" : "allocation-mode-card"} type="button" onClick={() => setTaskCreationMode("manual")}><strong>Build manually</strong><span>Create the initial task list yourself with the same review and ownership controls.</span></button></div>{taskCreationMode === "manual" ? <section className="onboarding-task-builder"><div className="project-field-grid"><label className="project-field-wide"><span>Title</span><input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label><label className="project-field-wide"><span>Description</span><textarea value={draftDescription} onChange={(event) => setDraftDescription(event.target.value)} /></label><label><span>Phase <small>Groups related tasks into a stage of the project.</small></span><select value={effectiveDraftPhaseKey} onChange={(event) => setDraftPhaseKey(event.target.value)}>{phaseChoices.map((phase) => <option key={phase.key} value={phase.key}>{phase.name}</option>)}</select></label><label><span>Owner</span><select value={draftOwnerMode} onChange={(event) => setDraftOwnerMode(event.target.value as DraftTask["ownerMode"])}><option value="creator">Creator</option><option value="open">Open for claiming</option><option value="unassigned">Unassigned until allocation</option></select></label><label><span>Task Weight <small>How much this task contributes to overall project progress.</small></span><input type="number" min="0.5" max="100" step="0.5" value={draftWeight} onChange={(event) => setDraftWeight(event.target.value)} /></label><label><span>Due Date</span><input type="date" max={deadline} value={draftDueDate} onChange={(event) => setDraftDueDate(event.target.value)} /></label><label className="project-field-wide"><span>Skills</span><input value={draftSkills} onChange={(event) => setDraftSkills(event.target.value)} placeholder="Figma, research" /></label><label><span>Peer Reviewer</span><select disabled><option>Owner chooses later</option></select></label></div><button className="quiet-button" type="button" onClick={addDraftTask}>Add to task list</button><div className="onboarding-draft-list">{draftTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{phaseChoices.find((phase) => phase.key === task.phaseKey)?.name} · due {task.dueDate} · weight {task.weight}</small></div><button type="button" className="text-link" onClick={() => setDraftTasks((current) => current.filter((item) => item.id !== task.id))}>Remove</button></article>)}</div></section> : <p className="ai-safety-note">After the room is created, Project Plan opens with Generate AI Project Plan as the primary action. If providers are busy, build the plan manually.</p>}</> : null}
 
@@ -388,11 +367,7 @@ export function ProjectOnboarding({
 
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <div className="guided-form-actions">
-          {step === 1 ? (
-            <button className="secondary-button" type="button" onClick={() => setShowAllFrameworks((current) => !current)}>
-              {showAllFrameworks ? "Show recommended" : "View all frameworks"}
-            </button>
-          ) : <span />}
+          <span />
           <button className="primary-button guided-primary" type="submit" disabled={isSaving}>
             {isSaving ? (currentProfileId ? "Creating project…" : "Opening Google…") : step === 5 ? "Create Project" : step === 2 ? "Continue to Project Plan" : step === 3 ? "Continue to Allocation" : step === 4 ? "Review Project" : "Continue"}
           </button>

@@ -26,7 +26,7 @@ describe("ProjectOnboarding", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /select your project domain specialization/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /project specialization/i })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
       "1Specialization",
       "2Brief",
@@ -141,7 +141,7 @@ describe("ProjectOnboarding", () => {
     expect(screen.getByRole("button", { name: /join room/i })).toBeInTheDocument();
   });
 
-  it("keeps every framework colourful while selection stays independently visible", () => {
+  it("keeps every specialization colourful while selection stays independently visible", () => {
     const { container } = render(
       <ProjectOnboarding
         mode="create"
@@ -151,10 +151,9 @@ describe("ProjectOnboarding", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /view all frameworks/i }));
     const choices = [...container.querySelectorAll<HTMLElement>(".framework-choice")];
 
-    expect(choices).toHaveLength(12);
+    expect(choices).toHaveLength(10);
     expect(choices[0]).toHaveClass("is-selected");
     expect(choices[0].querySelector(".framework-selected-mark")).toHaveTextContent("✓");
   });
