@@ -33,7 +33,7 @@ function dateAfter(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-const STEP_LABELS = ["Structure", "Brief", "Plan", "Allocate", "Create"];
+const STEP_LABELS = ["Specialization", "Brief", "Plan", "Allocate", "Create"];
 
 export function ProjectOnboarding({
   mode,
@@ -103,7 +103,7 @@ export function ProjectOnboarding({
         phases: [{ key: "project-work", name: "Project work", description: "Flexible project work.", canOverlap: true, dependencyKeys: [] as string[], reviewCheckpoint: true }],
       };
     }
-    const framework = BUILT_IN_FRAMEWORKS.find((item) => item.id === frameworkChoice)!;
+    const framework = BUILT_IN_FRAMEWORKS.find((item) => item.id === frameworkChoice) ?? BUILT_IN_FRAMEWORKS[0];
     return {
       type: "built_in" as const,
       id: framework.id,
@@ -316,7 +316,7 @@ export function ProjectOnboarding({
     );
   }
 
-  const stepLabels = ["Structure", "Brief", "Plan", "Allocate", "Create"];
+  const stepLabels = ["Specialization", "Brief", "Plan", "Allocate", "Create"];
   return (
     <section className="guided-flow" aria-labelledby="create-flow-title">
       <button
@@ -338,9 +338,9 @@ export function ProjectOnboarding({
       <ol className="guided-stepper" aria-label="Create project progress">{stepLabels.map((label, index) => <li key={label} className={step === index + 1 ? "is-current" : step > index + 1 ? "is-complete" : ""}><span>{index + 1}</span><small>{label}</small></li>)}</ol>
       <form className="guided-card" onSubmit={handleCreate} ref={formRef}>
         {step === 1 ? <>
-          <p className="kicker">Step 1 · Structure</p>
-          <h1 className="display-heading" id="create-flow-title">Choose your project structure</h1>
-          <p className="guided-helper">Choose how this project will be organised into phases.</p>
+          <p className="kicker">Step 1 · Project Specialization</p>
+          <h1 className="display-heading" id="create-flow-title">Select your project domain specialization</h1>
+          <p className="guided-helper">Select your project specialization domain in English to structure workstreams and AI context.</p>
           <div className="framework-choice-grid">
             {BUILT_IN_FRAMEWORKS.slice(0, showAllFrameworks ? BUILT_IN_FRAMEWORKS.length : 3).map((framework, index) => (
               <button

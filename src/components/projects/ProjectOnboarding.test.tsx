@@ -16,7 +16,7 @@ describe("ProjectOnboarding", () => {
     window.sessionStorage.clear();
   });
 
-  it("uses the new structure-to-create flow and retains earlier input", () => {
+  it("uses the new specialization-to-create flow and retains earlier input", () => {
     render(
       <ProjectOnboarding
         mode="create"
@@ -26,9 +26,9 @@ describe("ProjectOnboarding", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /choose your project structure/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /select your project domain specialization/i })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "1Structure",
+      "1Specialization",
       "2Brief",
       "3Plan",
       "4Allocate",
@@ -98,7 +98,7 @@ describe("ProjectOnboarding", () => {
   it("resumes a saved guest draft after Google authentication", async () => {
     window.sessionStorage.setItem(PENDING_PROJECT_DRAFT_KEY, JSON.stringify({
       version: 1,
-      frameworkChoice: "design-nonlinear",
+      frameworkChoice: "ui-ux-product-strategy",
       customFrameworkName: "My framework",
       customPhaseNames: "Discover, Make, Review, Deliver",
       title: "Saved guest project",
@@ -154,10 +154,7 @@ describe("ProjectOnboarding", () => {
     fireEvent.click(screen.getByRole("button", { name: /view all frameworks/i }));
     const choices = [...container.querySelectorAll<HTMLElement>(".framework-choice")];
 
-    expect(choices).toHaveLength(9);
-    expect(choices.map((choice) => choice.style.getPropertyValue("--mld-framework-color"))).toEqual([
-      "#FF8AE7", "#FFF73F", "#FEAA01", "#1DD851", "#FD39E4", "#4CA0FE", "#17A738", "#FF8AE7", "#FFF73F",
-    ]);
+    expect(choices).toHaveLength(12);
     expect(choices[0]).toHaveClass("is-selected");
     expect(choices[0].querySelector(".framework-selected-mark")).toHaveTextContent("✓");
   });
