@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import {
   validateAiPlan,
+  validatePlanAgainstBrief,
   type ValidatedAiPlan,
 } from "./lib/aiPlanValidation";
 import {
@@ -428,7 +429,14 @@ export const generateProjectPlan = action({
             systemPrompt,
             userPrompt,
           }),
-          validate: (content) => validateAiPlan(parseJsonResponse(content), context),
+          validate: (content) => {
+            const plan = validateAiPlan(parseJsonResponse(content), context);
+            const report = validatePlanAgainstBrief(plan, brief, context);
+            if (!report.valid) {
+              console.warn("AI generated plan had semantic validation warnings:", report.errors);
+            }
+            return plan;
+          },
         });
         console.info("AI planning succeeded", JSON.stringify({ model: result.modelUsed }));
         await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {

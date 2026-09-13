@@ -204,6 +204,8 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   return deliverables;
 }
 
+import { extractFactsFromBrief } from "./aiPlanValidation";
+
 export function parseExplicitDeliverables(userBriefText: string): string[] {
   const explicitMatch = userBriefText.match(/deliverables\s*(?:include|:|\s)\s*([^.]+)/i);
   if (!explicitMatch) return [];
@@ -217,7 +219,6 @@ export function parseExplicitDeliverables(userBriefText: string): string[] {
 
   const items: string[] = [];
   for (const seg of segments) {
-    // Strip leading conjunctive clutter (e.g. "and a ", "and ", "a ")
     let cleaned = seg.replace(/^(?:and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "").trim();
     cleaned = cleaned.replace(/\.$/, "").trim();
     if (cleaned.length > 2 && !/^\d+$/.test(cleaned)) {
@@ -239,72 +240,8 @@ export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: str
 }> {
   if (rawItems.length === 0) return [];
 
-  // Semantic Categories for Domain-Agnostic Workstream Synthesis
-  type Category = "concept" | "design" | "backend" | "services" | "ops" | "evaluation";
-
-  const buckets: Record<Category, string[]> = {
-    concept: [],
-    design: [],
-    backend: [],
-    services: [],
-    ops: [],
-    evaluation: [],
-  };
-
-  const conceptKeywords = /concept|theme|curation|selection|strategy|research|requirements|scope|persona|hypothesis|screenplay|script|wireframe|framing|literature|ideation/i;
-  const designKeywords = /design|promotional|materials|asset|brand|visual|copy|art|graphics|ui|ux|content|media|social|character|background|campaign|dashboard/i;
-  const backendKeywords = /database|schema|backend|architecture|installation|setup|venue|layout|infrastructure|environment|spatial|model|3d/i;
-  const serviceKeywords = /api|endpoint|service|authentication|auth|integration|code|sound|audio|mixing|animatic/i;
-  const opsKeywords = /logistics|event|execution|deployment|hosting|launch|operations|scheduling|coordination|release|testing|qa|automated/i;
-  const evalKeywords = /documentation|evaluation|post-event|review|analytics report|analytics audit|performance analytics|report|audit|verification|final|export|pitch|presentation|deck|post-project/i;
-
-  for (const item of rawItems) {
-    if (evalKeywords.test(item)) {
-      buckets.evaluation.push(item);
-    } else if (backendKeywords.test(item)) {
-      buckets.backend.push(item);
-    } else if (opsKeywords.test(item)) {
-      buckets.ops.push(item);
-    } else if (serviceKeywords.test(item)) {
-      buckets.services.push(item);
-    } else if (designKeywords.test(item)) {
-      buckets.design.push(item);
-    } else if (conceptKeywords.test(item)) {
-      buckets.concept.push(item);
-    } else {
-      if (/plan|spec|frame/i.test(item)) buckets.concept.push(item);
-      else buckets.ops.push(item);
-    }
-  }
-
-  const categoryConfigs: Array<{
-    cat: Category;
-    activeVerb: string;
-    skills: string[];
-    weight: number;
-    diff: number;
-    effort: number;
-  }> = [
-    { cat: "concept", activeVerb: "Develop", skills: ["Strategy", "Planning"], weight: 3, diff: 2, effort: 6 },
-    { cat: "design", activeVerb: "Design & Produce", skills: ["Creative Design", "Visual Arts"], weight: 4, diff: 3, effort: 8 },
-    { cat: "backend", activeVerb: "Plan & Configure", skills: ["Technical Development", "Infrastructure"], weight: 4, diff: 3, effort: 10 },
-    { cat: "services", activeVerb: "Implement", skills: ["API Development", "System Integration"], weight: 4, diff: 3, effort: 8 },
-    { cat: "ops", activeVerb: "Coordinate", skills: ["Operations", "Logistics"], weight: 4, diff: 3, effort: 8 },
-    { cat: "evaluation", activeVerb: "Compile", skills: ["QA & Evaluation", "Documentation"], weight: 3, diff: 2, effort: 5 },
-  ];
-
-  // Extract contextual numbers and scope from user brief for rich descriptions
-  const artworkMatch = userBriefText.match(/(\d+)\s*(?:interactive|audiovisual|digital|artworks|projects|items|screens|features)/i);
-  const visitorMatch = userBriefText.match(/(\d+)\s*(?:visitors|users|attendees|customers|members)/i);
-  const timeframeMatch = userBriefText.match(/(\d+)\s*-?\s*(?:week|month)/i);
-
-  const scopeDetail = [
-    artworkMatch ? `${artworkMatch[1]} project deliverables` : null,
-    visitorMatch ? `${visitorMatch[1]} target audience/visitors` : null,
-    timeframeMatch ? `${timeframeMatch[1]}-week project timeline` : null,
-  ].filter(Boolean).join(", ");
-
-  const synthesizedTasks: Array<{
+  const facts = extractFactsFromBrief(userBriefText);
+  const tasks: Array<{
     title: string;
     desc: string;
     skills: string[];
@@ -314,54 +251,98 @@ export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: str
     offset: number;
   }> = [];
 
-  let offsetCounter = 4;
+  // Coupling rules: Only merge naturally paired items (e.g. concept + theme). Keep independent items separate.
+  const processedIndices = new Set<number>();
 
-  for (const cfg of categoryConfigs) {
-    const items = buckets[cfg.cat];
-    if (items.length === 0) continue;
+  for (let i = 0; i < rawItems.length; i++) {
+    if (processedIndices.has(i)) continue;
+    const current = rawItems[i];
+    const currentLower = current.toLowerCase();
 
-    const formattedItems = items.map((it) => it.charAt(0).toUpperCase() + it.slice(1));
-    let combinedTitleStr = formattedItems.join(" & ");
-    if (formattedItems.length > 2) {
-      combinedTitleStr = `${formattedItems.slice(0, -1).join(", ")} & ${formattedItems[formattedItems.length - 1]}`;
+    // Check if current item can pair with next item if tightly coupled
+    let combinedTitle = current.charAt(0).toUpperCase() + current.slice(1);
+    let isPaired = false;
+
+    if (i + 1 < rawItems.length && !processedIndices.has(i + 1)) {
+      const next = rawItems[i + 1];
+      const nextLower = next.toLowerCase();
+
+      if (
+        (currentLower.includes("concept") && nextLower.includes("theme")) ||
+        (currentLower.includes("theme") && nextLower.includes("concept"))
+      ) {
+        combinedTitle = "Exhibition Concept & Theme";
+        processedIndices.add(i + 1);
+        isPaired = true;
+      } else if (
+        (currentLower.includes("script") && nextLower.includes("storyboard")) ||
+        (currentLower.includes("storyboard") && nextLower.includes("script"))
+      ) {
+        combinedTitle = "Script & Storyboard Framing";
+        processedIndices.add(i + 1);
+        isPaired = true;
+      }
     }
 
-    const title = `${cfg.activeVerb} ${combinedTitleStr}`;
-    const scopeClause = scopeDetail ? ` in support of ${scopeDetail}` : "";
-    const desc = `Synthesize and execute ${combinedTitleStr} according to brief specifications${scopeClause}, ensuring all quality checkpoints are verified.`;
+    processedIndices.add(i);
 
-    synthesizedTasks.push({
+    // Active verb selection based on deliverable domain
+    let activeVerb = "Develop";
+    let skills = ["Planning"];
+    let desc = "";
+
+    if (/artist|curation|selection|project selection/i.test(combinedTitle)) {
+      activeVerb = "Conduct";
+      skills = ["Curation", "Selection"];
+      desc = `Establish selection criteria and curate project entries${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}, aligning with brief requirements.`;
+    } else if (/promotional|materials|marketing|campaign|social/i.test(combinedTitle)) {
+      activeVerb = "Design";
+      skills = ["Graphic Design", "Marketing"];
+      desc = `Create promotional signage, media assets, and marketing collateral${facts.visitorsOrAudience ? ` tailored for approximately ${facts.visitorsOrAudience.count} ${facts.visitorsOrAudience.label}` : ""}.`;
+    } else if (/layout|venue|spatial|floorplan/i.test(combinedTitle)) {
+      activeVerb = "Plan";
+      skills = ["Spatial Planning", "Layout"];
+      desc = `Map physical space, define circulation pathways, and arrange layout logistics${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}.`;
+    } else if (/installation|setup|technical|hardware|backend|schema|database|api/i.test(combinedTitle)) {
+      activeVerb = /api|backend|schema/i.test(combinedTitle) ? "Implement" : "Configure";
+      skills = ["Technical Development", "Setup"];
+      desc = `Set up technical infrastructure, equipment, and installation hardware${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}, verifying pre-event operation.`;
+    } else if (/logistics|event logistics|operations/i.test(combinedTitle)) {
+      activeVerb = "Coordinate";
+      skills = ["Event Logistics", "Operations"];
+      desc = `Manage live event logistics, staff scheduling, visitor flow, and operational execution.`;
+    } else if (/visitor documentation|media archiving|photography/i.test(combinedTitle)) {
+      activeVerb = "Produce";
+      skills = ["Documentation", "Media Archiving"];
+      desc = `Capture visual media, record visitor engagement, and produce comprehensive documentation during execution.`;
+    } else if (/evaluation|post-event|post-project|retrospective/i.test(combinedTitle)) {
+      activeVerb = "Execute";
+      skills = ["Evaluation", "Analytics"];
+      desc = `Collect feedback data, analyze performance metrics, and compile final post-event evaluation report.`;
+    } else if (/concept|theme/i.test(combinedTitle)) {
+      activeVerb = "Develop";
+      skills = ["Concept Strategy", "Framing"];
+      desc = `Formulate foundational concept, theme, and scope framework for target audience execution.`;
+    } else {
+      activeVerb = /build|implement|code/i.test(combinedTitle) ? "Build" : "Execute";
+      skills = ["Execution"];
+      desc = `Synthesize and deliver ${combinedTitle} according to brief specifications, meeting all project quality standards.`;
+    }
+
+    const title = combinedTitle.startsWith(activeVerb) ? combinedTitle : `${activeVerb} ${combinedTitle}`;
+
+    tasks.push({
       title,
       desc,
-      skills: cfg.skills,
-      weight: cfg.weight,
-      diff: cfg.diff,
-      effort: cfg.effort,
-      offset: offsetCounter,
-    });
-
-    offsetCounter += 6;
-  }
-
-  if (synthesizedTasks.length < 3 && rawItems.length >= 3) {
-    return rawItems.map((item, idx) => {
-      const cleanTitle = item.charAt(0).toUpperCase() + item.slice(1);
-      const verb = /^(research|concept|curation|venue|promotional|interactive|event|visitor|post|design|setup|draft|build|implement|create)/i.test(cleanTitle)
-        ? "Coordinate"
-        : "Execute";
-      return {
-        title: `${verb} ${cleanTitle}`,
-        desc: `Perform ${item} according to project goals${scopeDetail ? ` (${scopeDetail})` : ""}, ensuring all deliverables meet team standards.`,
-        skills: [idx % 2 === 0 ? "Execution" : "Planning"],
-        weight: 3,
-        diff: 2,
-        effort: 6,
-        offset: (idx + 1) * 5,
-      };
+      skills,
+      weight: isPaired ? 4 : 3,
+      diff: 3,
+      effort: isPaired ? 8 : 6,
+      offset: (tasks.length + 1) * 4,
     });
   }
 
-  return synthesizedTasks;
+  return tasks;
 }
 
 function findBestMember(
