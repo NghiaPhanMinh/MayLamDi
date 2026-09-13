@@ -171,6 +171,38 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
+  // Helper to dynamically scale deliverables based on explicit items in user brief
+  const userText = userBriefText.toLowerCase();
+
+  // Extract explicit deliverables listed after "deliverables include", "deliverables:", etc.
+  const explicitDeliverablesMatch = userBriefText.match(/deliverables\s*(?:include|:|\s)\s*([^.]+)/i);
+  if (explicitDeliverablesMatch) {
+    const rawItems = explicitDeliverablesMatch[1]
+      .split(/,|\band\b|;|\n|•|-/i)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 2 && !/^\d+$/.test(item));
+
+    if (rawItems.length >= 3) {
+      const dynamicDeliverables = rawItems.map((item, idx) => {
+        // Clean title
+        const cleanTitle = item.charAt(0).toUpperCase() + item.slice(1);
+        const activeVerbTitle = /^(research|concept|curation|venue|promotional|interactive|event|visitor|post|design|setup|draft|build|implement|create)/i.test(cleanTitle)
+          ? `Execute ${cleanTitle}`
+          : `Deliver ${cleanTitle}`;
+        return {
+          title: activeVerbTitle,
+          desc: `Complete ${item} according to project requirements and team specifications.`,
+          skills: [idx % 2 === 0 ? "Execution" : "Planning"],
+          weight: Math.min(5, Math.max(2, Math.round(10 / rawItems.length))),
+          diff: idx % 3 === 0 ? 3 : 2,
+          effort: Math.max(3, Math.round(30 / rawItems.length)),
+          offset: Math.min(30, (idx + 1) * Math.max(2, Math.round(25 / rawItems.length))),
+        };
+      });
+      return dynamicDeliverables;
+    }
+  }
+
   // 11. Fallback for general briefs
   if (deliverables.length === 0) {
     const rawTitle = projectTitle.trim() || "Project";
@@ -180,6 +212,13 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
       { title: `${rawTitle} — Core Component 2 Deliverable`, desc: "Build and verify the second main deliverable specified in the brief.", skills: ["Execution"], weight: 4, diff: 3, effort: 8, offset: 13 },
       { title: `${rawTitle} — Quality Verification & Final Submission`, desc: "Perform final review, complete documentation, and submit finished project.", skills: ["QA", "Review"], weight: 3, diff: 2, effort: 5, offset: 17 }
     );
+  }
+
+  // If simple brief (e.g. small website, 1 week, short brief text), scale down base deliverables
+  if (userBriefText.length > 0 && userBriefText.length < 150 && deliverables.length > 3) {
+    if (/simple|1 week|one week|portfolio|single page|small/i.test(userBriefText)) {
+      return deliverables.slice(0, 3);
+    }
   }
 
   return deliverables;

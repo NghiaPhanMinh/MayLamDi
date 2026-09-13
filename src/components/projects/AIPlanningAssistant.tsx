@@ -57,6 +57,16 @@ export function AIPlanningAssistant({
   }, [isGenerating, onGeneratingChange]);
 
   useEffect(() => {
+    setBrief(workspace.project.description || workspace.project.title);
+    setDraft(null);
+    setError(null);
+    setAdjustment("");
+    setSaveMessage(null);
+    setRetryNotice(null);
+    hasAutoStartedRef.current = false;
+  }, [workspace.project._id, workspace.project.description, workspace.project.title]);
+
+  useEffect(() => {
     trackEvent("ai_assistant_opened", {
       project_status: workspace.project.status,
     });

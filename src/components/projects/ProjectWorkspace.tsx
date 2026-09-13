@@ -681,6 +681,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
 
           {(workspace.tasks.length > 0 || shouldRunAi) && (
             <AIPlanningAssistant
+              key={workspace.project._id}
               workspace={workspace}
               onUseTask={useAiTask}
               autoStart={workspace.tasks.length === 0 && shouldRunAi}

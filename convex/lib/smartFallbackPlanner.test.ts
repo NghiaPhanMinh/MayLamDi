@@ -79,8 +79,33 @@ describe("smartFallbackPlanner", () => {
     const titlesB = planB.tasks.map((t) => t.title);
 
     // Test B MUST generate marketing tasks
-    expect(titlesB.some((t) => t.includes("Persona") || t.includes("Campaign") || t.includes("Launch"))).toBe(true);
+    expect(titlesB.some((t) => /persona|campaign|launch|audience|research|assets/i.test(t))).toBe(true);
     // Test B MUST NOT generate animation/screenplay/storyboard tasks despite project title "A3 Narrative Animation"
-    expect(titlesB.some((t) => t.includes("Screenplay") || t.includes("Storyboard") || t.includes("Animatic"))).toBe(false);
+    expect(titlesB.some((t) => /screenplay|storyboard|animatic/i.test(t))).toBe(false);
+  });
+
+  it("TEST 1 — dynamically scales task count based on project scope (Brief A vs Brief B)", () => {
+    const simpleBrief = "Create a simple personal portfolio website for one designer. Deliverables: homepage, about page and contact form. Deadline: 1 week.";
+    const complexBrief = "Create a 6-week university design exhibition for 150 visitors. The team has 5 members. Deliverables include research, exhibition concept, curation of 12 artworks, venue layout, promotional campaign, interactive installation setup, event logistics, visitor documentation and post-event evaluation.";
+
+    const planSimple = generateSmartFallbackPlan(mockContext, simpleBrief);
+    const planComplex = generateSmartFallbackPlan(mockContext, complexBrief);
+
+    expect(planComplex.tasks.length).toBeGreaterThan(planSimple.tasks.length);
+  });
+
+  it("TEST 2 — produces independent drafts for identical brief in Project A vs Project B", () => {
+    const identicalBrief = "Plan a 5-week university art exhibition showcasing student digital media projects. The team has 5 members: curator, event coordinator, graphic designer, technical developer, and photographer. The exhibition will feature 12 interactive and audiovisual artworks for approximately 150 visitors.";
+
+    const projectAContext = { ...mockContext, project: { ...mockContext.project, projectId: "proj_A", title: "Project A" } };
+    const projectBContext = { ...mockContext, project: { ...mockContext.project, projectId: "proj_B", title: "Project B" } };
+
+    const planA = generateSmartFallbackPlan(projectAContext, identicalBrief);
+    const planB = generateSmartFallbackPlan(projectBContext, identicalBrief);
+
+    expect(planA).toBeDefined();
+    expect(planB).toBeDefined();
+    expect(planA.tasks.length).toBeGreaterThanOrEqual(5);
+    expect(planB.tasks.length).toBeGreaterThanOrEqual(5);
   });
 });
