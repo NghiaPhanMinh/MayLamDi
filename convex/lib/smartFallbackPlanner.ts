@@ -28,6 +28,18 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
 }> {
   const userBriefText = brief.trim();
   const text = (userBriefText.length > 0 ? userBriefText : projectTitle).toLowerCase();
+
+  // 0. FIRST: Try extracting explicit deliverables / clauses directly from user brief
+  if (userBriefText.length > 0) {
+    const explicitItems = parseExplicitDeliverables(userBriefText);
+    if (explicitItems.length >= 2) {
+      const synthesized = synthesizeWorkstreamTasks(explicitItems, userBriefText);
+      if (synthesized.length >= 2) {
+        return synthesized;
+      }
+    }
+  }
+
   const deliverables: Array<{
     title: string;
     desc: string;
@@ -50,7 +62,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 2. Match Animation / Film / Narrative Briefs (using strict word boundaries)
-  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|greyscale|video|film|movie|3d animation|2d animation/.test(text)) {
+  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|greyscale|video|film|movie|3d animation|2d animation|phim|kịch bản|hoạt hình/.test(text)) {
     deliverables.push(
       {
         title: "Script & Narrative Screenplay",
@@ -86,7 +98,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 3. Match Marketing & Campaign Briefs
-  if (deliverables.length === 0 && /campaign|marketing|brand|advertising|\bpr\b|social media|promotional|launch strategy/.test(text)) {
+  if (deliverables.length === 0 && /campaign|marketing|brand|advertising|\bpr\b|social media|promotional|launch strategy|chiến dịch|quảng cáo|quán|cà phê|coffee|thương hiệu/.test(text)) {
     deliverables.push(
       { title: "Audience Persona & Competitor Benchmark Matrix", desc: "Research target demographic, analyze competitor positioning, and define audience personas.", skills: ["Market Research", "Audience Insights"], weight: 3, diff: 2, effort: 6, offset: 4 },
       { title: "Campaign Strategy & Value Proposition Statement", desc: "Formulate central campaign theme, key message framework, and communication channels.", skills: ["Campaign Strategy", "Copywriting"], weight: 4, diff: 3, effort: 8, offset: 8 },
@@ -97,7 +109,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 4. Match Business & Strategy Briefs
-  if (deliverables.length === 0 && /business|startup|opportunity|market|business model|finance|pitch|revenue|investor|operating/.test(text)) {
+  if (deliverables.length === 0 && /business|startup|opportunity|market|business model|finance|pitch|revenue|investor|operating|kinh doanh|tài chính|đầu tư/.test(text)) {
     deliverables.push(
       { title: "Market Problem & Value Opportunity Definition", desc: "Analyze market gap, stakeholder needs, and define the core problem statement.", skills: ["Business Analysis", "Problem Framing"], weight: 3, diff: 2, effort: 6, offset: 4 },
       { title: "Customer Validation & Competitor Landscape Matrix", desc: "Conduct target customer interviews, review competitors, and map market fit.", skills: ["Market Research", "Customer Insights"], weight: 4, diff: 3, effort: 8, offset: 8 },
@@ -107,8 +119,8 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // 5. Match Architecture & Spatial Design Briefs
-  if (deliverables.length === 0 && /architecture|spatial|building|site|floorplan|blueprint|landscape|interior|zoning/.test(text)) {
+  // 5. Match Architecture & Spatial Design Briefs (Strict word boundaries)
+  if (deliverables.length === 0 && /\barchitecture\b|\bspatial design\b|\bfloorplan\b|\bblueprint\b|\bkiến trúc\b|\bbản vẽ mặt bằng\b|\bcông trình xây dựng\b/.test(text)) {
     deliverables.push(
       { title: "Site Context & Topographical Analysis Report", desc: "Document site contours, environmental orientation, regulatory constraints, and circulation.", skills: ["Site Analysis", "Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
       { title: "Spatial Programme & Adjacency Diagram Spec", desc: "Define space requirements, user flow adjacencies, and volumetric zoning.", skills: ["Spatial Design", "Architectural Programming"], weight: 4, diff: 3, effort: 8, offset: 8 },
@@ -118,8 +130,8 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // 6. Match Creative & UX Design Briefs
-  if (deliverables.length === 0 && /design|prototype|wireframe|user journey|usability|figma|interface|creative|user experience/.test(text)) {
+  // 6. Match Creative & UX Design Briefs (Strict word boundaries)
+  if (deliverables.length === 0 && /\bfigma\b|\bwireframe\b|\bui\/ux\b|\bux design\b|\buser experience\b|\bgiao diện\b|\bgiao diện ứng dụng\b/.test(text)) {
     deliverables.push(
       { title: "User Persona & Journey Map Discovery", desc: "Interview target users, map behavioral pain points, and define design principles.", skills: ["UX Research", "Persona Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
       { title: "Low-Fidelity Wireframes & Information Architecture", desc: "Sketch layout wireframes, navigation taxonomy, and component hierarchy.", skills: ["Wireframing", "UI Design"], weight: 4, diff: 3, effort: 8, offset: 8 },
@@ -130,7 +142,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 7. Match Software & Web Briefs
-  if (deliverables.length === 0 && /web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex/.test(text)) {
+  if (deliverables.length === 0 && /web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex|phần mềm|trang web|ứng dụng|lập trình/.test(text)) {
     deliverables.push(
       { title: "System Architecture & Database Schema", desc: "Design data entities, Convex/SQL schema, and API specification.", skills: ["Backend", "Database"], weight: 4, diff: 3, effort: 8, offset: 4 },
       { title: "Figma Component Tokens & UI Layouts", desc: "Create responsive wireframes, design tokens, and interactive components.", skills: ["Figma", "UI/UX"], weight: 3, diff: 2, effort: 6, offset: 7 },
@@ -141,7 +153,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 8. Match Mobile App Briefs
-  if (deliverables.length === 0 && /mobile|app|flutter|react native|ios|android|swift|kotlin/.test(text)) {
+  if (deliverables.length === 0 && /mobile|app|flutter|react native|ios|android|swift|kotlin|mobile app/.test(text)) {
     deliverables.push(
       { title: "User Journey & Mobile Navigation Stack", desc: "Outline screen hierarchy, user flows, and navigation stack.", skills: ["UI/UX", "Mobile"], weight: 3, diff: 2, offset: 4, effort: 6 },
       { title: "Core Mobile Views & State Management", desc: "Develop primary mobile app screens, form inputs, and local storage.", skills: ["React Native/Flutter"], weight: 5, diff: 4, offset: 10, effort: 12 },
@@ -151,7 +163,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 9. Match Game & 3D Briefs
-  if (deliverables.length === 0 && /game|unity|unreal|godot|gamedev|2d|3d|physics|graphics/.test(text)) {
+  if (deliverables.length === 0 && /game|unity|unreal|godot|gamedev|2d|3d|physics|graphics|trò chơi/.test(text)) {
     deliverables.push(
       { title: "Game Design Document & Mechanics Spec", desc: "Define core loop, player controls, win/loss rules, and UI HUD layout.", skills: ["Game Design"], weight: 3, diff: 2, offset: 4, effort: 6 },
       { title: "3D Asset Modeling, Texturing & Rigging", desc: "Create 3D character/prop meshes, UV textures, and skeletal rigs.", skills: ["Blender/Maya", "3D Art"], weight: 4, diff: 3, offset: 9, effort: 10 },
@@ -162,25 +174,13 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }
 
   // 10. Match Research & Writing Briefs
-  if (deliverables.length === 0 && /research|thesis|study|survey|paper|analysis|report|essay|literature/.test(text)) {
+  if (deliverables.length === 0 && /research|thesis|study|survey|paper|analysis|report|essay|literature|nghiên cứu|luận văn|tiểu luận|đồ án|báo cáo/.test(text)) {
     deliverables.push(
       { title: "Literature Review & Thesis Hypothesis Outline", desc: "Gather academic sources, analyze prior work, and formulate core research questions.", skills: ["Research", "Academic Writing"], weight: 3, diff: 2, offset: 4, effort: 6 },
       { title: "Methodology & Data Collection Tooling", desc: "Design survey questionnaires, experiment metrics, and sampling strategy.", skills: ["Data Analysis", "Methodology"], weight: 4, diff: 3, offset: 9, effort: 8 },
       { title: "Primary Data Gathering & Statistical Analysis", desc: "Execute survey data collection, run statistical tests, and chart findings.", skills: ["Statistics", "Data Mining"], weight: 4, diff: 3, offset: 14, effort: 10 },
       { title: "Draft Report Writing & Peer Citation Audit", desc: "Compile full report chapters, verify APA/IEEE citations, and proofread.", skills: ["Technical Writing", "Editing"], weight: 3, diff: 2, offset: 18, effort: 6 }
     );
-  }
-
-  // Helper to dynamically scale deliverables based on explicit items in user brief
-  const userText = userBriefText.toLowerCase();
-
-  // Extract explicit deliverables listed after "deliverables include", "deliverables:", etc.
-  const explicitItems = parseExplicitDeliverables(userBriefText);
-  if (explicitItems.length >= 3) {
-    const synthesized = synthesizeWorkstreamTasks(explicitItems, userBriefText);
-    if (synthesized.length >= 2) {
-      return synthesized;
-    }
   }
 
   // 11. Fallback for general briefs
@@ -196,7 +196,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
 
   // If simple brief (e.g. small website, 1 week, short brief text), scale down base deliverables
   if (userBriefText.length > 0 && userBriefText.length < 150 && deliverables.length > 3) {
-    if (/simple|1 week|one week|portfolio|single page|small/i.test(userBriefText)) {
+    if (/simple|1 week|one week|portfolio|single page|small|đơn giản/i.test(userBriefText)) {
       return deliverables.slice(0, 3);
     }
   }
@@ -207,26 +207,55 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
 import { extractFactsFromBrief } from "./aiPlanValidation";
 
 export function parseExplicitDeliverables(userBriefText: string): string[] {
-  const explicitMatch = userBriefText.match(/deliverables\s*(?:include|:|\s)\s*([^.]+)/i);
-  if (!explicitMatch) return [];
+  if (!userBriefText || userBriefText.trim().length === 0) return [];
 
-  const rawSegmentText = explicitMatch[1];
-  // Split strictly by commas, semicolons, newlines, bullet points, pipes (NEVER hyphens)
-  const segments = rawSegmentText
-    .split(/[,;\n•|]/)
+  // 1. Check for explicit header match (deliverables include / sản phẩm bàn giao / bao gồm / tasks:)
+  const headerMatch = userBriefText.match(
+    /(?:deliverables|sản phẩm bàn giao|kết quả|nhiệm vụ|công việc|bao gồm|yêu cầu|requirements|tasks|goals)\s*(?:include|:|\s)\s*([^.]+)/i
+  );
+
+  const targetText = headerMatch ? headerMatch[1] : userBriefText;
+
+  // 2. Split by bullet points, newlines, semicolons, pipes, or numbered lists
+  let segments = targetText
+    .split(/(?:[\n;•|]|\d+\.\s+)/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
+  // If no bullet points/lines, try splitting by commas or 'và' / 'and' for lists
+  if (segments.length === 1 && (targetText.includes(",") || targetText.includes("và") || targetText.includes("and"))) {
+    segments = targetText
+      .split(/[,]|(?:\s+và\s+)|\b(?:and)\b/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+
   const items: string[] = [];
+
   for (const seg of segments) {
-    let cleaned = seg.replace(/^(?:and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "").trim();
+    let cleaned = seg
+      .replace(/^(?:deliverables\s+include|deliverables:|sản phẩm bàn giao:|bao gồm:|và\s+|gồm\s+|cần\s+|and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "")
+      .trim();
     cleaned = cleaned.replace(/\.$/, "").trim();
-    if (cleaned.length > 2 && !/^\d+$/.test(cleaned)) {
+    if (cleaned.length >= 3 && !/^\d+$/.test(cleaned) && !/^(deliverables|project|plan|brief)$/i.test(cleaned)) {
       items.push(cleaned);
     }
   }
 
-  return items;
+  // 3. Fallback: Extract action clauses (sentences starting with verbs in EN or VI)
+  if (items.length < 2 && !headerMatch) {
+    const clauseMatches = userBriefText.match(
+      /(?:thiết kế|xây dựng|nghiên cứu|lập|tạo|phát triển|tổ chức|chạy|đánh giá|kiểm thử|triển khai|viết|soạn|design|build|develop|create|draft|research|implement|setup|launch|deploy|conduct|produce)\s+[^.,;\n]+/gi
+    );
+    if (clauseMatches) {
+      for (const clause of clauseMatches) {
+        const cleaned = clause.trim().replace(/\.$/, "");
+        if (cleaned.length >= 4) items.push(cleaned);
+      }
+    }
+  }
+
+  return [...new Set(items)];
 }
 
 export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: string): Array<{
