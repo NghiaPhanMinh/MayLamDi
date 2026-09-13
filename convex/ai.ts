@@ -195,8 +195,9 @@ function planningPrompts(brief: string, context: AiPlanningContext) {
   const systemPrompt = [
     "You are MayLamDi's Senior General-Purpose Project Architect.",
     "GOAL: Convert the raw project brief into an actionable, context-aware project plan for any domain including creative, design, animation, research, business, marketing, product, software, and academic projects.",
+    "AUTHORITATIVE USER BRIEF RULE: The current user-provided brief is authoritative. Treat any stored project title or description as metadata only and NEVER let them override, contaminate, or conflict with the current brief. All generated tasks MUST strictly reflect the requirements, scope, domain, deliverables, and team specified in the current user brief.",
     "TARGET PLANNING FLOW:",
-    "1. Understand Context: Reason about project domain, stage, goals, deliverables, constraints, deadline timeframe, team skills, and dependencies.",
+    "1. Understand Context: Reason about project domain, stage, goals, deliverables, constraints, deadline timeframe, team skills, and dependencies based strictly on the authoritative user brief.",
     "2. Framework Skeleton Adaptation: Use context.phases as your structural skeleton. Map deliverables into relevant phases. Preserve relevant framework phases across the project lifecycle without forcing irrelevant steps or inventing unnecessary structures.",
     "3. Actionable Task Quality: Every task MUST be specific, actionable, and outcome-oriented, starting with an active verb (e.g. 'Prototype onboarding flow...', 'Draft script screenplay...', 'Conduct market analysis...', 'Implement backend API...', 'Formulate thesis hypothesis...'). NEVER output generic placeholders like 'Build website', 'Do research', 'Create content', 'Testing', or 'Setup'.",
     "4. Task Count: Generate enough tasks to cover the project's meaningful lifecycle based on complexity, team size, deliverables, and deadline (typically 4–15 tasks total). Do not truncate complex multi-week projects into 2 generic tasks.",
@@ -206,11 +207,9 @@ function planningPrompts(brief: string, context: AiPlanningContext) {
   ].join(" ");
 
   const userPrompt = JSON.stringify({
-    request: "Analyze project brief and generate a context-aware, outcome-oriented general-purpose project plan with clear dependencies and team allocation.",
-    rawProjectBrief: brief,
-    project: {
-      title: context.project.title,
-      description: context.project.description,
+    request: "Analyze current user brief and generate a context-aware, outcome-oriented project plan.",
+    authoritativeUserBrief: brief,
+    projectMetadata: {
       frameworkName: context.project.frameworkName,
       startDate: context.project.startDate,
       deadline: context.project.deadline,

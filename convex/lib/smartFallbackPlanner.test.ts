@@ -58,4 +58,29 @@ describe("smartFallbackPlanner", () => {
     const taskTitles = plan.tasks.map((t) => t.title);
     expect(taskTitles.some((t) => t.includes("Site") || t.includes("Schematic") || t.includes("Floor Plans"))).toBe(true);
   });
+
+  it("handles Test A and Test B correctly in the SAME project with stored title 'A3 Narrative Animation'", () => {
+    const staleAnimationProjectContext = {
+      ...mockContext,
+      project: {
+        ...mockContext.project,
+        title: "A3 Narrative Animation",
+        description: "Old animation assignment description",
+      },
+    };
+
+    const briefTestA = "Create a 2-minute narrative animation about loneliness. Team of 3: animator, illustrator, sound designer. Deadline: 3 weeks.";
+    const planA = generateSmartFallbackPlan(staleAnimationProjectContext, briefTestA);
+    const titlesA = planA.tasks.map((t) => t.title);
+    expect(titlesA.some((t) => t.includes("Script") || t.includes("Animatic") || t.includes("Storyboard"))).toBe(true);
+
+    const briefTestB = "Create a marketing campaign for a local coffee shop launching a seasonal drink. Team of 4: graphic designer, copywriter, social media manager, photographer. Deadline: 4 weeks. Deliverables include audience research, visual campaign assets, social media content, promotional event planning and a final performance report.";
+    const planB = generateSmartFallbackPlan(staleAnimationProjectContext, briefTestB);
+    const titlesB = planB.tasks.map((t) => t.title);
+
+    // Test B MUST generate marketing tasks
+    expect(titlesB.some((t) => t.includes("Persona") || t.includes("Campaign") || t.includes("Launch"))).toBe(true);
+    // Test B MUST NOT generate animation/screenplay/storyboard tasks despite project title "A3 Narrative Animation"
+    expect(titlesB.some((t) => t.includes("Screenplay") || t.includes("Storyboard") || t.includes("Animatic"))).toBe(false);
+  });
 });

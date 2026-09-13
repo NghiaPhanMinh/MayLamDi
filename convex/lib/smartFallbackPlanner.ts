@@ -26,7 +26,8 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   effort: number;
   offset: number;
 }> {
-  const text = `${projectTitle} ${brief}`.toLowerCase();
+  const userBriefText = brief.trim();
+  const text = (userBriefText.length > 0 ? userBriefText : projectTitle).toLowerCase();
   const deliverables: Array<{
     title: string;
     desc: string;
@@ -38,7 +39,7 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   }> = [];
 
   // 1. Match Web / HTML / CSS / Deployment / Software Briefs FIRST
-  if (/html|css|\bjs\b|javascript|typescript|github pages|netlify|vercel|hosting|deploy|page|url|zip|submission|asset/.test(text)) {
+  if (/html|css|\bjs\b|javascript|typescript|github pages|netlify|vercel|web hosting|webpage|landing page|public url|zip submission/.test(text)) {
     deliverables.push(
       { title: "Ideation Selection & Project Scope Framing", desc: "Select project ideation, define target audience, and map out technical requirements.", skills: ["Research", "UI/UX"], weight: 3, diff: 2, effort: 4, offset: 3 },
       { title: "HTML/CSS Layout & Responsive Webpage Implementation", desc: "Build self-contained, responsive HTML/CSS frontend page based on chosen ideation.", skills: ["HTML", "CSS", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 7 },
