@@ -242,14 +242,14 @@ function cleanBrief(value: string) {
 }
 
 function parseJsonResponse(content: string): unknown {
-  const trimmed = content.trim();
-  const candidates = [trimmed];
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1];
+  const sanitized = content.replace(/<(think|thought)>[\s\S]*?<\/\1>/gi, "").trim();
+  const candidates = [sanitized];
+  const fenced = sanitized.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1];
   if (fenced) candidates.push(fenced.trim());
-  const objectStart = trimmed.indexOf("{");
-  const objectEnd = trimmed.lastIndexOf("}");
+  const objectStart = sanitized.indexOf("{");
+  const objectEnd = sanitized.lastIndexOf("}");
   if (objectStart >= 0 && objectEnd > objectStart) {
-    candidates.push(trimmed.slice(objectStart, objectEnd + 1));
+    candidates.push(sanitized.slice(objectStart, objectEnd + 1));
   }
 
   for (const candidate of [...new Set(candidates)]) {

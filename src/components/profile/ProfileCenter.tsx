@@ -148,7 +148,7 @@ export function ProfileCenter({
   const initialByok = getByokSession();
   const [useOwnKey, setUseOwnKey] = useState(initialByok !== null);
   const [apiKey, setApiKey] = useState(initialByok?.apiKey ?? "");
-  const [model, setModel] = useState(initialByok?.model ?? "anthropic/claude-3.5-sonnet");
+  const [model, setModel] = useState(initialByok?.model ?? "deepseek/deepseek-chat");
 
   /* Realtime profile data arrives after the first render; hydrate once without
      overwriting edits made while the save request is in flight. */
@@ -279,34 +279,20 @@ export function ProfileCenter({
               </label>
               <div className="guided-field-grid">
                 <label>
-                  <span>OpenRouter API key</span>
-                  <input disabled={!useOwnKey} type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} />
+                  <span>OpenRouter API Key</span>
+                  <input disabled={!useOwnKey} type="password" autoComplete="off" placeholder="sk-or-v1-..." value={apiKey} onChange={(event) => setApiKey(event.target.value)} />
                 </label>
                 <label>
-                  <span>Model ID</span>
-                  <input disabled={!useOwnKey} value={model} onChange={(event) => setModel(event.target.value)} />
+                  <span>AI Engine (Mô hình AI)</span>
+                  <select disabled={!useOwnKey} value={model} onChange={(event) => setModel(event.target.value)} className="profile-select-input" style={{ width: "100%", padding: "0.6rem", borderRadius: "0.375rem", border: "1px solid var(--border-color, #ccc)" }}>
+                    <option value="deepseek/deepseek-chat">🔥 DeepSeek V3 (Phân tích chuyên sâu & Tối ưu nhất)</option>
+                    <option value="deepseek/deepseek-r1">🧠 DeepSeek R1 (Suy luận Chain-of-Thought)</option>
+                    <option value="anthropic/claude-3.5-sonnet">🌟 Claude 3.5 Sonnet (Cao cấp)</option>
+                    <option value="google/gemini-2.0-flash">⚡ Gemini 2.0 Flash (Tốc độ cao)</option>
+                  </select>
                 </label>
               </div>
-              {useOwnKey ? (
-                <div className="profile-skill-options" style={{ marginTop: "0.5rem" }}>
-                  {[
-                    { id: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet (Recommended)" },
-                    { id: "deepseek/deepseek-r1", label: "DeepSeek R1 (Reasoning)" },
-                    { id: "deepseek/deepseek-chat", label: "DeepSeek V3 (Fast & Cheap)" },
-                    { id: "google/gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-                  ].map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={model === preset.id ? "is-selected" : ""}
-                      onClick={() => setModel(preset.id)}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <p className="ai-security-note">This key stays in this browser session and is never stored with your profile.</p>
+              <p className="ai-security-note">API Key này được bảo mật trong phiên duyệt web hiện tại và không lưu trữ trên máy chủ.</p>
             </section>
           </details>
         </div>
