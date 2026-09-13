@@ -141,15 +141,24 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     );
   }
 
-  // 7. Match Software & Web Briefs
-  if (deliverables.length === 0 && /web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex|phần mềm|trang web|ứng dụng|lập trình/.test(text)) {
-    deliverables.push(
-      { title: "System Architecture & Database Schema", desc: "Design data entities, Convex/SQL schema, and API specification.", skills: ["Backend", "Database"], weight: 4, diff: 3, effort: 8, offset: 4 },
-      { title: "Figma Component Tokens & UI Layouts", desc: "Create responsive wireframes, design tokens, and interactive components.", skills: ["Figma", "UI/UX"], weight: 3, diff: 2, effort: 6, offset: 7 },
-      { title: "Core Frontend Screen & State Implementation", desc: "Develop main user-facing views, forms, and client state handlers.", skills: ["React/TypeScript", "CSS"], weight: 5, diff: 4, effort: 12, offset: 12 },
-      { title: "Backend API Endpoint & Mutation Services", desc: "Build realtime data mutations, authentication checks, and error boundaries.", skills: ["Node.js/Convex", "API"], weight: 4, diff: 3, effort: 10, offset: 15 },
-      { title: "Vitest End-to-End Suite & Hosting Deployment", desc: "Run automated unit test coverage, set up SSL hosting, and verify production build.", skills: ["QA", "DevOps"], weight: 3, diff: 2, effort: 5, offset: 18 }
-    );
+  // 7. Match Software, HTML Submission & Web Assignment Briefs
+  if (deliverables.length === 0 && /html|css|javascript|github pages|netlify|vercel|webpage|zip|zipped|submission|ideation|hosting|web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex|phần mềm|trang web|ứng dụng|lập trình/i.test(text)) {
+    if (/html|css|github pages|netlify|vercel|zip|submission/i.test(text)) {
+      deliverables.push(
+        { title: "Select Concept & Define Component Hierarchy", desc: "Choose 1 of 3 target ideations, map user interaction flow, and plan self-contained HTML/CSS structure.", skills: ["HTML/CSS", "UI Architecture"], weight: 3, diff: 2, effort: 6, offset: 4 },
+        { title: "Develop Responsive Web Layout & Interactivity", desc: "Implement responsive HTML elements, CSS styling rules, and client JavaScript functionality.", skills: ["HTML5", "CSS3", "JavaScript"], weight: 5, diff: 4, effort: 12, offset: 10 },
+        { title: "Deploy Live Webpage to Public Hosting", desc: "Publish live site via GitHub Pages, Vercel, or Netlify, verifying domain URL and asset paths.", skills: ["Deployment", "Hosting"], weight: 3, diff: 2, effort: 5, offset: 14 },
+        { title: "Package Asset Archive & Write Technical Exploration Summary", desc: "Bundle HTML/CSS/JS assets into zipped file and compose technical exploration note detailing target users and improvements.", skills: ["Documentation", "Technical Writing"], weight: 4, diff: 3, effort: 6, offset: 17 }
+      );
+    } else {
+      deliverables.push(
+        { title: "System Architecture & Database Schema", desc: "Design data entities, Convex/SQL schema, and API specification.", skills: ["Backend", "Database"], weight: 4, diff: 3, effort: 8, offset: 4 },
+        { title: "Figma Component Tokens & UI Layouts", desc: "Create responsive wireframes, design tokens, and interactive components.", skills: ["Figma", "UI/UX"], weight: 3, diff: 2, effort: 6, offset: 7 },
+        { title: "Core Frontend Screen & State Implementation", desc: "Develop main user-facing views, forms, and client state handlers.", skills: ["React/TypeScript", "CSS"], weight: 5, diff: 4, effort: 12, offset: 12 },
+        { title: "Backend API Endpoint & Mutation Services", desc: "Build realtime data mutations, authentication checks, and error boundaries.", skills: ["Node.js/Convex", "API"], weight: 4, diff: 3, effort: 10, offset: 15 },
+        { title: "Vitest End-to-End Suite & Hosting Deployment", desc: "Run automated unit test coverage, set up SSL hosting, and verify production build.", skills: ["QA", "DevOps"], weight: 3, diff: 2, effort: 5, offset: 18 }
+      );
+    }
   }
 
   // 8. Match Mobile App Briefs
@@ -209,6 +218,8 @@ import { extractFactsFromBrief } from "./aiPlanValidation";
 export function parseExplicitDeliverables(userBriefText: string): string[] {
   if (!userBriefText || userBriefText.trim().length === 0) return [];
 
+  const ABSTRACT_RUBRIC_REGEX = /^(?:originality|resourcefulness|technical exploration|practical function|clear communication|evaluation|rubric|criteria|submission requirements|ideations?|submissions?|exploration|quality standards|toward technical exploration|towards technical exploration)$/i;
+
   // 1. Check for explicit header match (deliverables include / sản phẩm bàn giao / bao gồm / tasks:)
   const headerMatch = userBriefText.match(
     /(?:deliverables|sản phẩm bàn giao|kết quả|nhiệm vụ|công việc|bao gồm|yêu cầu|requirements|tasks|goals)\s*(?:include|:|\s)\s*([^.]+)/i
@@ -222,8 +233,8 @@ export function parseExplicitDeliverables(userBriefText: string): string[] {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-  // If no bullet points/lines, try splitting by commas or 'và' / 'and' for lists
-  if (segments.length === 1 && (targetText.includes(",") || targetText.includes("và") || targetText.includes("and"))) {
+  // Split by commas ONLY if an explicit header was present (e.g. "deliverables include: X, Y, Z")
+  if (headerMatch && segments.length === 1 && (targetText.includes(",") || targetText.includes("và") || targetText.includes("and"))) {
     segments = targetText
       .split(/[,]|(?:\s+và\s+)|\b(?:and)\b/)
       .map((s) => s.trim())
@@ -237,7 +248,12 @@ export function parseExplicitDeliverables(userBriefText: string): string[] {
       .replace(/^(?:deliverables\s+include|deliverables:|sản phẩm bàn giao:|bao gồm:|và\s+|gồm\s+|cần\s+|and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "")
       .trim();
     cleaned = cleaned.replace(/\.$/, "").trim();
-    if (cleaned.length >= 3 && !/^\d+$/.test(cleaned) && !/^(deliverables|project|plan|brief)$/i.test(cleaned)) {
+    if (
+      cleaned.length >= 3 &&
+      !/^\d+$/.test(cleaned) &&
+      !/^(deliverables|project|plan|brief)$/i.test(cleaned) &&
+      !ABSTRACT_RUBRIC_REGEX.test(cleaned)
+    ) {
       items.push(cleaned);
     }
   }
@@ -332,10 +348,10 @@ export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: str
       activeVerb = "Plan";
       skills = ["Spatial Planning", "Layout"];
       desc = `Map physical space, define circulation pathways, and arrange layout logistics${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}.`;
-    } else if (/installation|setup|technical|hardware|backend|schema|database|api/i.test(combinedTitle)) {
-      activeVerb = /api|backend|schema/i.test(combinedTitle) ? "Implement" : "Configure";
-      skills = ["Technical Development", "Setup"];
-      desc = `Set up technical infrastructure, equipment, and installation hardware${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}, verifying pre-event operation.`;
+    } else if (/hardware\s+setup|equipment\s+setup|physical\s+installation|venue\s+hardware/i.test(combinedTitle)) {
+      activeVerb = "Configure";
+      skills = ["Hardware", "Equipment Setup"];
+      desc = `Set up physical equipment, interactive displays, and installation hardware, verifying pre-event operation.`;
     } else if (/logistics|event logistics|operations/i.test(combinedTitle)) {
       activeVerb = "Coordinate";
       skills = ["Event Logistics", "Operations"];
@@ -355,7 +371,7 @@ export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: str
     } else {
       activeVerb = /build|implement|code/i.test(combinedTitle) ? "Build" : "Execute";
       skills = ["Execution"];
-      desc = `Synthesize and deliver ${combinedTitle} according to brief specifications, meeting all project quality standards.`;
+      desc = `Execute core technical deliverables for ${combinedTitle}, defining clear specifications, component architecture, and verification steps.`;
     }
 
     const title = combinedTitle.startsWith(activeVerb) ? combinedTitle : `${activeVerb} ${combinedTitle}`;
