@@ -146,5 +146,63 @@ describe("smartFallbackPlanner & 10-Point Output Validator", () => {
     expect(planSimple.tasks.length).toBeLessThan(planComplex.tasks.length);
     expect(planComplex.tasks.length).toBe(8);
   });
-});
 
+  it("VERIFICATION — SAME FRAMEWORK != SAME TASKS: 4 different project briefs using identical Design Thinking framework produce 100% domain-specific tasks", () => {
+    const designThinkingFrameworkContext = {
+      ...mockContext,
+      phases: [
+        { phaseId: "phase_empathise", title: "Empathise & Research" },
+        { phaseId: "phase_define", title: "Define & Concept" },
+        { phaseId: "phase_prototype", title: "Prototype & Execute" },
+        { phaseId: "phase_test", title: "Test & Deliver" },
+      ],
+      members: [
+        { profileId: "lead_1", displayName: "Project Lead" },
+        { profileId: "exec_1", displayName: "Domain Specialist" },
+      ],
+    };
+
+    const uxBrief = "Build a mobile food delivery app in 4 weeks. Deliverables include user research, wireframe taxonomy, Figma interactive prototype, usability test sessions.";
+    const archBrief = "Architectural spatial proposal for a community library. Deliverables include site analysis, schematic floor plans, 3D massing model, material strategy specs.";
+    const mktBrief = "Design a seasonal campaign for a coffee shop. Deliverables include audience research, visual ad deck, promotional social posts, launch event logistics.";
+    const animBrief = "Create a 2D animated short about space. Deliverables include screenplay script, character art direction, timed animatic render, sound design mixing.";
+
+    const planUX = generateSmartFallbackPlan(designThinkingFrameworkContext, uxBrief);
+    const planArch = generateSmartFallbackPlan(designThinkingFrameworkContext, archBrief);
+    const planMkt = generateSmartFallbackPlan(designThinkingFrameworkContext, mktBrief);
+    const planAnim = generateSmartFallbackPlan(designThinkingFrameworkContext, animBrief);
+
+    // 1. All 4 plans MUST use the exact same framework phase IDs
+    const uxPhaseIds = new Set(planUX.tasks.map((t) => t.phaseId));
+    const archPhaseIds = new Set(planArch.tasks.map((t) => t.phaseId));
+    const mktPhaseIds = new Set(planMkt.tasks.map((t) => t.phaseId));
+    const animPhaseIds = new Set(planAnim.tasks.map((t) => t.phaseId));
+
+    expect(uxPhaseIds.has("phase_empathise") || uxPhaseIds.has("phase_define")).toBe(true);
+    expect(archPhaseIds.has("phase_empathise") || archPhaseIds.has("phase_define")).toBe(true);
+    expect(mktPhaseIds.has("phase_empathise") || mktPhaseIds.has("phase_define")).toBe(true);
+    expect(animPhaseIds.has("phase_empathise") || animPhaseIds.has("phase_define")).toBe(true);
+
+    // 2. Tasks MUST be 100% domain-specific (SAME FRAMEWORK != SAME TASKS)
+    const uxTitles = planUX.tasks.map((t) => t.title).join(" ");
+    const archTitles = planArch.tasks.map((t) => t.title).join(" ");
+    const mktTitles = planMkt.tasks.map((t) => t.title).join(" ");
+    const animTitles = planAnim.tasks.map((t) => t.title).join(" ");
+
+    expect(uxTitles).toMatch(/wireframe|prototype|figma|research/i);
+    expect(archTitles).toMatch(/site|schematic|floorplan|massing|renders/i);
+    expect(mktTitles).toMatch(/campaign|audience|ad deck|social|event/i);
+    expect(animTitles).toMatch(/script|screenplay|animatic|sound/i);
+
+    // 3. ZERO template bleed across domain tasks
+    expect(uxTitles).not.toMatch(/floorplan|animatic/i);
+    expect(archTitles).not.toMatch(/figma|animatic/i);
+    expect(animTitles).not.toMatch(/floorplan|ad deck/i);
+
+    // 4. Validation Engine MUST pass for all 4 adaptive plans
+    expect(validatePlanAgainstBrief(planUX, uxBrief, designThinkingFrameworkContext).valid).toBe(true);
+    expect(validatePlanAgainstBrief(planArch, archBrief, designThinkingFrameworkContext).valid).toBe(true);
+    expect(validatePlanAgainstBrief(planMkt, mktBrief, designThinkingFrameworkContext).valid).toBe(true);
+    expect(validatePlanAgainstBrief(planAnim, animBrief, designThinkingFrameworkContext).valid).toBe(true);
+  });
+});

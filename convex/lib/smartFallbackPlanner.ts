@@ -376,6 +376,53 @@ function findBestMember(
   return members[fallbackIndex % members.length];
 }
 
+function mapTaskToFrameworkPhase(
+  task: { title: string; skills: string[] },
+  phases: Array<{ phaseId: string; title: string }>,
+  index: number,
+  totalTasks: number
+) {
+  if (phases.length === 0) return { phaseId: "phase_1", title: "Execution" };
+  if (phases.length === 1) return phases[0];
+
+  const taskText = `${task.title} ${task.skills.join(" ")}`.toLowerCase();
+
+  for (const phase of phases) {
+    const phaseTitle = phase.title.toLowerCase();
+
+    if (
+      (/research|empath|discovery|define|concept|analysis|requirements|framing/i.test(phaseTitle)) &&
+      (/concept|theme|curation|selection|research|requirements|scope|persona|hypothesis|script|screenplay/i.test(taskText))
+    ) {
+      return phase;
+    }
+
+    if (
+      (/design|ideate|prototype|architecture|schema|spec/i.test(phaseTitle)) &&
+      (/design|promotional|wireframe|layout|spatial|floorplan|schema|architecture|prototype|materials|asset|banner/i.test(taskText))
+    ) {
+      return phase;
+    }
+
+    if (
+      (/build|execute|implement|develop|production|construct/i.test(phaseTitle)) &&
+      (/installation|setup|hardware|code|backend|api|endpoint|animation|render|logistics|event/i.test(taskText))
+    ) {
+      return phase;
+    }
+
+    if (
+      (/test|verify|deliver|launch|review|evaluation|retrospective/i.test(phaseTitle)) &&
+      (/documentation|evaluation|post-event|testing|qa|audit|archiving|reporting/i.test(taskText))
+    ) {
+      return phase;
+    }
+  }
+
+  const fallbackIndex = Math.min(phases.length - 1, Math.floor((index / Math.max(1, totalTasks)) * phases.length));
+  return phases[fallbackIndex] || phases[0];
+}
+
 export function generateSmartFallbackPlan(context: PlanningContext, brief: string): ValidatedAiPlan {
   const phases = context.phases.length > 0 ? context.phases : [{ phaseId: "phase_1", title: "Project Execution" }];
   const members = context.members.length > 0 ? context.members : [{ profileId: "member_1", displayName: "Team Member" }];
@@ -391,7 +438,7 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
   }));
 
   const tasks = rawTasks.map((task, index) => {
-    const assignedPhase = phases[Math.floor((index / rawTasks.length) * phases.length)] || phases[0];
+    const assignedPhase = mapTaskToFrameworkPhase(task, phases, index, rawTasks.length);
     const assignedOwner = findBestMember(members, task, index);
     const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
 

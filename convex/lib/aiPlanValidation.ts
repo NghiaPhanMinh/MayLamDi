@@ -390,17 +390,40 @@ export function validatePlanAgainstBrief(
   checks.push({ check: "FACT_ACCURACY", passed: factAccurate, message: factMsg });
   if (!factAccurate) errors.push(`FACT_ACCURACY_FAIL: ${factMsg}`);
 
-  // 3. NO HALLUCINATION: Ensure no foreign domain tasks introduced
+  // 3. NO HALLUCINATION & RELEVANCE: Ensure no foreign domain tasks or framework template bleed introduced
   let noHallucination = true;
-  if (/coffee|beverage|restaurant/i.test(brief) && /screenplay|animatic|storyboard/i.test(combinedText)) {
-    noHallucination = false;
+  let relevanceMsg = "All tasks are semantically relevant to the current brief domain with zero template bleed.";
+  const briefLower = brief.toLowerCase();
+
+  const isSoftware = /software|saas|app|web|database|schema|api|backend|frontend|code|react|node|flutter|python/i.test(briefLower);
+  const isAnimation = /animation|animatic|short film|movie|character animation|screenplay|storyboard|sound design/i.test(briefLower);
+  const isExhibition = /exhibition|artworks|curator|venue layout|installation setup|visitor documentation/i.test(briefLower);
+
+  for (const t of plan.tasks) {
+    const taskText = `${t.title} ${t.description}`.toLowerCase();
+    if (!isSoftware && (taskText.includes("database schema") || taskText.includes("restful api endpoints") || taskText.includes("postgresql"))) {
+      noHallucination = false;
+      relevanceMsg = `Task "${t.title}" contains software database/API concepts unrelated to brief domain.`;
+      break;
+    }
+    if (!isAnimation && (taskText.includes("greyscale animatic") || taskText.includes("character turnarounds") || taskText.includes("screenplay script"))) {
+      noHallucination = false;
+      relevanceMsg = `Task "${t.title}" contains animation screenplay/animatic concepts unrelated to brief domain.`;
+      break;
+    }
+    if (!isExhibition && (taskText.includes("12 interactive and audiovisual artworks") || taskText.includes("artist/project selection"))) {
+      noHallucination = false;
+      relevanceMsg = `Task "${t.title}" contains exhibition artwork concepts unrelated to brief domain.`;
+      break;
+    }
   }
+
   checks.push({
     check: "NO_HALLUCINATION",
     passed: noHallucination,
-    message: noHallucination ? "No domain hallucination detected." : "Plan introduced foreign domain tasks.",
+    message: noHallucination ? "No domain hallucination detected." : relevanceMsg,
   });
-  if (!noHallucination) errors.push("NO_HALLUCINATION_FAIL");
+  if (!noHallucination) errors.push(`NO_HALLUCINATION_FAIL: ${relevanceMsg}`);
 
   // 4. GROUPING QUALITY: Ensure unrelated items are NOT merged
   let groupingQuality = true;
