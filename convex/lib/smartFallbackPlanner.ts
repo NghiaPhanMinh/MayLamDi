@@ -17,7 +17,7 @@ function formatIsoDate(daysFromNow: number): string {
   return target.toISOString().slice(0, 10);
 }
 
-export function extractDeliverablesFromBrief(brief: string, projectTitle: string): Array<{
+export function extractDeliverablesFromBrief(brief: string, projectTitle: string, specializationName?: string): Array<{
   title: string;
   desc: string;
   skills: string[];
@@ -27,9 +27,9 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
   offset: number;
 }> {
   const userBriefText = brief.trim();
-  const text = (userBriefText.length > 0 ? userBriefText : projectTitle).toLowerCase();
+  const text = `${userBriefText} ${projectTitle} ${specializationName || ""}`.toLowerCase();
 
-  // 0. FIRST: Try extracting explicit deliverables / clauses directly from user brief
+  // BƯỚC 1 & BƯỚC 2: Try extracting explicit deliverables / clauses directly from user brief
   if (userBriefText.length > 0) {
     const explicitItems = parseExplicitDeliverables(userBriefText);
     if (explicitItems.length >= 2) {
@@ -50,100 +50,11 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     offset: number;
   }> = [];
 
-  // 1. Match Web / HTML / CSS / Deployment / Software Briefs FIRST
-  if (/html|css|\bjs\b|javascript|typescript|github pages|netlify|vercel|web hosting|webpage|landing page|public url|zip submission/.test(text)) {
-    deliverables.push(
-      { title: "Ideation Selection & Project Scope Framing", desc: "Select project ideation, define target audience, and map out technical requirements.", skills: ["Research", "UI/UX"], weight: 3, diff: 2, effort: 4, offset: 3 },
-      { title: "HTML/CSS Layout & Responsive Webpage Implementation", desc: "Build self-contained, responsive HTML/CSS frontend page based on chosen ideation.", skills: ["HTML", "CSS", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 7 },
-      { title: "JavaScript Interactive Functionality & Asset Assembly", desc: "Program client-side interactive logic, asset loading, and local script handlers.", skills: ["JavaScript", "Frontend"], weight: 4, diff: 3, effort: 8, offset: 11 },
-      { title: "Live Hosting Deployment & Public URL Setup", desc: "Deploy webpage to live URL via GitHub Pages, Vercel, or Netlify and verify access.", skills: ["DevOps", "Web Hosting"], weight: 3, diff: 2, effort: 4, offset: 15 },
-      { title: "Project Technical Note & Asset Archive Packaging", desc: "Write technical exploration note (idea, target audience, future improvements) and package zip asset submission.", skills: ["Technical Writing", "Documentation"], weight: 3, diff: 2, effort: 4, offset: 18 }
-    );
-  }
+  // BƯỚC 3 & BƯỚC 4: Domain-specific task generation across 10 Specializations
 
-  // 2. Match Animation / Film / Narrative Briefs (using strict word boundaries)
-  if (deliverables.length === 0 && /animation|animatic|\bscript\b|screenplay|narrative|shot list|storyboard|character design|greyscale|video|film|movie|3d animation|2d animation|phim|kịch bản|hoạt hình/.test(text)) {
-    deliverables.push(
-      {
-        title: "Script & Narrative Screenplay",
-        desc: "Draft full screenplay, character dialogues, and narrative story structure for target audience.",
-        skills: ["Screenwriting", "Storytelling"],
-        weight: 3, diff: 3, effort: 6, offset: 3,
-      },
-      {
-        title: "Shot List & Storyboard Framing Composition",
-        desc: "Detailed shot list breakdown, camera angles, timing, and key scene framing composition.",
-        skills: ["Storyboarding", "Cinematography"],
-        weight: 3, diff: 3, effort: 8, offset: 6,
-      },
-      {
-        title: "Design Document & Art Direction Specs",
-        desc: "Character design sheets, background turnarounds, visual style guide, and look development.",
-        skills: ["Concept Art", "Art Direction"],
-        weight: 4, diff: 3, effort: 10, offset: 10,
-      },
-      {
-        title: "Greyscale Animatic Render & Timeline Assembly",
-        desc: "Timed 45+ second greyscale animatic sequence with scratch audio and pacing validation.",
-        skills: ["Video Editing", "Animation"],
-        weight: 5, diff: 4, effort: 12, offset: 15,
-      },
-      {
-        title: "Final Artwork Render & Presentation Assembly",
-        desc: "Export final high-res animation file, full documentation, and project presentation deck.",
-        skills: ["Post-Production", "Presentation"],
-        weight: 3, diff: 2, effort: 6, offset: 18,
-      }
-    );
-  }
-
-  // 3. Match Marketing & Campaign Briefs
-  if (deliverables.length === 0 && /campaign|marketing|brand|advertising|\bpr\b|social media|promotional|launch strategy|chiến dịch|quảng cáo|quán|cà phê|coffee|thương hiệu/.test(text)) {
-    deliverables.push(
-      { title: "Audience Persona & Competitor Benchmark Matrix", desc: "Research target demographic, analyze competitor positioning, and define audience personas.", skills: ["Market Research", "Audience Insights"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Campaign Strategy & Value Proposition Statement", desc: "Formulate central campaign theme, key message framework, and communication channels.", skills: ["Campaign Strategy", "Copywriting"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Creative Visual Asset & Copy Deck Production", desc: "Design social media banners, promotional video cut-downs, and ad copy deck.", skills: ["Graphic Design", "Content Creation"], weight: 4, diff: 3, effort: 10, offset: 13 },
-      { title: "Multi-Channel Launch Execution & Content Scheduling", desc: "Deploy media placements, schedule social posts, and launch promotional outreach.", skills: ["Media Planning", "Marketing Operations"], weight: 4, diff: 3, effort: 8, offset: 16 },
-      { title: "Campaign Analytics Audit & Performance Report", desc: "Measure engagement metrics, conversion ROI, and optimize post-launch performance.", skills: ["Analytics", "Reporting"], weight: 3, diff: 2, effort: 5, offset: 19 }
-    );
-  }
-
-  // 4. Match Business & Strategy Briefs
-  if (deliverables.length === 0 && /business|startup|opportunity|market|business model|finance|pitch|revenue|investor|operating|kinh doanh|tài chính|đầu tư/.test(text)) {
-    deliverables.push(
-      { title: "Market Problem & Value Opportunity Definition", desc: "Analyze market gap, stakeholder needs, and define the core problem statement.", skills: ["Business Analysis", "Problem Framing"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Customer Validation & Competitor Landscape Matrix", desc: "Conduct target customer interviews, review competitors, and map market fit.", skills: ["Market Research", "Customer Insights"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Business Model Canvas & Value Unit Economics", desc: "Formulate revenue streams, cost structure, key partners, and pricing strategy.", skills: ["Financial Modeling", "Strategy"], weight: 4, diff: 3, effort: 10, offset: 13 },
-      { title: "Operational Execution Roadmap & Risk Register", desc: "Build milestone implementation timeline, key metrics, and mitigation plans.", skills: ["Operations", "Risk Management"], weight: 4, diff: 3, effort: 8, offset: 16 },
-      { title: "Executive Pitch Deck & Investor Presentation", desc: "Synthesize executive summary deck, financial forecast slides, and present proposal.", skills: ["Pitching", "Executive Communication"], weight: 3, diff: 2, effort: 6, offset: 19 }
-    );
-  }
-
-  // 5. Match Architecture & Spatial Design Briefs (Strict word boundaries)
-  if (deliverables.length === 0 && /\barchitecture\b|\bspatial design\b|\bfloorplan\b|\bblueprint\b|\bkiến trúc\b|\bbản vẽ mặt bằng\b|\bcông trình xây dựng\b/.test(text)) {
-    deliverables.push(
-      { title: "Site Context & Topographical Analysis Report", desc: "Document site contours, environmental orientation, regulatory constraints, and circulation.", skills: ["Site Analysis", "Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Spatial Programme & Adjacency Diagram Spec", desc: "Define space requirements, user flow adjacencies, and volumetric zoning.", skills: ["Spatial Design", "Architectural Programming"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Schematic Floor Plans & 3D Massing Model", desc: "Develop conceptual floor plans, building elevations, and massing models.", skills: ["3D CAD/BIM", "Drafting"], weight: 5, diff: 4, effort: 12, offset: 13 },
-      { title: "Material Strategy & Technical Detailing Specs", desc: "Specify structural materials, environmental systems, and detail assembly sections.", skills: ["Technical Detailing", "Material Research"], weight: 4, diff: 3, effort: 10, offset: 17 },
-      { title: "Architectural Renders & Review Presentation Package", desc: "Render high-quality perspective views, physical/digital model boards, and review deck.", skills: ["Visualisation", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 20 }
-    );
-  }
-
-  // 6. Match Creative & UX Design Briefs (Strict word boundaries)
-  if (deliverables.length === 0 && /\bfigma\b|\bwireframe\b|\bui\/ux\b|\bux design\b|\buser experience\b|\bgiao diện\b|\bgiao diện ứng dụng\b/.test(text)) {
-    deliverables.push(
-      { title: "User Persona & Journey Map Discovery", desc: "Interview target users, map behavioral pain points, and define design principles.", skills: ["UX Research", "Persona Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Low-Fidelity Wireframes & Information Architecture", desc: "Sketch layout wireframes, navigation taxonomy, and component hierarchy.", skills: ["Wireframing", "UI Design"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "High-Fidelity Interactive Prototype & Design Tokens", desc: "Create interactive Figma prototype with visual design tokens and typography system.", skills: ["Figma", "Interaction Design"], weight: 5, diff: 4, effort: 12, offset: 13 },
-      { title: "Usability Testing & Feedback Refinement", desc: "Run usability test sessions with target users and iterate on friction points.", skills: ["Usability Testing", "Design Iteration"], weight: 4, diff: 3, effort: 8, offset: 17 },
-      { title: "Design Handoff Spec & Presentation Deck", desc: "Prepare component specs, asset redlines, and showcase presentation deck.", skills: ["Design Handoff", "Presentation"], weight: 3, diff: 2, effort: 5, offset: 20 }
-    );
-  }
-
-  // 7. Match Software, HTML Submission & Web Assignment Briefs
-  if (deliverables.length === 0 && /html|css|javascript|github pages|netlify|vercel|webpage|zip|zipped|submission|ideation|hosting|web|frontend|backend|fullstack|react|vue|next|node|laravel|django|api|database|convex|phần mềm|trang web|ứng dụng|lập trình/i.test(text)) {
-    if (/html|css|github pages|netlify|vercel|zip|submission/i.test(text)) {
+  // 1. Software & Web/App Engineering
+  if (/software|web\/app|engineering|programming|html|css|\bjs\b|javascript|typescript|react|next|node|github pages|netlify|vercel|lập trình|phần mềm|trang web/i.test(text)) {
+    if (/html|css|github pages|netlify|vercel|zip|submission/i.test(userBriefText.toLowerCase())) {
       deliverables.push(
         { title: "Select Concept & Define Component Hierarchy", desc: "Choose 1 of 3 target ideations, map user interaction flow, and plan self-contained HTML/CSS structure.", skills: ["HTML/CSS", "UI Architecture"], weight: 3, diff: 2, effort: 6, offset: 4 },
         { title: "Develop Responsive Web Layout & Interactivity", desc: "Implement responsive HTML elements, CSS styling rules, and client JavaScript functionality.", skills: ["HTML5", "CSS3", "JavaScript"], weight: 5, diff: 4, effort: 12, offset: 10 },
@@ -161,38 +72,105 @@ export function extractDeliverablesFromBrief(brief: string, projectTitle: string
     }
   }
 
-  // 8. Match Mobile App Briefs
-  if (deliverables.length === 0 && /mobile|app|flutter|react native|ios|android|swift|kotlin|mobile app/.test(text)) {
+  // 2. Data Science & AI Engineering
+  if (deliverables.length === 0 && /data science|ai engineering|machine learning|deep learning|data engineering|nlp|computer vision|dữ liệu|trí tuệ nhân tạo/i.test(text)) {
     deliverables.push(
-      { title: "User Journey & Mobile Navigation Stack", desc: "Outline screen hierarchy, user flows, and navigation stack.", skills: ["UI/UX", "Mobile"], weight: 3, diff: 2, offset: 4, effort: 6 },
-      { title: "Core Mobile Views & State Management", desc: "Develop primary mobile app screens, form inputs, and local storage.", skills: ["React Native/Flutter"], weight: 5, diff: 4, offset: 10, effort: 12 },
-      { title: "Server API Sync & Push Notification Integration", desc: "Connect REST/WebSocket endpoints and configure notification alerts.", skills: ["API Integration"], weight: 4, diff: 3, offset: 14, effort: 8 },
-      { title: "Device Compatibility & Store Release Audit", desc: "Audit performance across iOS/Android test devices and prepare app bundle.", skills: ["QA", "App Store"], weight: 3, diff: 2, offset: 18, effort: 6 }
+      { title: "Data Pipeline & Exploratory Analysis (EDA)", desc: "Ingest raw datasets, clean missing features, and map exploratory data distributions.", skills: ["Python", "Pandas", "EDA"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Feature Engineering & Data Preprocessing Pipeline", desc: "Construct feature transformers, vector embeddings, and train/val/test data splits.", skills: ["Data Pipeline", "Feature Engineering"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Model Baseline Training & Architecture Selection", desc: "Train baseline classifier/regressor models and compare performance metrics.", skills: ["PyTorch/Scikit-Learn", "Machine Learning"], weight: 5, diff: 4, effort: 12, offset: 13 },
+      { title: "Hyperparameter Optimization & Validation Audit", desc: "Tune hyperparameter grids, evaluate cross-validation metrics, and audit bias.", skills: ["Model Evaluation", "MLOps"], weight: 4, diff: 3, effort: 8, offset: 17 },
+      { title: "Inference API Deployment & Model Monitoring Deck", desc: "Containerize model serving endpoint (FastAPI/Docker) and setup latency monitoring.", skills: ["Docker", "API Deployment"], weight: 3, diff: 2, effort: 6, offset: 20 }
     );
   }
 
-  // 9. Match Game & 3D Briefs
-  if (deliverables.length === 0 && /game|unity|unreal|godot|gamedev|2d|3d|physics|graphics|trò chơi/.test(text)) {
+  // 3. Cybersecurity & Systems Infrastructure
+  if (deliverables.length === 0 && /cybersecurity|systems infrastructure|devops|cloud|security|penetration|network|an ninh mạng|hạ tầng/i.test(text)) {
     deliverables.push(
-      { title: "Game Design Document & Mechanics Spec", desc: "Define core loop, player controls, win/loss rules, and UI HUD layout.", skills: ["Game Design"], weight: 3, diff: 2, offset: 4, effort: 6 },
-      { title: "3D Asset Modeling, Texturing & Rigging", desc: "Create 3D character/prop meshes, UV textures, and skeletal rigs.", skills: ["Blender/Maya", "3D Art"], weight: 4, diff: 3, offset: 9, effort: 10 },
-      { title: "Level Environment & Lighting Assembly", desc: "Build scene geometry, collision bounds, dynamic lighting, and shaders.", skills: ["Level Design", "Unity/Unreal"], weight: 4, diff: 3, offset: 13, effort: 10 },
-      { title: "Core Player Mechanics & Physics Scripts", desc: "Program movement controller, interaction scripts, and game state logic.", skills: ["C#/C++", "Gameplay Dev"], weight: 5, diff: 4, offset: 16, effort: 12 },
-      { title: "Playtesting, Balance & Build Optimization", desc: "Run FPS stress tests, fix collision bugs, and build executable release.", skills: ["QA", "Optimization"], weight: 3, diff: 2, offset: 19, effort: 6 }
+      { title: "Threat Modeling & Security Architecture Audit", desc: "Identify attack vectors, map trust boundaries, and establish security compliance rules.", skills: ["Threat Modeling", "Security Architecture"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Infrastructure as Code & Network Provisioning", desc: "Configure cloud VPC networks, firewall security groups, and Terraform IaC scripts.", skills: ["Terraform", "Cloud Infrastructure"], weight: 4, diff: 3, effort: 10, offset: 9 },
+      { title: "Access Control & Identity Management (IAM) Integration", desc: "Enforce zero-trust IAM policies, OAuth2/OIDC authentication, and secret vault storage.", skills: ["IAM", "OAuth/Vault"], weight: 4, diff: 3, effort: 8, offset: 13 },
+      { title: "Vulnerability Scanning & Automated Penetration Test", desc: "Execute automated penetration testing, patch CVE vulnerabilities, and harden OS kernels.", skills: ["Penetration Testing", "Vulnerability Management"], weight: 5, diff: 4, effort: 10, offset: 17 },
+      { title: "SIEM Logging Infrastructure & Incident Response Deck", desc: "Deploy centralized log aggregators (ELK/Datadog) and document incident playbook.", skills: ["SIEM", "Incident Response"], weight: 3, diff: 2, effort: 5, offset: 20 }
     );
   }
 
-  // 10. Match Research & Writing Briefs
-  if (deliverables.length === 0 && /research|thesis|study|survey|paper|analysis|report|essay|literature|nghiên cứu|luận văn|tiểu luận|đồ án|báo cáo/.test(text)) {
+  // 4. Digital Marketing & Growth Strategy
+  if (deliverables.length === 0 && /marketing|growth|campaign|advertising|seo|social media|chiến dịch|quảng cáo|thương hiệu/i.test(text)) {
     deliverables.push(
-      { title: "Literature Review & Thesis Hypothesis Outline", desc: "Gather academic sources, analyze prior work, and formulate core research questions.", skills: ["Research", "Academic Writing"], weight: 3, diff: 2, offset: 4, effort: 6 },
-      { title: "Methodology & Data Collection Tooling", desc: "Design survey questionnaires, experiment metrics, and sampling strategy.", skills: ["Data Analysis", "Methodology"], weight: 4, diff: 3, offset: 9, effort: 8 },
-      { title: "Primary Data Gathering & Statistical Analysis", desc: "Execute survey data collection, run statistical tests, and chart findings.", skills: ["Statistics", "Data Mining"], weight: 4, diff: 3, offset: 14, effort: 10 },
-      { title: "Draft Report Writing & Peer Citation Audit", desc: "Compile full report chapters, verify APA/IEEE citations, and proofread.", skills: ["Technical Writing", "Editing"], weight: 3, diff: 2, offset: 18, effort: 6 }
+      { title: "Audience Persona & Competitor Benchmark Matrix", desc: "Research target demographic, analyze competitor positioning, and define audience personas.", skills: ["Market Research", "Audience Insights"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Campaign Strategy & Value Proposition Statement", desc: "Formulate central campaign theme, key message framework, and communication channels.", skills: ["Campaign Strategy", "Copywriting"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Creative Visual Asset & Copy Deck Production", desc: "Design social media banners, promotional video cut-downs, and ad copy deck.", skills: ["Graphic Design", "Content Creation"], weight: 4, diff: 3, effort: 10, offset: 13 },
+      { title: "Multi-Channel Launch Execution & Content Scheduling", desc: "Deploy media placements, schedule social posts, and launch promotional outreach.", skills: ["Media Planning", "Marketing Operations"], weight: 4, diff: 3, effort: 8, offset: 16 },
+      { title: "Campaign Analytics Audit & Performance Report", desc: "Measure engagement metrics, conversion ROI, and optimize post-launch performance.", skills: ["Analytics", "Reporting"], weight: 3, diff: 2, effort: 5, offset: 19 }
     );
   }
 
-  // 11. Fallback for general briefs
+  // 5. Business Operations & Financial Planning
+  if (deliverables.length === 0 && /business operations|financial planning|startup|business model|finance|pitch|revenue|investor|operating|kinh doanh|tài chính|đầu tư/i.test(text)) {
+    deliverables.push(
+      { title: "Market Problem & Value Opportunity Definition", desc: "Analyze market gap, stakeholder needs, and define the core problem statement.", skills: ["Business Analysis", "Problem Framing"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Customer Validation & Competitor Landscape Matrix", desc: "Conduct target customer interviews, review competitors, and map market fit.", skills: ["Market Research", "Customer Insights"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Business Model Canvas & Value Unit Economics", desc: "Formulate revenue streams, cost structure, key partners, and pricing strategy.", skills: ["Financial Modeling", "Strategy"], weight: 4, diff: 3, effort: 10, offset: 13 },
+      { title: "Operational Execution Roadmap & Risk Register", desc: "Build milestone implementation timeline, key metrics, and mitigation plans.", skills: ["Operations", "Risk Management"], weight: 4, diff: 3, effort: 8, offset: 16 },
+      { title: "Executive Pitch Deck & Investor Presentation", desc: "Synthesize executive summary deck, financial forecast slides, and present proposal.", skills: ["Pitching", "Executive Communication"], weight: 3, diff: 2, effort: 6, offset: 19 }
+    );
+  }
+
+  // 6. Event Management & Public Relations
+  if (deliverables.length === 0 && /event management|public relations|\bpr\b|sự kiện|truyền thông|triển lãm|exhibition|venue/i.test(text)) {
+    deliverables.push(
+      { title: "Event Concept & Venue Layout Logistics Plan", desc: "Select event theme, map spatial floorplan, and negotiate venue contracts.", skills: ["Event Strategy", "Venue Planning"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Sponsor & Vendor Contract Management", desc: "Secure catering, AV equipment, ticketing services, and sponsor commitments.", skills: ["Vendor Management", "Budgeting"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "PR Outreach Deck & Press Release Distribution", desc: "Draft press kits, distribute media announcements, and coordinate influencer invitations.", skills: ["PR Writing", "Media Outreach"], weight: 4, diff: 3, effort: 8, offset: 12 },
+      { title: "Live Event On-Site Logistics & Equipment Setup", desc: "Coordinate stage run-of-show, AV hardware testing, and crowd flow management.", skills: ["Live Event Ops", "Equipment Setup"], weight: 5, diff: 4, effort: 12, offset: 16 },
+      { title: "Post-Event Analytics Audit & Media Coverage Report", desc: "Compile attendance metrics, media press clippings, and post-event financial reconciliation.", skills: ["Analytics", "Post-Event Review"], weight: 3, diff: 2, effort: 5, offset: 19 }
+    );
+  }
+
+  // 7. Content Creation & Media Production
+  if (deliverables.length === 0 && /content creation|media production|animation|animatic|\bscript\b|screenplay|storyboard|video|film|3d animation|phim|kịch bản|hoạt hình/i.test(text)) {
+    deliverables.push(
+      { title: "Script & Narrative Screenplay", desc: "Draft full screenplay, character dialogues, and narrative story structure for target audience.", skills: ["Screenwriting", "Storytelling"], weight: 3, diff: 3, effort: 6, offset: 3 },
+      { title: "Shot List & Storyboard Framing Composition", desc: "Detailed shot list breakdown, camera angles, timing, and key scene framing composition.", skills: ["Storyboarding", "Cinematography"], weight: 3, diff: 3, effort: 8, offset: 6 },
+      { title: "Design Document & Art Direction Specs", desc: "Character design sheets, background turnarounds, visual style guide, and look development.", skills: ["Concept Art", "Art Direction"], weight: 4, diff: 3, effort: 10, offset: 10 },
+      { title: "Greyscale Animatic Render & Timeline Assembly", desc: "Timed 45+ second greyscale animatic sequence with scratch audio and pacing validation.", skills: ["Video Editing", "Animation"], weight: 5, diff: 4, effort: 12, offset: 15 },
+      { title: "Final Artwork Render & Presentation Assembly", desc: "Export final high-res animation file, full documentation, and project presentation deck.", skills: ["Post-Production", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 18 }
+    );
+  }
+
+  // 8. Academic Research & Educational Design
+  if (deliverables.length === 0 && /academic research|educational design|research|thesis|study|survey|paper|analysis|report|essay|literature|nghiên cứu|luận văn|tiểu luận/i.test(text)) {
+    deliverables.push(
+      { title: "Literature Review & Thesis Hypothesis Outline", desc: "Gather academic sources, analyze prior work, and formulate core research questions.", skills: ["Research", "Academic Writing"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Methodology & Data Collection Tooling", desc: "Design survey questionnaires, experiment metrics, and sampling strategy.", skills: ["Data Analysis", "Methodology"], weight: 4, diff: 3, effort: 9, offset: 8 },
+      { title: "Primary Data Gathering & Statistical Analysis", desc: "Execute survey data collection, run statistical tests, and chart findings.", skills: ["Statistics", "Data Mining"], weight: 4, diff: 3, effort: 14, offset: 14 },
+      { title: "Draft Report Writing & Peer Citation Audit", desc: "Compile full report chapters, verify APA/IEEE citations, and proofread.", skills: ["Technical Writing", "Editing"], weight: 3, diff: 2, effort: 18, offset: 18 }
+    );
+  }
+
+  // 9. Architecture, Construction & Spatial Planning
+  if (deliverables.length === 0 && /architecture|construction|spatial planning|spatial design|floorplan|blueprint|kiến trúc|xây dựng|mặt bằng/i.test(text)) {
+    deliverables.push(
+      { title: "Site Context & Topographical Analysis Report", desc: "Document site contours, environmental orientation, regulatory constraints, and circulation.", skills: ["Site Analysis", "Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Spatial Programme & Adjacency Diagram Spec", desc: "Define space requirements, user flow adjacencies, and volumetric zoning.", skills: ["Spatial Design", "Architectural Programming"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "Schematic Floor Plans & 3D Massing Model", desc: "Develop conceptual floor plans, building elevations, and massing models.", skills: ["3D CAD/BIM", "Drafting"], weight: 5, diff: 4, effort: 12, offset: 13 },
+      { title: "Material Strategy & Technical Detailing Specs", desc: "Specify structural materials, environmental systems, and detail assembly sections.", skills: ["Technical Detailing", "Material Research"], weight: 4, diff: 3, effort: 10, offset: 17 },
+      { title: "Architectural Renders & Review Presentation Package", desc: "Render high-quality perspective views, physical/digital model boards, and review deck.", skills: ["Visualisation", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 20 }
+    );
+  }
+
+  // 10. UI/UX Design & Product Strategy (Strict word boundaries)
+  if (deliverables.length === 0 && /\bfigma\b|\bwireframe\b|\bui\/ux\b|\bux design\b|\buser experience\b|\bgiao diện\b|\bgiao diện ứng dụng\b/i.test(text)) {
+    deliverables.push(
+      { title: "User Persona & Journey Map Discovery", desc: "Interview target users, map behavioral pain points, and define design principles.", skills: ["UX Research", "Persona Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
+      { title: "Low-Fidelity Wireframes & Information Architecture", desc: "Sketch layout wireframes, navigation taxonomy, and component hierarchy.", skills: ["Wireframing", "UI Design"], weight: 4, diff: 3, effort: 8, offset: 8 },
+      { title: "High-Fidelity Interactive Prototype & Design Tokens", desc: "Create interactive Figma prototype with visual design tokens and typography system.", skills: ["Figma", "Interaction Design"], weight: 5, diff: 4, effort: 12, offset: 13 },
+      { title: "Usability Testing & Feedback Refinement", desc: "Run usability test sessions with target users and iterate on friction points.", skills: ["Usability Testing", "Design Iteration"], weight: 4, diff: 3, effort: 8, offset: 17 },
+      { title: "Design Handoff Spec & Presentation Deck", desc: "Prepare component specs, asset redlines, and showcase presentation deck.", skills: ["Design Handoff", "Presentation"], weight: 3, diff: 2, effort: 5, offset: 20 }
+    );
+  }
+
+  // Fallback for general briefs
   if (deliverables.length === 0) {
     const rawTitle = userBriefText.length > 0 ? "Project" : (projectTitle.trim() || "Project");
     deliverables.push(
@@ -218,7 +196,7 @@ import { extractFactsFromBrief } from "./aiPlanValidation";
 export function parseExplicitDeliverables(userBriefText: string): string[] {
   if (!userBriefText || userBriefText.trim().length === 0) return [];
 
-  const ABSTRACT_RUBRIC_REGEX = /^(?:originality|resourcefulness|technical exploration|practical function|clear communication|evaluation|rubric|criteria|submission requirements|ideations?|submissions?|exploration|quality standards|toward technical exploration|towards technical exploration)$/i;
+  const ABSTRACT_RUBRIC_REGEX = /^(?:originality|resourcefulness|technical exploration|practical function|clear communication|evaluation|rubric|criteria|submission requirements|ideations?|submissions?|exploration|quality standards|toward technical exploration|towards technical exploration|sáng tạo|khả thi|độ sâu kỹ thuật|tính thực tiễn|tiêu chí|đánh giá|originality & creativity)$/i;
 
   // 1. Check for explicit header match (deliverables include / sản phẩm bàn giao / bao gồm / tasks:)
   const headerMatch = userBriefText.match(
@@ -475,7 +453,7 @@ export function generateSmartFallbackPlan(context: PlanningContext, brief: strin
   const seed = generationId ? Array.from(generationId).reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
   const isVariation = seed > 0;
 
-  const rawTasks = extractDeliverablesFromBrief(brief, context.project.title);
+  const rawTasks = extractDeliverablesFromBrief(brief, context.project.title, context.project.frameworkName);
 
   const milestones = phases.slice(0, Math.min(6, phases.length)).map((phase, index) => ({
     tempId: `milestone_${index + 1}`,

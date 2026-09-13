@@ -298,4 +298,27 @@ describe("smartFallbackPlanner & 10-Point Output Validator", () => {
     // Plans must not be byte-for-byte identical when regenerated with a new generationId seed
     expect(titles1).not.toBe(titles2);
   });
+
+  it("BƯỚC 1 - BƯỚC 4: 4-Step Brief Analysis Pipeline isolates rubric grading criteria and generates domain tasks for Vietnamese and English briefs", () => {
+    const viBrief = "Dự án phát triển ứng dụng di động tìm kiếm nhà trọ cho sinh viên. Yêu cầu sản phẩm bàn giao: Thiết kế giao diện Figma, Xây dựng cơ sở dữ liệu SQL, Lập trình ứng dụng React Native, Triển khai hệ thống thông báo đẩy, Viết tài liệu hướng dẫn. Tiêu chí chấm điểm: Tính sáng tạo, Độ khả thi, Độ sâu kỹ thuật, Khả năng mở rộng.";
+
+    const context = {
+      ...mockContext,
+      project: {
+        ...mockContext.project,
+        frameworkName: "Software & Web/App Engineering",
+      },
+    };
+
+    const plan = generateSmartFallbackPlan(context, viBrief);
+    const taskTitles = plan.tasks.map((t) => t.title).join(" ");
+
+    // Step 2 Verification: MUST NOT contain grading rubric terms as tasks
+    expect(taskTitles).not.toMatch(/sáng tạo|khả thi|độ sâu kỹ thuật|khả năng mở rộng/i);
+    expect(taskTitles).not.toMatch(/originality|feasibility|technical depth/i);
+
+    // Step 4 Verification: MUST contain concrete deliverables
+    expect(taskTitles).toMatch(/figma|giao diện|cơ sở dữ liệu|react native|lập trình|triển khai|tài liệu|database|schema|frontend|api/i);
+    expect(plan.tasks.length).toBeGreaterThanOrEqual(4);
+  });
 });
