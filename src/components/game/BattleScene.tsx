@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { jsPDF } from "jspdf";
 import {
   BookOpen,
+  BarChart2,
   Check,
   CheckCircle2,
   ClipboardCheck,
@@ -1416,10 +1417,31 @@ export function BattleScene({
   const [showSoundSettingsModal, setShowSoundSettingsModal] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(() => gameAudio.getMuted());
   const [audioVolume, setAudioVolume] = useState(() => Math.round(gameAudio.getVolume() * 100));
+  const [spellVolume, setSpellVolume] = useState(() => Math.round(gameAudio.getSpellVolume() * 100));
+  const [bgmVolume, setBgmVolume] = useState(() => Math.round(gameAudio.getBgmVolume() * 100));
   const [isLofiBgmPlaying, setIsLofiBgmPlaying] = useState(() => gameAudio.isBgmActive());
   const [hasPushGranted, setHasPushGranted] = useState(() => areNotificationsEnabled());
   const [showGoblinAttackAlert, setShowGoblinAttackAlert] = useState(false);
   const [taskDeadlineAlertTask, setTaskDeadlineAlertTask] = useState<QuestTask | null>(null);
+
+  // Display Experience Mode (Tool Mode vs Game Mode)
+  const [displayMode, setDisplayMode] = useState<"game" | "tool">(() => {
+    if (typeof window === "undefined") return "game";
+    const projectSpecific = localStorage.getItem(`project_display_mode_${projectId}`);
+    if (projectSpecific === "tool" || projectSpecific === "game") return projectSpecific;
+    const globalSetting = localStorage.getItem("project_display_mode");
+    if (globalSetting === "tool" || globalSetting === "game") return globalSetting;
+    return "game";
+  });
+
+  const toggleDisplayMode = () => {
+    const nextMode = displayMode === "game" ? "tool" : "game";
+    setDisplayMode(nextMode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`project_display_mode_${projectId}`, nextMode);
+      localStorage.setItem("project_display_mode", nextMode);
+    }
+  };
 
   // Spawner states
   const [spawnerType, setSpawnerType] = useState<"circle" | "ellipse" | "rect" | "polygon" | "path">("circle");
@@ -1939,7 +1961,6 @@ export function BattleScene({
         targetY: 175,
       });
 
-      gameAudio.playTing();
       setShowBossModal(false);
       setSelectedTaskId(null);
       setEvidenceNote("");
@@ -2865,7 +2886,8 @@ export function BattleScene({
       <SVGDefs />
 
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
-      <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
+      {displayMode === "game" ? (
+        <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
         {/* Layer 10: Task Progress Bar (TOP, centered text, draggable, responsive width) */}
         <div
           className="pvz-deadline-progress-container project-task-progress-container"
@@ -2939,6 +2961,28 @@ export function BattleScene({
                 (Target passed · No penalty)
               </span>
             )}
+            <button
+              type="button"
+              onClick={toggleDisplayMode}
+              title="Switch to Tool Mode (Plain progress bar, minimal productivity layout)"
+              style={{
+                background: "#f1f5f9",
+                border: "1.5px solid #101517",
+                borderRadius: "6px",
+                padding: "2px 8px",
+                fontSize: "0.68rem",
+                fontWeight: 800,
+                color: "#0f172a",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                marginLeft: "4px",
+              }}
+            >
+              <BarChart2 size={12} />
+              Tool Mode
+            </button>
           </div>
 
           {/* Progress Bar Track */}
@@ -3092,8 +3136,8 @@ export function BattleScene({
             isVictory={defeated}
             activeAttackers={activeAttackers}
             dragonTarget={{
-              x: Math.round((dragonX + 80) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
-              y: Math.round(195 * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.y || 0)),
+              x: Math.round(500 + (dragonX + 45 - 500) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
+              y: Math.round(200 + (225 - 200) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.y || 0)),
             }}
           />
         </div>
@@ -3150,6 +3194,17 @@ export function BattleScene({
           >
             <GripHorizontal size={18} />
           </div>
+
+          {/* 0. Mode Switcher: Game Mode vs Tool Mode */}
+          <button
+            type="button"
+            className="rpg-btn-icon"
+            onClick={toggleDisplayMode}
+            title="Switch to Tool Mode (Plain progress bar & minimal dashboard)"
+            aria-label="Switch to Tool Mode"
+          >
+            <BarChart2 size={20} />
+          </button>
 
           {/* 1. Tutorial */}
           <button
@@ -3256,6 +3311,289 @@ export function BattleScene({
           />
         )}
       </div>
+      ) : (
+        <div
+          className="tool-mode-dashboard-container"
+          style={{
+            position: "relative",
+            width: "100%",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "24px 20px",
+            display: "grid",
+            gap: "20px",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Header Card */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "#fffded",
+              border: "3px solid #101517",
+              borderRadius: "14px",
+              padding: "16px 20px",
+              boxShadow: "4px 4px 0 rgba(16,21,23,0.72)",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif", color: "#101517" }}>
+                  {workspace?.project?.title || state?.project?.title || "Project Workspace"}
+                </h1>
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    background: "#e0f2fe",
+                    color: "#0369a1",
+                    border: "1.5px solid #0284c7",
+                  }}
+                >
+                  Tool Mode
+                </span>
+              </div>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.82rem", color: "#475569" }}>
+                Distraction-free productivity view · Plain progress & tasks
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                type="button"
+                className="rpg-modern-btn is-primary"
+                onClick={toggleDisplayMode}
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "0.82rem" }}
+                title="Switch to Game Mode (Full Dragon & RPG visuals)"
+              >
+                <Gamepad2 size={16} />
+                Switch to Game Mode
+              </button>
+              <button
+                type="button"
+                className="rpg-modern-btn is-secondary"
+                onClick={() => setShowSoundSettingsModal(true)}
+                style={{ padding: "8px", display: "grid", placeItems: "center" }}
+                title="Sound Settings"
+              >
+                <Volume2 size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Plain Progress Bar Card */}
+          <div
+            style={{
+              background: "#fffded",
+              border: "3px solid #101517",
+              borderRadius: "14px",
+              padding: "18px 20px",
+              boxShadow: "4px 4px 0 rgba(16,21,23,0.72)",
+              display: "grid",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+              <div>
+                <span style={{ fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>Overall Status</span>
+                <div style={{ fontSize: "1.5rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif", color: "#101517" }}>
+                  Team progress: <span style={{ color: "#15803d" }}>{progressPercentage}%</span>
+                </div>
+              </div>
+              <div style={{ textAlign: "right", fontSize: "0.82rem", color: "#334155" }}>
+                <div><strong>{completedTasksCount}</strong> of <strong>{totalTasksCount}</strong> tasks completed</div>
+                <div>Deadline: <strong>{deadlineStr || "Not set"}</strong> (Day {daysPassed} of {totalDays || 14} · {daysRemaining > 0 ? `${daysRemaining} days left` : "Target passed"})</div>
+              </div>
+            </div>
+
+            {/* Plain Progress Bar Track */}
+            <div style={{ width: "100%", height: "16px", background: "#e2e8f0", border: "2px solid #101517", borderRadius: "8px", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${progressPercentage}%`,
+                  height: "100%",
+                  background: "linear-gradient(90deg, #15803d, #22c55e)",
+                  borderRadius: "6px",
+                  transition: "width 0.4s ease",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Tasks & Team Section */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
+            {/* Tasks List */}
+            <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "18px 20px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
+                  Tasks & Deliverables
+                </h3>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="rpg-modern-btn is-secondary"
+                    style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+                    onClick={() => setShowQuestBoardModal(true)}
+                  >
+                    Open Tasks Board
+                  </button>
+                  {workspace?.project?.creatorProfileId === state?.currentProfileId && (
+                    <button
+                      type="button"
+                      className="rpg-modern-btn is-primary"
+                      style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+                      onClick={() => setShowCreateQuestModal(true)}
+                    >
+                      + Add Task
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: "8px" }}>
+                {questTasks.map((task) => {
+                  const isCompleted = task.isCompleted || task.status === "completed" || task.status === "verified";
+                  const isPendingReview = task.status === "review";
+                  const isMine = task.isMine;
+
+                  return (
+                    <div
+                      key={task._id}
+                      style={{
+                        border: "2px solid #101517",
+                        borderRadius: "10px",
+                        padding: "12px 14px",
+                        background: isCompleted ? "#f8fafc" : "#ffffff",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "12px",
+                        boxShadow: "2px 2px 0 rgba(16,21,23,0.15)",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: 800, fontSize: "0.92rem", color: isCompleted ? "#64748b" : "#101517", textDecoration: isCompleted ? "line-through" : "none" }}>
+                            {task.title}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.7rem",
+                              fontWeight: 800,
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              background: isCompleted ? "#dcfce7" : isPendingReview ? "#fef3c7" : "#f1f5f9",
+                              color: isCompleted ? "#15803d" : isPendingReview ? "#b45309" : "#475569",
+                              border: "1px solid #101517",
+                            }}
+                          >
+                            {isCompleted ? "Completed" : isPendingReview ? "Review Pending" : "In Progress"}
+                          </span>
+                        </div>
+                        {task.description && (
+                          <p style={{ margin: "3px 0 0 0", fontSize: "0.78rem", color: "#64748b" }}>
+                            {task.description}
+                          </p>
+                        )}
+                        <div style={{ display: "flex", gap: "12px", marginTop: "4px", fontSize: "0.74rem", color: "#64748b" }}>
+                          <span>Assignee: <strong>{task.assigneeName || "Open"}</strong></span>
+                          <span>Due: <strong>{task.dueDate || "No date"}</strong></span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        {!isCompleted && !isPendingReview && isMine && (
+                          <button
+                            type="button"
+                            className="rpg-modern-btn is-primary"
+                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
+                            onClick={() => {
+                              setSelectedTaskId(task._id);
+                              setShowBossModal(true);
+                            }}
+                          >
+                            Submit Proof
+                          </button>
+                        )}
+                        {isPendingReview && (
+                          <button
+                            type="button"
+                            className="rpg-modern-btn is-boss"
+                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
+                            onClick={() => setReviewingTaskId(task._id)}
+                          >
+                            Review
+                          </button>
+                        )}
+                        {!task.primaryOwnerProfileId && task.isOpen && (
+                          <button
+                            type="button"
+                            className="rpg-modern-btn is-secondary"
+                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
+                            onClick={() => handleClaimQuest(task)}
+                          >
+                            Claim
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Team Roster & PDF Export */}
+            <div style={{ display: "grid", gap: "16px", alignContent: "start" }}>
+              {/* Team Members */}
+              <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "16px 18px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "10px" }}>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
+                  Team Members ({players.length})
+                </h3>
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {players.map((p) => (
+                    <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#0284c7", border: "1.5px solid #101517", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.82rem" }}>
+                        {p.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: "0.84rem", color: "#101517" }}>{p.displayName}</div>
+                        <div style={{ fontSize: "0.7rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 700 }}>
+                          {p.isActiveToday ? "● Active today" : "○ Idle"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contribution Record Download */}
+              <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "16px 18px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "8px" }}>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
+                  Contribution Dossier
+                </h3>
+                <p style={{ margin: 0, fontSize: "0.76rem", color: "#64748b" }}>
+                  Verifiable PDF report with contribution breakdown and review history.
+                </p>
+                <button
+                  type="button"
+                  className="rpg-modern-btn is-secondary"
+                  onClick={generateContributionPdf}
+                  style={{ padding: "8px 12px", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", width: "100%" }}
+                >
+                  <FileDown size={16} />
+                  Download PDF Record
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           ADJUST ELEMENTS MODAL (Dragon, HP Bar, Players)
@@ -4026,11 +4364,6 @@ export function BattleScene({
                 onClick={() => {
                   const next = !isDummyTaskSubmitted;
                   setIsDummyTaskSubmitted(next);
-                  if (next) {
-                    gameAudio.playDragonRoar();
-                    gameAudio.playProjectileSound("fire");
-                    gameAudio.playTing();
-                  }
                 }}
               >
                 {isDummyTaskSubmitted ? "Undo Task Submit" : "Simulate Task Submit"}
@@ -4362,8 +4695,6 @@ export function BattleScene({
                       onClick={() => {
                         setDummyReviewTaskDone(true);
                         setIsDummyTaskSubmitted(true);
-                        gameAudio.playDragonRoar();
-                        gameAudio.playTing();
                       }}
                     >
                       ⚔️ Approve Proof & Deal Boss Damage
@@ -5144,7 +5475,7 @@ export function BattleScene({
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingBottom: "8px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", border: "1.5px solid #101517", borderRadius: "8px", padding: "8px 12px", flexShrink: 0 }}>
                     <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#334155" }}>
-                      Daily goblin battle reports submitted by heroes.
+                      Everything in the chat will be recorded and put into the PDF download. Post daily updates to see proof and contribution get recorded.
                     </span>
                     <button
                       className="rpg-modern-btn is-primary"
@@ -5175,7 +5506,7 @@ export function BattleScene({
                         No daily proofs submitted today yet!
                       </p>
                       <p style={{ margin: "6px 0 14px 0", fontSize: "0.82rem" }}>
-                        Defend the village and slay daily goblins by posting your progress notes or screenshots.
+                        Everything in the chat will be recorded and put into the PDF download. Post daily updates to see proof and contribution get recorded.
                       </p>
                       <button
                         className="rpg-modern-btn is-primary"
@@ -7010,11 +7341,17 @@ export function BattleScene({
       {/* =========================================================================
           SOUND SETTINGS & WEB PUSH NOTIFICATION MODAL
          ========================================================================= */}
+      {/* =========================================================================
+          SOUND SETTINGS MODAL (3 Clean Sliders: Master SFX, Spell SFX, BGM)
+         ========================================================================= */}
       {showSoundSettingsModal && (
         <div className="rpg-modal-backdrop" onClick={() => setShowSoundSettingsModal(false)}>
-          <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 className="rpg-modern-title" style={{ fontSize: "1.25rem" }}>Sound & Notifications</h3>
+          <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 className="rpg-modern-title" style={{ fontSize: "1.25rem", margin: 0 }}>Sound Settings</h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "0.78rem", color: "#64748b" }}>Master, elemental spell, and background audio</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowSoundSettingsModal(false)}
@@ -7024,44 +7361,28 @@ export function BattleScene({
               </button>
             </div>
 
-            {/* 1. Master Audio & Volume Slider */}
-            <div className="rpg-panel-card" style={{ display: "grid", gap: "10px", marginTop: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900 }}>Master Audio</h4>
-                  <p style={{ margin: "2px 0 0 0", fontSize: "0.76rem", opacity: 0.8 }}>Control game volume and sound effects</p>
-                </div>
-                <button
-                  type="button"
-                  className={`rpg-modern-btn ${isAudioMuted ? "is-secondary" : "is-primary"}`}
-                  style={{ padding: "6px 14px", fontSize: "0.8rem", background: isAudioMuted ? "#fee2e2" : undefined, color: isAudioMuted ? "#b91c1c" : undefined }}
-                  onClick={() => {
-                    const newMuted = !isAudioMuted;
-                    setIsAudioMuted(newMuted);
-                    gameAudio.setMuted(newMuted);
-                  }}
-                >
-                  {isAudioMuted ? "Unmute All Sound" : "Mute All Sound"}
-                </button>
-              </div>
-
-              {/* Volume Slider */}
-              <div style={{ display: "grid", gap: "4px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontWeight: 800 }}>
-                  <span>Master Volume</span>
-                  <span>{isAudioMuted ? "Muted (0%)" : `${audioVolume}%`}</span>
+            <div style={{ display: "grid", gap: "16px" }}>
+              {/* 1. Master Sound Effects Slider (Default 80%, On) */}
+              <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 900 }}>Master Sound Effects</h4>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.74rem", color: "#64748b" }}>Overall volume for all sound effects</p>
+                  </div>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0284c7" }}>
+                    {isAudioMuted ? "Muted (0%)" : `${audioVolume}%`}
+                  </span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={isAudioMuted ? 0 : audioVolume}
-                  disabled={isAudioMuted}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10) || 0;
                     setAudioVolume(val);
                     gameAudio.setVolume(val / 100);
-                    if (isAudioMuted && val > 0) {
+                    if (val > 0 && isAudioMuted) {
                       setIsAudioMuted(false);
                       gameAudio.setMuted(false);
                     }
@@ -7069,211 +7390,68 @@ export function BattleScene({
                   style={{ width: "100%", accentColor: "#0284c7" }}
                 />
               </div>
-            </div>
 
-            {/* 2. Medieval Heroic Combat Background Music */}
-            <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900 }}>Medieval Heroic Combat BGM</h4>
-                  <p style={{ margin: "2px 0 0 0", fontSize: "0.76rem", opacity: 0.8 }}>Driving 128 BPM medieval gallop, battle drums, and brass fanfare</p>
-                </div>
-                <button
-                  type="button"
-                  className={`rpg-modern-btn ${isLofiBgmPlaying ? "is-secondary" : "is-primary"}`}
-                  style={{ padding: "6px 14px", fontSize: "0.8rem" }}
-                  onClick={() => {
-                    if (isLofiBgmPlaying) {
-                      gameAudio.stopMedievalHeroicBgm();
-                      setIsLofiBgmPlaying(false);
-                    } else {
-                      gameAudio.startMedievalHeroicBgm();
-                      setIsLofiBgmPlaying(true);
-                    }
-                  }}
-                >
-                  {isLofiBgmPlaying ? "Pause Heroic Music" : "Play Heroic Music"}
-                </button>
-              </div>
-              <p style={{ margin: 0, fontSize: "0.74rem", opacity: 0.85 }}>
-                Ferocious dragon roar periodically echoes across the battlefield every 60 seconds while music is active.
-              </p>
-            </div>
-
-            {/* 3. Web Push Notifications & Task Reminders */}
-            <div className="rpg-panel-card" style={{ display: "grid", gap: "12px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900 }}>Task & Daily Goblin Reminders</h4>
-                  <p style={{ margin: "2px 0 0 0", fontSize: "0.76rem", opacity: 0.8 }}>Browser push notifications and periodic alarms</p>
-                </div>
-                <button
-                  type="button"
-                  className={`rpg-modern-btn ${hasPushGranted ? "is-secondary" : "is-primary"}`}
-                  style={{ padding: "6px 14px", fontSize: "0.8rem", background: hasPushGranted ? "#dcfce7" : undefined, color: hasPushGranted ? "#15803d" : undefined }}
-                  onClick={async () => {
-                    const granted = await requestWebPushPermission();
-                    setHasPushGranted(granted);
-                    if (granted) {
-                      sendWebNotification(
-                        `${workspace?.project?.title || "Realm"}: Notifications Enabled!`,
-                        "You will now receive periodic task reminders and goblin defense alerts.",
-                        "ting"
-                      );
-                    }
-                  }}
-                >
-                  {hasPushGranted ? "Push Active" : "Enable Push Notifications"}
-                </button>
-              </div>
-
-              {/* Goblin Reminder Info */}
-              <div style={{ background: "rgba(220,38,38,0.06)", border: "1.5px solid #ef4444", borderRadius: "8px", padding: "10px", display: "grid", gap: "6px" }}>
+              {/* 2. Spell Sound Effects Slider (Default 80%, On) */}
+              <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 900, color: "#991b1b" }}>
-                    Daily Goblin Defense (Every 6h + 11:00 PM)
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 900 }}>Spell Sound Effects</h4>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.74rem", color: "#64748b" }}>Elemental projectile impact sounds (Fire, Ice, Lightning, Arcane)</p>
+                  </div>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0284c7" }}>
+                    {spellVolume}%
                   </span>
-                  <button
-                    type="button"
-                    className="rpg-modern-btn is-primary"
-                    style={{ padding: "4px 8px", fontSize: "0.72rem" }}
-                    onClick={() => {
-                      sendWebNotification(
-                        `${workspace?.project?.title || "Realm"}: VILLAGE IS UNDER ATTACK!`,
-                        "Slay the goblin horde now to defend the village!",
-                        "fanfare"
-                      );
-                      setShowGoblinAttackAlert(true);
-                    }}
-                  >
-                    Test Goblin Alarm
-                  </button>
                 </div>
-                <span style={{ fontSize: "0.75rem", color: "#7f1d1d" }}>
-                  Plays a 3.5s Heroic Melody and triggers: "VILLAGE IS UNDER ATTACK! Slay the goblin horde now to defend the village!"
-                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={spellVolume}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10) || 0;
+                    setSpellVolume(val);
+                    gameAudio.setSpellVolume(val / 100);
+                  }}
+                  style={{ width: "100%", accentColor: "#0284c7" }}
+                />
               </div>
 
-              {/* Task Deadline Reminder Info */}
-              <div style={{ background: "rgba(234,88,12,0.06)", border: "1.5px solid #ea580c", borderRadius: "8px", padding: "10px", display: "grid", gap: "6px" }}>
+              {/* 3. Background Music Slider (Default 0%, Muted - user slides up to turn on) */}
+              <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 900, color: "#9a3412" }}>
-                    Task Deadline Due Soon (1 Day Before Due Date)
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 900 }}>Background Music</h4>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.74rem", color: "#64748b" }}>Medieval lute, brass fanfare & marching tempo (Slide up to play)</p>
+                  </div>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: bgmVolume > 0 ? "#16a34a" : "#64748b" }}>
+                    {bgmVolume > 0 ? `${bgmVolume}%` : "Off (0%)"}
                   </span>
-                  <button
-                    type="button"
-                    className="rpg-modern-btn is-boss"
-                    style={{ padding: "4px 8px", fontSize: "0.72rem" }}
-                    onClick={() => {
-                      sendWebNotification(
-                        `${workspace?.project?.title || "Realm"}: BOSS DEADLINE DUE SOON!`,
-                        "Task deadline due soon. Submit proof to strike the boss!",
-                        "roar"
-                      );
-                      const mockTask = questTasks.find(t => t.isMine && !t.isCompleted) || questTasks[0] || {
-                        _id: "test" as any,
-                        title: "Sample Critical Quest",
-                        dueDate: "Tomorrow",
-                      };
-                      setTaskDeadlineAlertTask(mockTask as any);
-                    }}
-                  >
-                    Test Deadline Alarm
-                  </button>
                 </div>
-                <span style={{ fontSize: "0.75rem", color: "#7c2d12" }}>
-                  Plays Powerful Dragon Roar and triggers: "BOSS DEADLINE DUE SOON! Submit proof to strike the boss!"
-                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={bgmVolume}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10) || 0;
+                    setBgmVolume(val);
+                    gameAudio.setBgmVolume(val / 100);
+                    setIsLofiBgmPlaying(val > 0);
+                  }}
+                  style={{ width: "100%", accentColor: "#16a34a" }}
+                />
               </div>
             </div>
 
-            {/* 4. Sound Effects Testing Board */}
-            <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
-              <h4 style={{ margin: 0, fontSize: "0.88rem", fontWeight: 900 }}>Sound Effects Palette</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playTing()}
-                >
-                  Submit Ting
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playDragonRoar()}
-                >
-                  Dragon Roar
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playHeroicMelody()}
-                >
-                  Heroic Fanfare
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem", color: "#eab308" }}
-                  onClick={() => gameAudio.playElectricZap()}
-                >
-                  ⚡ Electric Zap
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem", color: "#f97316" }}
-                  onClick={() => gameAudio.playBurnPop()}
-                >
-                  🔥 Burn Pop
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem", color: "#38bdf8" }}
-                  onClick={() => gameAudio.playIceCrack()}
-                >
-                  ❄️ Ice Crack
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem", color: "#a855f7" }}
-                  onClick={() => gameAudio.playArcaneSpark()}
-                >
-                  ✨ Arcane Spark
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playLightning(1600)}
-                >
-                  Lightning Spell
-                </button>
-                <button
-                  type="button"
-                  className="rpg-modern-btn is-secondary"
-                  style={{ padding: "6px", fontSize: "0.74rem" }}
-                  onClick={() => gameAudio.playFreeze()}
-                >
-                  Ice Freeze
-                </button>
-              </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button
+                className="rpg-modern-btn is-primary"
+                type="button"
+                onClick={() => setShowSoundSettingsModal(false)}
+              >
+                Done
+              </button>
             </div>
-
-            <button
-              className="rpg-modern-btn is-secondary"
-              type="button"
-              style={{ marginTop: "4px" }}
-              onClick={() => setShowSoundSettingsModal(false)}
-            >
-              Close
-            </button>
           </div>
         </div>
       )}

@@ -32,7 +32,7 @@ export function LandscapeFX({
   activeAttackers = [],
   dragonTarget = { x: 660, y: 195 },
 }: LandscapeFXProps) {
-  // Trigger elemental non-looping projectile sounds in sync with the 5s launch cycle
+  // Trigger elemental projectile sounds precisely when the spell reaches and hits the dragon (1.9s flight)
   useEffect(() => {
     if (activeAttackers.length === 0) return;
 
@@ -40,7 +40,7 @@ export function LandscapeFX({
       activeAttackers.forEach((attacker, idx) => {
         const timer = setTimeout(() => {
           gameAudio.playProjectileSound(attacker.spellType);
-        }, idx * 800);
+        }, idx * 800 + 1900);
         return timer;
       });
     };
@@ -53,12 +53,12 @@ export function LandscapeFX({
   return (
     <div className="landscape-layer layer-9-fx" aria-hidden="true">
       <style>{`
-        @keyframes island-hover {
+        @keyframes player-hover {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-7px); }
         }
-        .floating-island-group {
-          animation: island-hover 5.5s ease-in-out infinite;
+        .player-independent-hover {
+          animation: player-hover 3.6s ease-in-out infinite;
           transform-origin: center center;
         }
       `}</style>
@@ -82,10 +82,10 @@ export function LandscapeFX({
 
           {/* =========================================================================
               CONTINUOUS ELEMENTAL ATTACK PROJECTILES FROM PLAYERS TO DRAGON
-              Synced with the floating island hover animation
+              Synced with the independent player hover animation
               Originates precisely from the peak of each attacking player's staff
              ========================================================================= */}
-          <g className="floating-island-group">
+          <g className="player-independent-hover">
             {activeAttackers.map((attacker, idx) => {
               const spellType = (attacker.spellType || "lightning").toLowerCase();
               const isAtkFire = spellType === "fire";

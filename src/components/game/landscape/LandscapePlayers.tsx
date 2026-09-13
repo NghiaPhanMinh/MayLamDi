@@ -70,44 +70,70 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
 
 export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
   const count = Math.max(1, totalCount);
-  let numCols: number;
-  let spriteScale: number;
+  const centerX = 315;
+  const centerY = 215;
 
-  if (count <= 2) {
-    numCols = 2;
-    spriteScale = 1.25;
-  } else if (count <= 4) {
-    numCols = 2;
+  let numCols: number;
+  let numRows: number;
+  let spriteScale: number;
+  let colGap: number;
+  let rowGap: number;
+
+  if (count === 1) {
+    return { x: centerX, y: centerY, scale: 1.25 };
+  } else if (count <= 3) {
+    numCols = count;
+    numRows = 1;
+    spriteScale = count === 2 ? 1.25 : 1.20;
+    colGap = 52;
+    rowGap = 0;
+  } else if (count <= 6) {
+    numCols = Math.ceil(count / 2);
+    numRows = 2;
     spriteScale = 1.15;
-  } else if (count <= 8) {
-    numCols = 4;
+    colGap = 48;
+    rowGap = 28;
+  } else if (count <= 10) {
+    numCols = Math.ceil(count / 2);
+    numRows = 2;
     spriteScale = 1.0;
-  } else if (count <= 14) {
-    numCols = 5;
+    colGap = Math.min(46, Math.floor(260 / (numCols - 1)));
+    rowGap = 30;
+  } else if (count <= 16) {
+    numCols = Math.ceil(count / 3);
+    numRows = 3;
     spriteScale = 0.88;
+    colGap = Math.min(42, Math.floor(280 / (numCols - 1)));
+    rowGap = 24;
   } else {
     numCols = Math.min(7, Math.ceil(Math.sqrt(count * 2)));
-    spriteScale = Math.max(0.68, 0.88 - (count - 14) * 0.015);
+    numRows = Math.ceil(count / numCols);
+    spriteScale = Math.max(0.68, 0.88 - (count - 16) * 0.015);
+    colGap = Math.floor(290 / (numCols - 1));
+    rowGap = Math.floor(62 / (numRows - 1));
   }
 
-  const numRows = Math.ceil(count / numCols);
   const row = Math.floor(index / numCols);
   const col = index % numCols;
 
+  const itemsInRow = (row === numRows - 1 && count % numCols !== 0) ? (count % numCols) : numCols;
+  const rowWidth = (itemsInRow - 1) * colGap;
+  const totalHeight = (numRows - 1) * rowGap;
+
+  const startX = centerX - rowWidth / 2;
+  const startY = centerY - totalHeight / 2;
+
+  // Stagger alternate rows slightly for RPG party feel
+  const stagger = (row % 2) * (colGap * 0.25);
+  const rawX = startX + col * colGap + stagger;
+  const rawY = startY + row * rowGap;
+
+  // Strict clamp within island plateau bounds so heroes never spill over
   const minX = 175;
   const maxX = 465;
   const minY = 188;
   const maxY = 250;
 
-  const colGap = numCols > 1 ? (maxX - minX) / (numCols - 1) : 0;
-  const rowGap = numRows > 1 ? (maxY - minY) / (numRows - 1) : 0;
-
-  // Stagger alternate rows slightly for RPG party feel
-  const stagger = (row % 2) * (colGap * 0.35);
-  const rawX = minX + col * colGap + stagger;
-  const rawY = minY + row * rowGap;
-
-  // Strict clamp within island plateau bounds so heroes never spill over
   const x = Math.round(Math.max(minX, Math.min(maxX, rawX)));
   const y = Math.round(Math.max(minY, Math.min(maxY, rawY)));
 
@@ -143,18 +169,18 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
   return (
     <div className="landscape-layer layer-7-players" aria-label="Party members roster">
       <style>{`
-        @keyframes island-hover {
+        @keyframes player-hover {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-7px); }
         }
-        .floating-island-group {
-          animation: island-hover 5.5s ease-in-out infinite;
+        .player-independent-hover {
+          animation: player-hover 3.6s ease-in-out infinite;
           transform-origin: center center;
         }
       `}</style>
       <svg viewBox="0 0 1000 400" width="100%" height="100%">
-        {/* Synced with island floating animation */}
-        <g className="floating-island-group">
+        {/* Independent player hover animation (not locked to the island) */}
+        <g className="player-independent-hover">
           {members.map((member, index) => {
             const { x: offsetX, y: offsetY, scale: spriteScale } = getPlayerLayoutInfo(index, count);
             const active = member.isActiveToday;

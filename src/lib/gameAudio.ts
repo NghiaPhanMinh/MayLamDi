@@ -7,10 +7,13 @@ class GameAudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
+  private spellGain: GainNode | null = null;
   private bgmGain: GainNode | null = null;
 
   private isMuted: boolean = false;
-  private masterVolume: number = 0.30; // 30% default master volume naturally
+  private masterVolume: number = 0.80; // 80% default master volume
+  private spellVolume: number = 0.80; // 80% default spell sound effects volume
+  private bgmVolume: number = 0.0; // 0% default background music volume (user turns up)
   private isBgmPlaying: boolean = false;
   private bgmIntervalId: any = null;
   private ambientRoarIntervalId: any = null;
@@ -31,6 +34,14 @@ class GameAudioEngine {
       if (savedVol !== null) {
         this.masterVolume = Math.max(0, Math.min(1, parseFloat(savedVol)));
       }
+      const savedSpellVol = localStorage.getItem("rpg_sound_spell_volume");
+      if (savedSpellVol !== null) {
+        this.spellVolume = Math.max(0, Math.min(1, parseFloat(savedSpellVol)));
+      }
+      const savedBgmVol = localStorage.getItem("rpg_sound_bgm_volume");
+      if (savedBgmVol !== null) {
+        this.bgmVolume = Math.max(0, Math.min(1, parseFloat(savedBgmVol)));
+      }
     }
   }
 
@@ -42,13 +53,16 @@ class GameAudioEngine {
         this.ctx = new AudioCtx();
         this.masterGain = this.ctx.createGain();
         this.sfxGain = this.ctx.createGain();
+        this.spellGain = this.ctx.createGain();
         this.bgmGain = this.ctx.createGain();
 
         this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.masterVolume, this.ctx.currentTime);
         this.sfxGain.gain.setValueAtTime(0.70, this.ctx.currentTime);
-        this.bgmGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        this.spellGain.gain.setValueAtTime(this.spellVolume, this.ctx.currentTime);
+        this.bgmGain.gain.setValueAtTime(this.bgmVolume * 0.40, this.ctx.currentTime);
 
         this.sfxGain.connect(this.masterGain);
+        this.spellGain.connect(this.masterGain);
         this.bgmGain.connect(this.masterGain);
         this.masterGain.connect(this.ctx.destination);
       }
@@ -87,6 +101,41 @@ class GameAudioEngine {
 
   public getVolume(): number {
     return this.masterVolume;
+  }
+
+  public setSpellVolume(vol: number) {
+    this.spellVolume = Math.max(0, Math.min(1, vol));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("rpg_sound_spell_volume", String(this.spellVolume));
+    }
+    if (this.spellGain && this.ctx) {
+      this.spellGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.spellGain.gain.setValueAtTime(this.spellVolume, this.ctx.currentTime);
+    }
+  }
+
+  public getSpellVolume(): number {
+    return this.spellVolume;
+  }
+
+  public setBgmVolume(vol: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, vol));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("rpg_sound_bgm_volume", String(this.bgmVolume));
+    }
+    if (this.bgmGain && this.ctx) {
+      this.bgmGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.bgmGain.gain.setValueAtTime(this.bgmVolume * 0.40, this.ctx.currentTime);
+    }
+    if (this.bgmVolume > 0 && !this.isBgmPlaying && !this.isMuted) {
+      this.startMedievalHeroicBgm();
+    } else if (this.bgmVolume === 0 && this.isBgmPlaying) {
+      this.stopMedievalHeroicBgm();
+    }
+  }
+
+  public getBgmVolume(): number {
+    return this.bgmVolume;
   }
 
   // ============================================================================
@@ -218,7 +267,7 @@ class GameAudioEngine {
     const loopGain = ctx.createGain();
     loopGain.gain.setValueAtTime(0, now);
     loopGain.gain.linearRampToValueAtTime(0.28, now + 0.08);
-    loopGain.connect(this.sfxGain);
+    loopGain.connect(this.spellGain || this.sfxGain);
 
     const nodes: (AudioNode | OscillatorNode | AudioBufferSourceNode)[] = [];
     const timers: any[] = [];
@@ -514,7 +563,8 @@ class GameAudioEngine {
   // ============================================================================
   public playElectricZap() {
     const ctx = this.initContext();
-    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const dest = this.spellGain || this.sfxGain;
+    if (!ctx || !dest || this.isMuted) return;
     const now = ctx.currentTime;
 
     // 1. Descending Sawtooth Voltage Discharge
@@ -534,7 +584,7 @@ class GameAudioEngine {
 
     osc.connect(bpFilter);
     bpFilter.connect(oscGain);
-    oscGain.connect(this.sfxGain);
+    oscGain.connect(dest);
 
     osc.start(now);
     osc.stop(now + 0.15);
@@ -553,58 +603,97 @@ class GameAudioEngine {
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
 
     noise.connect(noiseGain);
-    noiseGain.connect(this.sfxGain);
+    noiseGain.connect(dest);
     noise.start(now);
   }
 
   public playBurnPop() {
     const ctx = this.initContext();
-    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const dest = this.spellGain || this.sfxGain;
+    if (!ctx || !dest || this.isMuted) return;
     const now = ctx.currentTime;
 
-    // 1. Resonant Warm Combustion Pop
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(360, now);
-    osc.frequency.exponentialRampToValueAtTime(70, now + 0.09);
+    // Layer 1: Sub-Bass Fireball Detonation Boom ("WHUMP-BOOM")
+    const boomOsc = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boomOsc.type = "triangle";
+    boomOsc.frequency.setValueAtTime(170, now);
+    boomOsc.frequency.exponentialRampToValueAtTime(32, now + 0.38);
 
-    gain.gain.setValueAtTime(0.55, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+    boomGain.gain.setValueAtTime(0, now);
+    boomGain.gain.linearRampToValueAtTime(0.75, now + 0.015);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-    osc.start(now);
-    osc.stop(now + 0.12);
+    const boomFilter = ctx.createBiquadFilter();
+    boomFilter.type = "lowpass";
+    boomFilter.frequency.setValueAtTime(240, now);
 
-    // 2. Muffled Fire Flame Whoosh Noise Crackle
-    const burstLen = Math.floor(ctx.sampleRate * 0.12);
-    const buffer = ctx.createBuffer(1, burstLen, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < burstLen; i++) {
+    boomOsc.connect(boomFilter);
+    boomFilter.connect(boomGain);
+    boomGain.connect(dest);
+    boomOsc.start(now);
+    boomOsc.stop(now + 0.48);
+
+    // Layer 2: Rushing Turbulent Flame Combustion Whoosh ("FWHHOOOOSHHH")
+    const flameDuration = 0.55;
+    const flameBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * flameDuration), ctx.sampleRate);
+    const flameData = flameBuffer.getChannelData(0);
+    let lastNoise = 0;
+    for (let i = 0; i < flameData.length; i++) {
       const white = Math.random() * 2 - 1;
-      data[i] = (last + 0.08 * white) / 1.08;
-      last = data[i];
+      flameData[i] = (lastNoise + 0.07 * white) / 1.07;
+      lastNoise = flameData[i];
     }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(600, now);
-    const nGain = ctx.createGain();
-    nGain.gain.setValueAtTime(0.35, now);
-    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    const flameSrc = ctx.createBufferSource();
+    flameSrc.buffer = flameBuffer;
 
-    noise.connect(filter);
-    filter.connect(nGain);
-    nGain.connect(this.sfxGain);
-    noise.start(now);
+    const flameFilter = ctx.createBiquadFilter();
+    flameFilter.type = "bandpass";
+    flameFilter.frequency.setValueAtTime(650, now);
+    flameFilter.frequency.exponentialRampToValueAtTime(220, now + 0.42);
+    flameFilter.Q.setValueAtTime(1.8, now);
+
+    const flameGain = ctx.createGain();
+    flameGain.gain.setValueAtTime(0, now);
+    flameGain.gain.linearRampToValueAtTime(0.70, now + 0.04);
+    flameGain.gain.exponentialRampToValueAtTime(0.001, now + 0.54);
+
+    flameSrc.connect(flameFilter);
+    flameFilter.connect(flameGain);
+    flameGain.connect(dest);
+    flameSrc.start(now);
+
+    // Layer 3: Sizzling Fiery Embers & Spark Crackles (Randomized snaps)
+    const crackleTimes = [0.05, 0.11, 0.18, 0.25, 0.33, 0.42];
+    crackleTimes.forEach((delay, idx) => {
+      const crackleLen = Math.floor(ctx.sampleRate * 0.015);
+      const crackleBuffer = ctx.createBuffer(1, crackleLen, ctx.sampleRate);
+      const cData = crackleBuffer.getChannelData(0);
+      for (let j = 0; j < crackleLen; j++) {
+        cData[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.003));
+      }
+      const cSrc = ctx.createBufferSource();
+      cSrc.buffer = crackleBuffer;
+
+      const cFilter = ctx.createBiquadFilter();
+      cFilter.type = "highpass";
+      cFilter.frequency.setValueAtTime(1800 + Math.random() * 1400, now + delay);
+
+      const cGain = ctx.createGain();
+      cGain.gain.setValueAtTime(0.30 - idx * 0.035, now + delay);
+      cGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.014);
+
+      cSrc.connect(cFilter);
+      cFilter.connect(cGain);
+      cGain.connect(dest);
+      cSrc.start(now + delay);
+    });
   }
 
   public playIceCrack() {
     const ctx = this.initContext();
-    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const dest = this.spellGain || this.sfxGain;
+    if (!ctx || !dest || this.isMuted) return;
     const now = ctx.currentTime;
 
     // 1. Brittle High Crystalline Crack Harmonics
@@ -619,7 +708,7 @@ class GameAudioEngine {
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
 
       osc.connect(gain);
-      gain.connect(this.sfxGain!);
+      gain.connect(dest);
       osc.start(now);
       osc.stop(now + 0.13);
     });
@@ -638,13 +727,14 @@ class GameAudioEngine {
     sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
     snap.connect(sGain);
-    sGain.connect(this.sfxGain);
+    sGain.connect(dest);
     snap.start(now);
   }
 
   public playArcaneSpark() {
     const ctx = this.initContext();
-    if (!ctx || !this.sfxGain || this.isMuted) return;
+    const dest = this.spellGain || this.sfxGain;
+    if (!ctx || !dest || this.isMuted) return;
     const now = ctx.currentTime;
 
     const notes = [1320, 1760, 2640];
@@ -658,7 +748,7 @@ class GameAudioEngine {
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
 
       osc.connect(gain);
-      gain.connect(this.sfxGain!);
+      gain.connect(dest);
       osc.start(now + idx * 0.02);
       osc.stop(now + 0.25);
     });
