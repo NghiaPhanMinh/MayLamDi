@@ -3,7 +3,6 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import {
-  repairAndEnrichPlan,
   validateAiPlan,
   validatePlanAgainstBrief,
   type ValidatedAiPlan,
@@ -15,7 +14,7 @@ import {
   runFreeModelFallback,
   type AiResponseMode,
 } from "./lib/openRouterFallback";
-import { extractDeliverablesFromBrief, generateSmartFallbackPlan } from "./lib/smartFallbackPlanner";
+import { generateSmartFallbackPlan } from "./lib/smartFallbackPlanner";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -323,7 +322,7 @@ async function requestPlan(input: {
         ...(input.mode === "structured"
           ? { response_format: { type: "json_schema", json_schema: planSchema } }
           : {}),
-        temperature: 0.7,
+        temperature: 0.1,
         max_tokens: 1_800,
         max_completion_tokens: 1_800,
       }),
@@ -464,12 +463,11 @@ export const generateProjectPlan = action({
           }),
           validate: (content) => {
             const plan = validateAiPlan(parseJsonResponse(content), context);
-            const enrichedPlan = repairAndEnrichPlan(plan, brief, context);
-            const report = validatePlanAgainstBrief(enrichedPlan, brief, context);
+            const report = validatePlanAgainstBrief(plan, brief, context);
             if (!report.valid) {
               console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
             }
-            return enrichedPlan;
+            return plan;
           },
         });
         console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
@@ -539,8 +537,7 @@ export const generateProjectPlanWithKey = action({
         if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
         response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
       }
-      const rawValue = validateAiPlan(parseJsonResponse(response.content), context);
-      const value = repairAndEnrichPlan(rawValue, brief, context);
+      const value = validateAiPlan(parseJsonResponse(response.content), context);
       await ctx.runMutation(internal.aiUsage.record, {
         projectId: args.projectId,
         profileId: access.profileId,
