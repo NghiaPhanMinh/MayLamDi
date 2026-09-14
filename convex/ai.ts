@@ -14,7 +14,7 @@ import {
   runFreeModelFallback,
   type AiResponseMode,
 } from "./lib/openRouterFallback";
-import { generateSmartFallbackPlan } from "./lib/smartFallbackPlanner";
+import { generateSmartFallbackPlan, type GeneratedAiPlan } from "./lib/smartFallbackPlanner";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -22,27 +22,7 @@ function environmentValue(name: string) {
   const runtime = globalThis as typeof globalThis & {
     process?: { env?: Record<string, string | undefined> };
   };
-  const envVal = runtime.process?.env?.[name];
-  if (envVal) return envVal;
-
-  try {
-    const fs = require("node:fs");
-    const path = require("node:path");
-    const cwd = runtime.process?.cwd?.() || "";
-    for (const file of [".env.local", ".env"]) {
-      const filePath = path.join(cwd, file);
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, "utf-8");
-        const match = content.match(new RegExp(`^${name}=(.*)$`, "m"));
-        if (match && match[1].trim()) {
-          return match[1].trim().replace(/^["']|["']$/g, "");
-        }
-      }
-    }
-  } catch {
-    // Ignore runtime FS errors
-  }
-  return undefined;
+  return runtime.process?.env?.[name];
 }
 
 const planSchema = {
@@ -201,11 +181,6 @@ type AiPlanningContext = {
     status: "todo" | "in_progress" | "blocked" | "review" | "completed" | "submitted" | "changes_requested" | "verified" | "awaiting_creator";
     dueDate: string;
   }>;
-};
-
-type GeneratedAiPlan = ValidatedAiPlan & {
-  generatedAt: number;
-  source?: "ai" | "smart_template";
 };
 
 export function planningPrompts(brief: string, context: AiPlanningContext) {
