@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { planningPrompts, validateJsonResponse } from "../ai";
+import { planningPrompts } from "../ai";
 import { generateSmartFallbackPlan } from "./smartFallbackPlanner";
-import { validateAiPlan, repairAndEnrichPlan, validatePlanAgainstBrief } from "./aiPlanValidation";
+import { validatePlanAgainstBrief } from "./aiPlanValidation";
 
 const mockPlanningContext = {
   project: {
@@ -13,16 +13,16 @@ const mockPlanningContext = {
     deadline: "2026-10-30",
   },
   phases: [
-    { phaseId: "phase_empathise", title: "Empathise & Discovery" },
-    { phaseId: "phase_define", title: "Define & Architecture" },
-    { phaseId: "phase_prototype", title: "Prototype & Development" },
-    { phaseId: "phase_test", title: "Testing, Delivery & Evaluation" },
+    { phaseId: "phase_empathise", title: "Empathise & Discovery", description: "Discovery phase", canOverlap: false, reviewCheckpoint: true },
+    { phaseId: "phase_define", title: "Define & Architecture", description: "Definition phase", canOverlap: false, reviewCheckpoint: true },
+    { phaseId: "phase_prototype", title: "Prototype & Development", description: "Prototyping phase", canOverlap: false, reviewCheckpoint: false },
+    { phaseId: "phase_test", title: "Testing, Delivery & Evaluation", description: "Testing phase", canOverlap: false, reviewCheckpoint: true },
   ],
   members: [
-    { profileId: "m1", displayName: "Lead Strategist" },
-    { profileId: "m2", displayName: "UI/UX Designer" },
-    { profileId: "m3", displayName: "Lead Developer" },
-    { profileId: "m4", displayName: "Quality Specialist" },
+    { profileId: "m1", displayName: "Lead Strategist", skills: ["Strategy"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+    { profileId: "m2", displayName: "UI/UX Designer", skills: ["UI/UX"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+    { profileId: "m3", displayName: "Lead Developer", skills: ["Development"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+    { profileId: "m4", displayName: "Quality Specialist", skills: ["QA"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
   ],
   existingTasks: [],
 };

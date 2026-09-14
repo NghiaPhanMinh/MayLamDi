@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { planningPrompts } from "../ai";
 import { generateSmartFallbackPlan } from "./smartFallbackPlanner";
-import { validateAiPlan, repairAndEnrichPlan, validatePlanAgainstBrief } from "./aiPlanValidation";
+import { validateAiPlan, validatePlanAgainstBrief } from "./aiPlanValidation";
 
 const mockContext = {
   project: {
@@ -488,19 +488,16 @@ describe("RAW PIPELINE TRACE FOR ALL 5 UNSEEN BRIEFS", () => {
       const validatedPlan = validateAiPlan(parsedObj, mockContext);
       console.log(`VALIDATED PLAN OBJECT:`, JSON.stringify(validatedPlan, null, 2));
 
-      // Step 3: Repair & Enrich
-      const enrichedPlan = repairAndEnrichPlan(validatedPlan, item.brief, mockContext);
-
-      // Step 4: Semantic Report
-      const report = validatePlanAgainstBrief(enrichedPlan, item.brief, mockContext);
-      console.log(`FINAL UI PLAN TASKS:`, JSON.stringify(enrichedPlan.tasks.map((t) => ({ title: t.title, owner: t.primaryOwnerProfileId })), null, 2));
+      // Step 3: Semantic Report & Validation
+      const report = validatePlanAgainstBrief(validatedPlan, item.brief, mockContext);
+      console.log(`FINAL UI PLAN TASKS:`, JSON.stringify(validatedPlan.tasks.map((t) => ({ title: t.title, owner: t.primaryOwnerProfileId })), null, 2));
       console.log(`SEMANTIC VALIDATION REPORT: valid=${report.valid}, errors:`, report.errors);
       console.log(`======================================================\n`);
 
       expect(report.valid).toBe(true);
-      expect(enrichedPlan.tasks.length).toBeGreaterThanOrEqual(3);
+      expect(validatedPlan.tasks.length).toBeGreaterThanOrEqual(3);
 
-      for (const t of enrichedPlan.tasks) {
+      for (const t of validatedPlan.tasks) {
         expect(t.title.split(" ").length).toBeLessThanOrEqual(12);
         expect(t.title).not.toContain("Create a small 2D narrative adventure game");
       }
