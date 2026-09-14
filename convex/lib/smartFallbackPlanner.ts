@@ -3,12 +3,17 @@ import type { ValidatedAiPlan } from "./aiPlanValidation";
 type PlanningContext = {
   project: { projectId: string; title: string; startDate: string; deadline: string; frameworkName: string };
   phases: Array<{ phaseId: string; title: string }>;
-  members: Array<{ profileId: string; displayName: string }>;
+  members: Array<{ profileId: string; displayName: string; skills?: string[] }>;
 };
 
 export type GeneratedAiPlan = ValidatedAiPlan & {
   generatedAt: number;
-  source?: "ai" | "smart_template";
+  source: "llm" | "fallback";
+  generationId?: string;
+  fallbackReason?: string;
+  apiAttempted: boolean;
+  apiErrorCategory?: string | null;
+  modelUsed?: string;
 };
 
 function formatIsoDate(daysFromNow: number): string {
@@ -17,533 +22,125 @@ function formatIsoDate(daysFromNow: number): string {
   return target.toISOString().slice(0, 10);
 }
 
-export function extractDeliverablesFromBrief(brief: string, projectTitle: string, specializationName?: string): Array<{
-  title: string;
-  desc: string;
-  skills: string[];
-  weight: number;
-  diff: number;
-  effort: number;
-  offset: number;
-}> {
-  const userBriefText = brief.trim();
-  const text = `${userBriefText} ${projectTitle} ${specializationName || ""}`.toLowerCase();
+export function generateSmartFallbackPlan(
+  context: PlanningContext,
+  brief: string,
+  generationId?: string,
+  fallbackReason: string = "FALLBACK_TRIGGERED"
+): ValidatedAiPlan {
+  const phases = context.phases.length > 0
+    ? context.phases
+    : [
+        { phaseId: "phase_discovery", title: "Discovery & Requirements" },
+        { phaseId: "phase_definition", title: "Architecture & Definition" },
+        { phaseId: "phase_execution", title: "Design & Construction" },
+        { phaseId: "phase_verification", title: "Testing & Quality Verification" },
+        { phaseId: "phase_delivery", title: "Deployment & Documentation" },
+      ];
 
-  // BƯỚC 1 & BƯỚC 2: Try extracting explicit deliverables / clauses directly from user brief
-  if (userBriefText.length > 0) {
-    const explicitItems = parseExplicitDeliverables(userBriefText);
-    if (explicitItems.length >= 2) {
-      const synthesized = synthesizeWorkstreamTasks(explicitItems, userBriefText);
-      if (synthesized.length >= 2) {
-        return synthesized;
-      }
-    }
-  }
-
-  const deliverables: Array<{
-    title: string;
-    desc: string;
-    skills: string[];
-    weight: number;
-    diff: number;
-    effort: number;
-    offset: number;
-  }> = [];
-
-  // BƯỚC 3 & BƯỚC 4: Domain-specific task generation across 10 Specializations
-
-  // 1. Software & Web/App Engineering
-  if (/software|web\/app|engineering|programming|html|css|\bjs\b|javascript|typescript|react|next|node|github pages|netlify|vercel|lập trình|phần mềm|trang web/i.test(text)) {
-    if (/html|css|github pages|netlify|vercel|zip|submission/i.test(userBriefText.toLowerCase())) {
-      deliverables.push(
-        { title: "Select Concept & Define Component Hierarchy", desc: "Choose 1 of 3 target ideations, map user interaction flow, and plan self-contained HTML/CSS structure.", skills: ["HTML/CSS", "UI Architecture"], weight: 3, diff: 2, effort: 6, offset: 4 },
-        { title: "Develop Responsive Web Layout & Interactivity", desc: "Implement responsive HTML elements, CSS styling rules, and client JavaScript functionality.", skills: ["HTML5", "CSS3", "JavaScript"], weight: 5, diff: 4, effort: 12, offset: 10 },
-        { title: "Deploy Live Webpage to Public Hosting", desc: "Publish live site via GitHub Pages, Vercel, or Netlify, verifying domain URL and asset paths.", skills: ["Deployment", "Hosting"], weight: 3, diff: 2, effort: 5, offset: 14 },
-        { title: "Package Asset Archive & Write Technical Exploration Summary", desc: "Bundle HTML/CSS/JS assets into zipped file and compose technical exploration note detailing target users and improvements.", skills: ["Documentation", "Technical Writing"], weight: 4, diff: 3, effort: 6, offset: 17 }
-      );
-    } else {
-      deliverables.push(
-        { title: "System Architecture & Database Schema", desc: "Design data entities, Convex/SQL schema, and API specification.", skills: ["Backend", "Database"], weight: 4, diff: 3, effort: 8, offset: 4 },
-        { title: "Figma Component Tokens & UI Layouts", desc: "Create responsive wireframes, design tokens, and interactive components.", skills: ["Figma", "UI/UX"], weight: 3, diff: 2, effort: 6, offset: 7 },
-        { title: "Core Frontend Screen & State Implementation", desc: "Develop main user-facing views, forms, and client state handlers.", skills: ["React/TypeScript", "CSS"], weight: 5, diff: 4, effort: 12, offset: 12 },
-        { title: "Backend API Endpoint & Mutation Services", desc: "Build realtime data mutations, authentication checks, and error boundaries.", skills: ["Node.js/Convex", "API"], weight: 4, diff: 3, effort: 10, offset: 15 },
-        { title: "Vitest End-to-End Suite & Hosting Deployment", desc: "Run automated unit test coverage, set up SSL hosting, and verify production build.", skills: ["QA", "DevOps"], weight: 3, diff: 2, effort: 5, offset: 18 }
-      );
-    }
-  }
-
-  // 2. Data Science & AI Engineering
-  if (deliverables.length === 0 && /data science|ai engineering|machine learning|deep learning|data engineering|nlp|computer vision|dữ liệu|trí tuệ nhân tạo/i.test(text)) {
-    deliverables.push(
-      { title: "Data Pipeline & Exploratory Analysis (EDA)", desc: "Ingest raw datasets, clean missing features, and map exploratory data distributions.", skills: ["Python", "Pandas", "EDA"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Feature Engineering & Data Preprocessing Pipeline", desc: "Construct feature transformers, vector embeddings, and train/val/test data splits.", skills: ["Data Pipeline", "Feature Engineering"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Model Baseline Training & Architecture Selection", desc: "Train baseline classifier/regressor models and compare performance metrics.", skills: ["PyTorch/Scikit-Learn", "Machine Learning"], weight: 5, diff: 4, effort: 12, offset: 13 },
-      { title: "Hyperparameter Optimization & Validation Audit", desc: "Tune hyperparameter grids, evaluate cross-validation metrics, and audit bias.", skills: ["Model Evaluation", "MLOps"], weight: 4, diff: 3, effort: 8, offset: 17 },
-      { title: "Inference API Deployment & Model Monitoring Deck", desc: "Containerize model serving endpoint (FastAPI/Docker) and setup latency monitoring.", skills: ["Docker", "API Deployment"], weight: 3, diff: 2, effort: 6, offset: 20 }
-    );
-  }
-
-  // 3. Cybersecurity & Systems Infrastructure
-  if (deliverables.length === 0 && /cybersecurity|systems infrastructure|devops|cloud|security|penetration|network|an ninh mạng|hạ tầng/i.test(text)) {
-    deliverables.push(
-      { title: "Threat Modeling & Security Architecture Audit", desc: "Identify attack vectors, map trust boundaries, and establish security compliance rules.", skills: ["Threat Modeling", "Security Architecture"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Infrastructure as Code & Network Provisioning", desc: "Configure cloud VPC networks, firewall security groups, and Terraform IaC scripts.", skills: ["Terraform", "Cloud Infrastructure"], weight: 4, diff: 3, effort: 10, offset: 9 },
-      { title: "Access Control & Identity Management (IAM) Integration", desc: "Enforce zero-trust IAM policies, OAuth2/OIDC authentication, and secret vault storage.", skills: ["IAM", "OAuth/Vault"], weight: 4, diff: 3, effort: 8, offset: 13 },
-      { title: "Vulnerability Scanning & Automated Penetration Test", desc: "Execute automated penetration testing, patch CVE vulnerabilities, and harden OS kernels.", skills: ["Penetration Testing", "Vulnerability Management"], weight: 5, diff: 4, effort: 10, offset: 17 },
-      { title: "SIEM Logging Infrastructure & Incident Response Deck", desc: "Deploy centralized log aggregators (ELK/Datadog) and document incident playbook.", skills: ["SIEM", "Incident Response"], weight: 3, diff: 2, effort: 5, offset: 20 }
-    );
-  }
-
-  // 4. Digital Marketing & Growth Strategy
-  if (deliverables.length === 0 && /marketing|growth|campaign|advertising|seo|social media|chiến dịch|quảng cáo|thương hiệu/i.test(text)) {
-    deliverables.push(
-      { title: "Audience Persona & Competitor Benchmark Matrix", desc: "Research target demographic, analyze competitor positioning, and define audience personas.", skills: ["Market Research", "Audience Insights"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Campaign Strategy & Value Proposition Statement", desc: "Formulate central campaign theme, key message framework, and communication channels.", skills: ["Campaign Strategy", "Copywriting"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Creative Visual Asset & Copy Deck Production", desc: "Design social media banners, promotional video cut-downs, and ad copy deck.", skills: ["Graphic Design", "Content Creation"], weight: 4, diff: 3, effort: 10, offset: 13 },
-      { title: "Multi-Channel Launch Execution & Content Scheduling", desc: "Deploy media placements, schedule social posts, and launch promotional outreach.", skills: ["Media Planning", "Marketing Operations"], weight: 4, diff: 3, effort: 8, offset: 16 },
-      { title: "Campaign Analytics Audit & Performance Report", desc: "Measure engagement metrics, conversion ROI, and optimize post-launch performance.", skills: ["Analytics", "Reporting"], weight: 3, diff: 2, effort: 5, offset: 19 }
-    );
-  }
-
-  // 5. Business Operations & Financial Planning
-  if (deliverables.length === 0 && /business operations|financial planning|startup|business model|finance|pitch|revenue|investor|operating|kinh doanh|tài chính|đầu tư/i.test(text)) {
-    deliverables.push(
-      { title: "Market Problem & Value Opportunity Definition", desc: "Analyze market gap, stakeholder needs, and define the core problem statement.", skills: ["Business Analysis", "Problem Framing"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Customer Validation & Competitor Landscape Matrix", desc: "Conduct target customer interviews, review competitors, and map market fit.", skills: ["Market Research", "Customer Insights"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Business Model Canvas & Value Unit Economics", desc: "Formulate revenue streams, cost structure, key partners, and pricing strategy.", skills: ["Financial Modeling", "Strategy"], weight: 4, diff: 3, effort: 10, offset: 13 },
-      { title: "Operational Execution Roadmap & Risk Register", desc: "Build milestone implementation timeline, key metrics, and mitigation plans.", skills: ["Operations", "Risk Management"], weight: 4, diff: 3, effort: 8, offset: 16 },
-      { title: "Executive Pitch Deck & Investor Presentation", desc: "Synthesize executive summary deck, financial forecast slides, and present proposal.", skills: ["Pitching", "Executive Communication"], weight: 3, diff: 2, effort: 6, offset: 19 }
-    );
-  }
-
-  // 6. Event Management & Public Relations
-  if (deliverables.length === 0 && /event management|public relations|\bpr\b|sự kiện|truyền thông|triển lãm|exhibition|venue/i.test(text)) {
-    deliverables.push(
-      { title: "Event Concept & Venue Layout Logistics Plan", desc: "Select event theme, map spatial floorplan, and negotiate venue contracts.", skills: ["Event Strategy", "Venue Planning"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Sponsor & Vendor Contract Management", desc: "Secure catering, AV equipment, ticketing services, and sponsor commitments.", skills: ["Vendor Management", "Budgeting"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "PR Outreach Deck & Press Release Distribution", desc: "Draft press kits, distribute media announcements, and coordinate influencer invitations.", skills: ["PR Writing", "Media Outreach"], weight: 4, diff: 3, effort: 8, offset: 12 },
-      { title: "Live Event On-Site Logistics & Equipment Setup", desc: "Coordinate stage run-of-show, AV hardware testing, and crowd flow management.", skills: ["Live Event Ops", "Equipment Setup"], weight: 5, diff: 4, effort: 12, offset: 16 },
-      { title: "Post-Event Analytics Audit & Media Coverage Report", desc: "Compile attendance metrics, media press clippings, and post-event financial reconciliation.", skills: ["Analytics", "Post-Event Review"], weight: 3, diff: 2, effort: 5, offset: 19 }
-    );
-  }
-
-  // 7. Content Creation & Media Production
-  if (deliverables.length === 0 && /content creation|media production|animation|animatic|\bscript\b|screenplay|storyboard|video|film|3d animation|phim|kịch bản|hoạt hình/i.test(text)) {
-    deliverables.push(
-      { title: "Script & Narrative Screenplay", desc: "Draft full screenplay, character dialogues, and narrative story structure for target audience.", skills: ["Screenwriting", "Storytelling"], weight: 3, diff: 3, effort: 6, offset: 3 },
-      { title: "Shot List & Storyboard Framing Composition", desc: "Detailed shot list breakdown, camera angles, timing, and key scene framing composition.", skills: ["Storyboarding", "Cinematography"], weight: 3, diff: 3, effort: 8, offset: 6 },
-      { title: "Design Document & Art Direction Specs", desc: "Character design sheets, background turnarounds, visual style guide, and look development.", skills: ["Concept Art", "Art Direction"], weight: 4, diff: 3, effort: 10, offset: 10 },
-      { title: "Greyscale Animatic Render & Timeline Assembly", desc: "Timed 45+ second greyscale animatic sequence with scratch audio and pacing validation.", skills: ["Video Editing", "Animation"], weight: 5, diff: 4, effort: 12, offset: 15 },
-      { title: "Final Artwork Render & Presentation Assembly", desc: "Export final high-res animation file, full documentation, and project presentation deck.", skills: ["Post-Production", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 18 }
-    );
-  }
-
-  // 8. Academic Research & Educational Design
-  if (deliverables.length === 0 && /academic research|educational design|research|thesis|study|survey|paper|analysis|report|essay|literature|nghiên cứu|luận văn|tiểu luận/i.test(text)) {
-    deliverables.push(
-      { title: "Literature Review & Thesis Hypothesis Outline", desc: "Gather academic sources, analyze prior work, and formulate core research questions.", skills: ["Research", "Academic Writing"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Methodology & Data Collection Tooling", desc: "Design survey questionnaires, experiment metrics, and sampling strategy.", skills: ["Data Analysis", "Methodology"], weight: 4, diff: 3, effort: 9, offset: 8 },
-      { title: "Primary Data Gathering & Statistical Analysis", desc: "Execute survey data collection, run statistical tests, and chart findings.", skills: ["Statistics", "Data Mining"], weight: 4, diff: 3, effort: 14, offset: 14 },
-      { title: "Draft Report Writing & Peer Citation Audit", desc: "Compile full report chapters, verify APA/IEEE citations, and proofread.", skills: ["Technical Writing", "Editing"], weight: 3, diff: 2, effort: 18, offset: 18 }
-    );
-  }
-
-  // 9. Architecture, Construction & Spatial Planning
-  if (deliverables.length === 0 && /architecture|construction|spatial planning|spatial design|floorplan|blueprint|kiến trúc|xây dựng|mặt bằng/i.test(text)) {
-    deliverables.push(
-      { title: "Site Context & Topographical Analysis Report", desc: "Document site contours, environmental orientation, regulatory constraints, and circulation.", skills: ["Site Analysis", "Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Spatial Programme & Adjacency Diagram Spec", desc: "Define space requirements, user flow adjacencies, and volumetric zoning.", skills: ["Spatial Design", "Architectural Programming"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "Schematic Floor Plans & 3D Massing Model", desc: "Develop conceptual floor plans, building elevations, and massing models.", skills: ["3D CAD/BIM", "Drafting"], weight: 5, diff: 4, effort: 12, offset: 13 },
-      { title: "Material Strategy & Technical Detailing Specs", desc: "Specify structural materials, environmental systems, and detail assembly sections.", skills: ["Technical Detailing", "Material Research"], weight: 4, diff: 3, effort: 10, offset: 17 },
-      { title: "Architectural Renders & Review Presentation Package", desc: "Render high-quality perspective views, physical/digital model boards, and review deck.", skills: ["Visualisation", "Presentation"], weight: 3, diff: 2, effort: 6, offset: 20 }
-    );
-  }
-
-  // 10. UI/UX Design & Product Strategy (Strict word boundaries)
-  if (deliverables.length === 0 && /\bfigma\b|\bwireframe\b|\bui\/ux\b|\bux design\b|\buser experience\b|\bgiao diện\b|\bgiao diện ứng dụng\b/i.test(text)) {
-    deliverables.push(
-      { title: "User Persona & Journey Map Discovery", desc: "Interview target users, map behavioral pain points, and define design principles.", skills: ["UX Research", "Persona Mapping"], weight: 3, diff: 2, effort: 6, offset: 4 },
-      { title: "Low-Fidelity Wireframes & Information Architecture", desc: "Sketch layout wireframes, navigation taxonomy, and component hierarchy.", skills: ["Wireframing", "UI Design"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: "High-Fidelity Interactive Prototype & Design Tokens", desc: "Create interactive Figma prototype with visual design tokens and typography system.", skills: ["Figma", "Interaction Design"], weight: 5, diff: 4, effort: 12, offset: 13 },
-      { title: "Usability Testing & Feedback Refinement", desc: "Run usability test sessions with target users and iterate on friction points.", skills: ["Usability Testing", "Design Iteration"], weight: 4, diff: 3, effort: 8, offset: 17 },
-      { title: "Design Handoff Spec & Presentation Deck", desc: "Prepare component specs, asset redlines, and showcase presentation deck.", skills: ["Design Handoff", "Presentation"], weight: 3, diff: 2, effort: 5, offset: 20 }
-    );
-  }
-
-  // Fallback for general briefs
-  if (deliverables.length === 0) {
-    const rawTitle = userBriefText.length > 0 ? "Project" : (projectTitle.trim() || "Project");
-    deliverables.push(
-      { title: `${rawTitle} — Requirement Spec & Scope Outline`, desc: "Detailed breakdown of project scope, milestone goals, and team roles.", skills: ["Planning"], weight: 2, diff: 2, effort: 4, offset: 3 },
-      { title: `${rawTitle} — Core Component 1 Deliverable`, desc: "Build and verify the first primary deliverable specified in the brief.", skills: ["Execution"], weight: 4, diff: 3, effort: 8, offset: 8 },
-      { title: `${rawTitle} — Core Component 2 Deliverable`, desc: "Build and verify the second main deliverable specified in the brief.", skills: ["Execution"], weight: 4, diff: 3, effort: 8, offset: 13 },
-      { title: `${rawTitle} — Quality Verification & Final Submission`, desc: "Perform final review, complete documentation, and submit finished project.", skills: ["QA", "Review"], weight: 3, diff: 2, effort: 5, offset: 17 }
-    );
-  }
-
-  // If simple brief (e.g. small website, 1 week, short brief text), scale down base deliverables
-  if (userBriefText.length > 0 && userBriefText.length < 150 && deliverables.length > 3) {
-    if (/simple|1 week|one week|portfolio|single page|small|đơn giản/i.test(userBriefText)) {
-      return deliverables.slice(0, 3);
-    }
-  }
-
-  return deliverables;
-}
-
-import { extractFactsFromBrief } from "./aiPlanValidation";
-
-export function parseExplicitDeliverables(userBriefText: string): string[] {
-  if (!userBriefText || userBriefText.trim().length === 0) return [];
-
-  const ABSTRACT_RUBRIC_REGEX = /^(?:originality|resourcefulness|technical exploration|practical function|clear communication|evaluation|rubric|criteria|submission requirements|ideations?|submissions?|exploration|quality standards|toward technical exploration|towards technical exploration|sáng tạo|khả thi|độ sâu kỹ thuật|tính thực tiễn|tiêu chí|đánh giá|originality & creativity)$/i;
-
-  // 1. Check for explicit header match (deliverables include / sản phẩm bàn giao / bao gồm / tasks:)
-  const headerMatch = userBriefText.match(
-    /(?:deliverables|sản phẩm bàn giao|kết quả|nhiệm vụ|công việc|bao gồm|yêu cầu|requirements|tasks|goals)\s*(?:include|:|\s)\s*([^.]+)/i
-  );
-
-  const targetText = headerMatch ? headerMatch[1] : userBriefText;
-
-  // 2. Split by bullet points, newlines, semicolons, pipes, or numbered lists
-  let segments = targetText
-    .split(/(?:[\n;•|]|\d+\.\s+)/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-
-  // Split by commas ONLY if an explicit header was present (e.g. "deliverables include: X, Y, Z")
-  if (headerMatch && segments.length === 1 && (targetText.includes(",") || targetText.includes("và") || targetText.includes("and"))) {
-    segments = targetText
-      .split(/[,]|(?:\s+và\s+)|\b(?:and)\b/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-  }
-
-  const items: string[] = [];
-
-  for (const seg of segments) {
-    let cleaned = seg
-      .replace(/^(?:deliverables\s+include|deliverables:|sản phẩm bàn giao:|bao gồm:|và\s+|gồm\s+|cần\s+|and\s+a\s+|and\s+an\s+|and\s+the\s+|and\s+|a\s+|an\s+|the\s+)/i, "")
-      .trim();
-    cleaned = cleaned.replace(/\.$/, "").trim();
-    if (
-      cleaned.length >= 3 &&
-      !/^\d+$/.test(cleaned) &&
-      !/^(deliverables|project|plan|brief)$/i.test(cleaned) &&
-      !ABSTRACT_RUBRIC_REGEX.test(cleaned)
-    ) {
-      items.push(cleaned);
-    }
-  }
-
-  // 3. Fallback: Extract action clauses (sentences starting with verbs in EN or VI)
-  if (items.length < 2 && !headerMatch) {
-    const clauseMatches = userBriefText.match(
-      /(?:thiết kế|xây dựng|nghiên cứu|lập|tạo|phát triển|tổ chức|chạy|đánh giá|kiểm thử|triển khai|viết|soạn|design|build|develop|create|draft|research|implement|setup|launch|deploy|conduct|produce)\s+[^.,;\n]+/gi
-    );
-    if (clauseMatches) {
-      for (const clause of clauseMatches) {
-        const cleaned = clause.trim().replace(/\.$/, "");
-        if (cleaned.length >= 4) items.push(cleaned);
-      }
-    }
-  }
-
-  return [...new Set(items)];
-}
-
-export function synthesizeWorkstreamTasks(rawItems: string[], userBriefText: string): Array<{
-  title: string;
-  desc: string;
-  skills: string[];
-  weight: number;
-  diff: number;
-  effort: number;
-  offset: number;
-}> {
-  if (rawItems.length === 0) return [];
-
-  const facts = extractFactsFromBrief(userBriefText);
-  const tasks: Array<{
-    title: string;
-    desc: string;
-    skills: string[];
-    weight: number;
-    diff: number;
-    effort: number;
-    offset: number;
-  }> = [];
-
-  // Coupling rules: Only merge naturally paired items (e.g. concept + theme). Keep independent items separate.
-  const processedIndices = new Set<number>();
-
-  for (let i = 0; i < rawItems.length; i++) {
-    if (processedIndices.has(i)) continue;
-    const current = rawItems[i];
-    const currentLower = current.toLowerCase();
-
-    // Check if current item can pair with next item if tightly coupled
-    let combinedTitle = current.charAt(0).toUpperCase() + current.slice(1);
-    let isPaired = false;
-
-    if (i + 1 < rawItems.length && !processedIndices.has(i + 1)) {
-      const next = rawItems[i + 1];
-      const nextLower = next.toLowerCase();
-
-      if (
-        (currentLower.includes("concept") && nextLower.includes("theme")) ||
-        (currentLower.includes("theme") && nextLower.includes("concept"))
-      ) {
-        combinedTitle = "Exhibition Concept & Theme";
-        processedIndices.add(i + 1);
-        isPaired = true;
-      } else if (
-        (currentLower.includes("script") && nextLower.includes("storyboard")) ||
-        (currentLower.includes("storyboard") && nextLower.includes("script"))
-      ) {
-        combinedTitle = "Script & Storyboard Framing";
-        processedIndices.add(i + 1);
-        isPaired = true;
-      }
-    }
-
-    processedIndices.add(i);
-
-    // Active verb selection based on deliverable domain
-    let activeVerb = "Develop";
-    let skills = ["Planning"];
-    let desc = "";
-
-    if (/artist|curation|selection|project selection/i.test(combinedTitle)) {
-      activeVerb = "Conduct";
-      skills = ["Curation", "Selection"];
-      desc = `Establish selection criteria and curate project entries${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}, aligning with brief requirements.`;
-    } else if (/promotional|materials|marketing|campaign|social/i.test(combinedTitle)) {
-      activeVerb = "Design";
-      skills = ["Graphic Design", "Marketing"];
-      desc = `Create promotional signage, media assets, and marketing collateral${facts.visitorsOrAudience ? ` tailored for approximately ${facts.visitorsOrAudience.count} ${facts.visitorsOrAudience.label}` : ""}.`;
-    } else if (/layout|venue|spatial|floorplan/i.test(combinedTitle)) {
-      activeVerb = "Plan";
-      skills = ["Spatial Planning", "Layout"];
-      desc = `Map physical space, define circulation pathways, and arrange layout logistics${facts.artworksOrProducts ? ` for ${facts.artworksOrProducts.count} ${facts.artworksOrProducts.label}` : ""}.`;
-    } else if (/hardware\s+setup|equipment\s+setup|physical\s+installation|venue\s+hardware/i.test(combinedTitle)) {
-      activeVerb = "Configure";
-      skills = ["Hardware", "Equipment Setup"];
-      desc = `Set up physical equipment, interactive displays, and installation hardware, verifying pre-event operation.`;
-    } else if (/logistics|event logistics|operations/i.test(combinedTitle)) {
-      activeVerb = "Coordinate";
-      skills = ["Event Logistics", "Operations"];
-      desc = `Manage live event logistics, staff scheduling, visitor flow, and operational execution.`;
-    } else if (/visitor documentation|media archiving|photography/i.test(combinedTitle)) {
-      activeVerb = "Produce";
-      skills = ["Documentation", "Media Archiving"];
-      desc = `Capture visual media, record visitor engagement, and produce comprehensive documentation during execution.`;
-    } else if (/evaluation|post-event|post-project|retrospective/i.test(combinedTitle)) {
-      activeVerb = "Execute";
-      skills = ["Evaluation", "Analytics"];
-      desc = `Collect feedback data, analyze performance metrics, and compile final post-event evaluation report.`;
-    } else if (/concept|theme/i.test(combinedTitle)) {
-      activeVerb = "Develop";
-      skills = ["Concept Strategy", "Framing"];
-      desc = `Formulate foundational concept, theme, and scope framework for target audience execution.`;
-    } else {
-      activeVerb = /build|implement|code/i.test(combinedTitle) ? "Build" : "Execute";
-      skills = ["Execution"];
-      desc = `Execute core technical deliverables for ${combinedTitle}, defining clear specifications, component architecture, and verification steps.`;
-    }
-
-    const title = combinedTitle.startsWith(activeVerb) ? combinedTitle : `${activeVerb} ${combinedTitle}`;
-
-    tasks.push({
-      title,
-      desc,
-      skills,
-      weight: isPaired ? 4 : 3,
-      diff: 3,
-      effort: isPaired ? 8 : 6,
-      offset: (tasks.length + 1) * 4,
-    });
-  }
-
-  return tasks;
-}
-
-function findBestMember(
-  members: Array<{ profileId: string; displayName: string; skills?: string[] }>,
-  task: { title: string; skills: string[] },
-  fallbackIndex: number
-) {
-  if (members.length === 0) return { profileId: "member_1", displayName: "Team Member" };
-  const taskTitle = task.title.toLowerCase();
-
-  for (const m of members) {
-    const memberName = m.displayName.toLowerCase();
-
-    if (/developer|tech|engineer|coder/i.test(memberName) && /installation|setup|layout|technical|database|backend|schema|api|endpoint|services/i.test(taskTitle)) {
-      return m;
-    }
-    if (/designer|graphic|artist|visual|ui|ux/i.test(memberName) && /design|promotional|visual|art|ui|ux|dashboard/i.test(taskTitle)) {
-      return m;
-    }
-    if (/curator|lead|manager|director|owner/i.test(memberName) && /concept|theme|curation|strategy|develop|draft/i.test(taskTitle)) {
-      return m;
-    }
-    if (/coordinator|event|logistics|ops/i.test(memberName) && /logistics|event|operations|coordinate/i.test(taskTitle)) {
-      return m;
-    }
-    if (/photographer|qa|tester|writer/i.test(memberName) && /documentation|evaluation|visitor|review|compile|testing/i.test(taskTitle)) {
-      return m;
-    }
-  }
-
-  return members[fallbackIndex % members.length];
-}
-
-function mapTaskToFrameworkPhase(
-  task: { title: string; skills: string[] },
-  phases: Array<{ phaseId: string; title: string }>,
-  index: number,
-  totalTasks: number
-) {
-  if (phases.length === 0) return { phaseId: "phase_1", title: "Execution" };
-  if (phases.length === 1) return phases[0];
-
-  const taskText = `${task.title} ${task.skills.join(" ")}`.toLowerCase();
-
-  for (const phase of phases) {
-    const phaseTitle = phase.title.toLowerCase();
-
-    if (
-      (/research|empath|discovery|define|concept|analysis|requirements|framing/i.test(phaseTitle)) &&
-      (/concept|theme|curation|selection|research|requirements|scope|persona|hypothesis|script|screenplay/i.test(taskText))
-    ) {
-      return phase;
-    }
-
-    if (
-      (/design|ideate|prototype|architecture|schema|spec/i.test(phaseTitle)) &&
-      (/design|promotional|wireframe|layout|spatial|floorplan|schema|architecture|prototype|materials|asset|banner/i.test(taskText))
-    ) {
-      return phase;
-    }
-
-    if (
-      (/build|execute|implement|develop|production|construct/i.test(phaseTitle)) &&
-      (/installation|setup|hardware|code|backend|api|endpoint|animation|render|logistics|event/i.test(taskText))
-    ) {
-      return phase;
-    }
-
-    if (
-      (/test|verify|deliver|launch|review|evaluation|retrospective/i.test(phaseTitle)) &&
-      (/documentation|evaluation|post-event|testing|qa|audit|archiving|reporting/i.test(taskText))
-    ) {
-      return phase;
-    }
-  }
-
-  const fallbackIndex = Math.min(phases.length - 1, Math.floor((index / Math.max(1, totalTasks)) * phases.length));
-  return phases[fallbackIndex] || phases[0];
-}
-
-export function generateSmartFallbackPlan(context: PlanningContext, brief: string, generationId?: string): ValidatedAiPlan {
-  const phases = context.phases.length > 0 ? context.phases : [{ phaseId: "phase_1", title: "Project Execution" }];
-  const members = context.members.length > 0 ? context.members : [{ profileId: "member_1", displayName: "Team Member" }];
+  const members = context.members.length > 0
+    ? context.members
+    : [{ profileId: "member_1", displayName: "Team Member" }];
 
   const seed = generationId ? Array.from(generationId).reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
-  const isVariation = seed > 0;
-
-  const rawTasks = extractDeliverablesFromBrief(brief, context.project.title, context.project.frameworkName);
 
   const milestones = phases.slice(0, Math.min(6, phases.length)).map((phase, index) => ({
     tempId: `milestone_${index + 1}`,
     title: `Milestone ${index + 1}: ${phase.title}`,
-    description: `Completion check for ${phase.title} deliverables.`,
+    description: `Target deliverables completion check for ${phase.title}.`,
     phaseId: phase.phaseId,
-    dueDate: context.project.deadline || formatIsoDate((index + 1) * 5),
+    dueDate: context.project.deadline || formatIsoDate((index + 1) * 7),
   }));
 
-  const tasks = rawTasks.map((task, index) => {
-    const assignedPhase = mapTaskToFrameworkPhase(task, phases, index, rawTasks.length);
+  const usedTitles = new Set<string>();
 
-    const memberOffset = isVariation ? seed % members.length : 0;
-    const assignedOwner = findBestMember(members, task, index + memberOffset);
-    const assignedReviewer = members.length > 1 ? members[(index + 1 + memberOffset) % members.length] : null;
+  // Create conservative, actionable tasks mapped cleanly to process phases
+  const tasks = phases.map((phase, index) => {
+    const phaseTitleLower = phase.title.toLowerCase();
+    let title = "Execute Phase Deliverables";
+    let desc = `Fulfill essential labor requirements and verify outputs for ${phase.title}.`;
+    let skills = ["Planning"];
+
+    if (/empath|discovery|research/i.test(phaseTitleLower)) {
+      title = "Research User Requirements & Brief Objectives";
+      desc = "Gather core project requirements, analyze target user needs, and establish baseline research scope.";
+      skills = ["Research", "Requirements"];
+    } else if (/define|architecture|framing|concept/i.test(phaseTitleLower)) {
+      title = "Define System Architecture & Task Specifications";
+      desc = "Outline technical data structures, feature specifications, and system architecture boundaries.";
+      skills = ["Architecture", "Requirements"];
+    } else if (/design|ideate|prototype|wireframe|art|graphics/i.test(phaseTitleLower)) {
+      title = "Design Core Wireframes & Visual Assets";
+      desc = "Draft user interface wireframes, component design tokens, and visual creative assets for team review.";
+      skills = ["Design", "Prototyping"];
+    } else if (/build|execute|implement|develop|construct|production|code/i.test(phaseTitleLower)) {
+      title = "Implement Core System Features & Logic";
+      desc = "Develop main application components, core business logic, and integration services.";
+      skills = ["Development", "Implementation"];
+    } else if (/test|verify|quality|qa|review/i.test(phaseTitleLower)) {
+      title = "Run Usability & Functional Verification Testing";
+      desc = "Execute end-to-end functional test cases, run usability testing, and resolve identified friction points.";
+      skills = ["Testing", "QA"];
+    } else if (/deliver|launch|deploy|document|final/i.test(phaseTitleLower)) {
+      title = "Finalize Deployment & Technical Presentation";
+      desc = "Publish production release, package asset archives, and compile technical exploration report.";
+      skills = ["Deployment", "Documentation"];
+    } else {
+      title = `Develop ${phase.title} Deliverables`;
+      desc = `Complete planned work items and verify execution for ${phase.title}.`;
+      skills = ["Execution"];
+    }
+
+    // Guarantee title uniqueness across phases
+    if (usedTitles.has(title)) {
+      title = `${title} — Phase ${index + 1}`;
+    }
+    usedTitles.add(title);
+
+    const assignedOwner = members[index % members.length];
+    const assignedReviewer = members.length > 1 ? members[(index + 1) % members.length] : null;
 
     const startDate = context.project.startDate || formatIsoDate(0);
-    const calculatedDueDate = formatIsoDate(task.offset);
+    const calculatedDueDate = formatIsoDate((index + 1) * 6);
     const dueDate = context.project.deadline && calculatedDueDate > context.project.deadline
       ? context.project.deadline
       : calculatedDueDate;
 
-    const effortVariation = isVariation ? ((seed + index) % 3) - 1 : 0;
-    const finalEffort = Math.max(2, task.effort + effortVariation);
-
-    let title = task.title;
-    const itemSeed = isVariation ? seed * 37 + index * 13 : 0;
-    const variantChoice = itemSeed % 3;
-
-    if (isVariation && variantChoice > 0) {
-      if (title.includes("Site Context")) {
-        title = variantChoice === 1 ? "Analyze Site Context & Topography" : "Conduct Site Topographical Analysis";
-      } else if (title.includes("Spatial Programme")) {
-        title = variantChoice === 1 ? "Formulate Spatial Layout & Programme" : "Map Spatial Programme & Adjacencies";
-      } else if (title.includes("Schematic Floor")) {
-        title = variantChoice === 1 ? "Draft Schematic Floor Plans & 3D Massing" : "Develop Architectural Floor & 3D Massing";
-      } else if (title.includes("Material Strategy")) {
-        title = variantChoice === 1 ? "Specify Material Strategy & Detailing" : "Formulate Material & Assembly Specs";
-      } else if (title.includes("Architectural Renders")) {
-        title = variantChoice === 1 ? "Produce Visual Architectural Renders" : "Synthesize Perspective Renders & Board";
-      } else if (title.includes("Execute")) {
-        title = variantChoice === 1 ? title.replace("Execute", "Deliver") : title.replace("Execute", "Coordinate");
-      } else if (title.includes("Implement")) {
-        title = variantChoice === 1 ? title.replace("Implement", "Build") : title.replace("Implement", "Deploy");
-      } else if (title.includes("Deliver")) {
-        title = variantChoice === 1 ? title.replace("Deliver", "Provide") : title.replace("Deliver", "Finalize");
-      } else if (title.includes("Develop")) {
-        title = variantChoice === 1 ? title.replace("Develop", "Craft") : title.replace("Develop", "Formulate");
-      } else if (title.includes("Conduct")) {
-        title = variantChoice === 1 ? title.replace("Conduct", "Run") : title.replace("Conduct", "Execute");
-      }
-    }
-
     return {
       tempId: `task_${index + 1}_${seed}`,
       title,
-      description: task.desc,
-      phaseId: assignedPhase.phaseId,
+      description: desc,
+      phaseId: phase.phaseId,
       milestoneTempId: milestones[index % milestones.length]?.tempId ?? null,
       primaryOwnerProfileId: assignedOwner.profileId,
       collaboratorProfileIds: [],
-      requiredSkills: task.skills,
-      estimatedEffortHours: finalEffort,
-      difficulty: task.diff,
-      weight: task.weight,
+      requiredSkills: skills,
+      estimatedEffortHours: 6 + (index * 2),
+      difficulty: 3,
+      weight: 4,
       required: true,
       startDate,
       dueDate,
       dependencyTempIds: index > 0 ? [`task_${index}_${seed}`] : [],
       requiresReview: true,
       reviewerProfileId: assignedReviewer ? assignedReviewer.profileId : null,
-      allocationExplanation: `Assigned to ${assignedOwner.displayName} based on domain workload balance.`,
-      longTaskBreakdown: finalEffort > 10 ? "Break down into sub-tasks for daily progress checks." : "",
+      allocationExplanation: `Assigned to ${assignedOwner.displayName} based on process phase workflow.`,
+      longTaskBreakdown: "",
     };
   });
 
   return {
-    recommendedFramework: `${context.project.frameworkName || "Agile Sprint"} (Smart Template)`,
-    frameworkReason: "Instant structured plan generated via Smart Deliverable Extraction Engine for immediate execution.",
+    recommendedFramework: `${context.project.frameworkName || "Agile Process Framework"} (Fallback Mode)`,
+    frameworkReason: `Coherent process plan generated via Fallback Planner (Reason: ${fallbackReason}).`,
     milestones,
     tasks,
     risks: [
-      "Scope creep: Additional requirements identified during execution phase.",
-      "Timeline compression: Ensure tasks are claimed and started on time to prevent HP penalties.",
-      ...(isVariation ? ["Dependency bottleneck: Upstream review checkpoints must be completed promptly."] : []),
+      "Scope alignment: Ensure task details are refined during sprint planning.",
+      "Timeline tracking: Monitor phase progress to prevent downstream bottlenecks.",
     ],
     assumptions: [
-      "Team members have access to required development tools and environments.",
-      "Phase review checkpoints will be verified before final submission.",
-      ...(isVariation ? ["Resource availability aligned with planned effort hours."] : []),
+      "Team members have access to necessary development tools.",
+      "Process phase checkpoints will be reviewed prior to final submission.",
     ],
   };
 }

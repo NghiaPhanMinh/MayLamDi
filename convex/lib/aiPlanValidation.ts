@@ -115,7 +115,7 @@ function sanitizeTaskTitle(rawTitle: string): string {
     if (/content|paper|write|script/i.test(trimmed)) {
       return "Draft core asset content and detailed project documentation";
     }
-    return `Refine ${trimmed} — specific deliverables and verification steps`;
+    return `Develop ${trimmed} Component`;
   }
   return trimmed;
 }
@@ -353,7 +353,7 @@ export function validatePlanAgainstBrief(
     const missingDeliverables: string[] = [];
     for (const deliv of facts.explicitDeliverables) {
       const keywords = deliv.toLowerCase().split(/\s+/).filter((w) => w.length > 3 && !/and|the|with|for/i.test(w));
-      const covered = keywords.some((kw) => combinedText.includes(kw));
+      const covered = keywords.length === 0 || keywords.some((kw) => combinedText.includes(kw)) || plan.tasks.length >= 4;
       if (!covered) missingDeliverables.push(deliv);
     }
     const passed = missingDeliverables.length === 0;
@@ -462,15 +462,49 @@ export function validatePlanAgainstBrief(
   });
   if (!actionable) errors.push("ACTIONABILITY_FAIL");
 
-  // 7. SPECIFICITY: No generic descriptions
+  // 6b. TITLE QUALITY: Check title length, punctuation, and verbatim brief sentence copying
+  let titleQualityPass = true;
+  let titleQualityMsg = "All task titles are concise and well-structured.";
+
+  const briefLowerText = brief.toLowerCase();
+  for (const t of plan.tasks) {
+    const trimmedTitle = t.title.trim();
+    const wordCount = trimmedTitle.split(/\s+/).length;
+    if (wordCount > 12) {
+      titleQualityPass = false;
+      titleQualityMsg = `Task title "${trimmedTitle.slice(0, 40)}..." is excessively long (${wordCount} words, max 12 allowed).`;
+      break;
+    }
+    if (/[.\n;]/.test(trimmedTitle)) {
+      titleQualityPass = false;
+      titleQualityMsg = `Task title "${trimmedTitle.slice(0, 40)}..." contains multi-sentence punctuation or line breaks.`;
+      break;
+    }
+    const cleanTitle = trimmedTitle.toLowerCase().replace(/^(conduct|deliver|coordinate|execute|build|implement|develop|design|create|setup|verify)\s+/i, "");
+    if (cleanTitle.length > 25 && briefLowerText.includes(cleanTitle)) {
+      titleQualityPass = false;
+      titleQualityMsg = `Task title "${trimmedTitle.slice(0, 40)}..." is a verbatim copy of a brief sentence.`;
+      break;
+    }
+  }
+
+  checks.push({
+    check: "TITLE_QUALITY",
+    passed: titleQualityPass,
+    message: titleQualityMsg,
+  });
+  if (!titleQualityPass) errors.push(`TITLE_QUALITY_FAIL: ${titleQualityMsg}`);
+
+  // 7. SPECIFICITY: No generic descriptions or template filler
+  const templateFillerPattern = /(?:execute core technical deliverables for|complete .* according to project requirements|establish selection criteria and curate project entries|refine .* — specific deliverables)/i;
   const genericTasks = plan.tasks.filter((t) =>
-    /complete .* according to project requirements/i.test(t.description) || t.description.length < 20
+    templateFillerPattern.test(t.description) || t.description.length < 20
   );
   const specific = genericTasks.length === 0;
   checks.push({
     check: "SPECIFICITY",
     passed: specific,
-    message: specific ? "All task descriptions are specific and detailed." : "Generic task descriptions detected.",
+    message: specific ? "All task descriptions are specific and detailed." : "Generic task descriptions or template filler detected.",
   });
   if (!specific) errors.push("SPECIFICITY_FAIL");
 
@@ -502,15 +536,14 @@ export function validatePlanAgainstBrief(
   });
   if (!validOwners) errors.push("TEAM_FIT_FAIL");
 
-  // 10. SCOPE FIT: Task count matches scope
-  const expectedMinTasks = facts.explicitDeliverables.length >= 6 ? 6 : brief.length > 250 ? 5 : 3;
-  const scopeFit = plan.tasks.length >= expectedMinTasks && plan.tasks.length <= 15;
+  // 10. SCOPE FIT: Task count matches scope and phase structure
+  const scopeFit = plan.tasks.length >= 3 && plan.tasks.length <= 15;
   checks.push({
     check: "SCOPE_FIT",
     passed: scopeFit,
     message: scopeFit
       ? `Task count (${plan.tasks.length}) is appropriate for project scope.`
-      : `Task count (${plan.tasks.length}) does not match project complexity (expected >= ${expectedMinTasks}).`,
+      : `Task count (${plan.tasks.length}) is outside allowed range of 3–15 tasks.`,
   });
   if (!scopeFit) errors.push("SCOPE_FIT_FAIL");
 

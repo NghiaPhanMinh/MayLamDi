@@ -23,7 +23,27 @@ function environmentValue(name: string) {
   const runtime = globalThis as typeof globalThis & {
     process?: { env?: Record<string, string | undefined> };
   };
-  return runtime.process?.env?.[name];
+  const envVal = runtime.process?.env?.[name];
+  if (envVal) return envVal;
+
+  try {
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const cwd = runtime.process?.cwd?.() || "";
+    for (const file of [".env.local", ".env"]) {
+      const filePath = path.join(cwd, file);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf-8");
+        const match = content.match(new RegExp(`^${name}=(.*)$`, "m"));
+        if (match && match[1].trim()) {
+          return match[1].trim().replace(/^["']|["']$/g, "");
+        }
+      }
+    }
+  } catch {
+    // Ignore runtime FS errors
+  }
+  return undefined;
 }
 
 const planSchema = {
@@ -189,21 +209,22 @@ type GeneratedAiPlan = ValidatedAiPlan & {
   source?: "ai" | "smart_template";
 };
 
-function planningPrompts(brief: string, context: AiPlanningContext) {
+export function planningPrompts(brief: string, context: AiPlanningContext) {
   const frameworkPhasesText = context.phases
     .map((p, idx) => `Phase ${idx + 1} (ID: "${p.phaseId}"): Title: "${p.title}" - Description: "${p.description}"`)
     .join("\n");
 
   const systemPrompt = [
-    "You are MayLamDi's Senior Domain-Driven Project Architect.",
-    "GOAL: Convert the raw project brief into an actionable, professional, domain-aware project plan strictly tailored to the user's selected Project Specialization.",
-    "AUTHORITATIVE USER BRIEF RULE: The current user-provided brief is authoritative. Treat any stored project title or description as metadata only and NEVER let them override, contaminate, or conflict with the current brief. All generated tasks MUST strictly reflect the requirements, scope, domain, deliverables, and team specified in the current user brief.",
-    "4-STEP DOMAIN-DRIVEN BRIEF ANALYSIS PIPELINE:",
-    "BƯỚC 1 (Domain & Goal Identification): Read the user's selected specialization in context.project.frameworkName (e.g. Software & Web/App Engineering, UI/UX Design & Product Strategy, Data Science & AI Engineering, Event Management, Academic Research, Architecture, etc.). Extract exact semantic facts (core objective, target audience, listed deliverables, domain constraints).",
-    "BƯỚC 2 (Deliverables VS Rubric Separation): Explicitly isolate concrete deliverables (HTML/CSS code, live URL, Figma prototype, dataset, event layout, research paper, 3D render) from grading rubrics or evaluation criteria (originality, feasibility, technical depth, resourcefulness, aesthetics, clear communication). NEVER create tasks out of grading rubric terms or abstract adjectives.",
-    "BƯỚC 3 (Workstream Decomposition): Group deliverables into a logical step-by-step sequence aligned with the micro-phases supplied in context.phases for the selected specialization. Upstream dependencies (ideation/architecture -> design/schema -> implementation -> hosting/deployment -> docs) MUST be strictly respected.",
-    "BƯỚC 4 (Professional Domain Task Generation): Generate tasks with industry-standard domain terminology. Every task title MUST start with an active verb (e.g. 'Model database schema...', 'Draft narrative screenplay...', 'Deploy live hosting...'). Task descriptions MUST be detailed, outcome-driven, and reference specific brief deliverables.",
-    "DYNAMIC TASK COUNT SCALING: Determine task count dynamically from project scope, complexity, and timeline. Simple briefs get 3–5 tasks; complex multi-week briefs get 6–15 tasks.",
+    "You are MayLamDi's Senior General-Purpose Project Architect.",
+    "CORE PHILOSOPHY: Do NOT turn project briefs into a superficial checklist of deliverables. A deliverable (e.g. 'Live Web App' or 'Research Paper') is an end outcome, NOT a task title. Reason deeply about the actual labor, technical design, engineering, or creative construction required to achieve that goal.",
+    "AUTHORITATIVE USER BRIEF RULE: The provided brief is authoritative. Analyze the project goal, scope, constraints, and team roles from the brief text. Generalize cleanly to any brief, familiar or novel.",
+    "REASONING PIPELINE (PROJECT GOAL -> REQUIRED WORK -> RELATIONSHIPS -> LOGICAL WORKSTREAMS -> ACTIONABLE TASKS):",
+    "1. PROJECT GOAL: Identify the core objective and target outcome of the project.",
+    "2. REQUIRED WORK: Determine the actual labor steps (research, architecture/design, execution, testing, deployment, documentation) required to build the target. NEVER copy grading rubric criteria (originality, feasibility, technical depth) as tasks.",
+    "3. RELATIONSHIPS BETWEEN WORK: Identify logical prerequisites and dependency sequencing. Upstream foundational tasks (e.g. data schema or wireframes) must precede downstream execution (e.g. API endpoints or interactive components).",
+    "4. LOGICAL WORKSTREAMS & PROCESS STRUCTURE: Treat context.phases as general process guidance over time, NOT predefined task templates. Adapt phases dynamically to map the project's real workstreams.",
+    "5. ACTIONABLE TASKS & UNIQUE DESCRIPTIONS: Write outcome-driven task titles starting with active verbs. Every task description MUST be specific, detailed, and non-repetitive, detailing the exact work performed, technical/creative inputs, and verification criteria. NEVER output template filler like 'Complete X according to requirements'.",
+    "DYNAMIC TASK COUNT SCALING: Simple briefs scale to 3–5 tasks; complex multi-week briefs scale to 6–15 tasks based on work complexity.",
     "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
   ].join(" ");
 
@@ -395,14 +416,22 @@ export const generateProjectPlan = action({
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
     const apiKey = tierKey ?? environmentValue("OPENROUTER_API_KEY") ?? environmentValue("GEMINI_API_KEY");
     if (!apiKey) {
-      console.info(`${genTag}No AI API key connected on platform. Utilizing Smart Fallback Planner.`);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
-      return { ...fallbackPlan, source: "smart_template", generatedAt: Date.now() };
+      console.info(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=NO_API_KEY | API Attempted=false`);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, "NO_API_KEY");
+      return {
+        ...fallbackPlan,
+        source: "fallback",
+        generationId: args.generationId,
+        fallbackReason: "NO_API_KEY",
+        apiAttempted: false,
+        apiErrorCategory: null,
+        generatedAt: Date.now(),
+      };
     }
 
     try {
       const { systemPrompt, userPrompt } = planningPrompts(brief, context);
-      console.info(`${genTag}Prompts constructed. User prompt length: ${userPrompt.length}`);
+      console.info(`${genTag}[AI OBSERVABILITY] Prompts constructed. User prompt length: ${userPrompt.length}`);
       const configuredTierModel = access.tier === "free"
         ? environmentValue("OPENROUTER_MODEL_FREE")
         : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
@@ -423,7 +452,7 @@ export const generateProjectPlan = action({
       });
 
       try {
-        console.info(`${genTag}Requesting plan from models:`, models);
+        console.info(`${genTag}[AI OBSERVABILITY] Requesting plan from models:`, models);
         const result = await runFreeModelFallback({
           models,
           attempt: ({ model, mode }) => requestPlan({
@@ -438,12 +467,12 @@ export const generateProjectPlan = action({
             const enrichedPlan = repairAndEnrichPlan(plan, brief, context);
             const report = validatePlanAgainstBrief(enrichedPlan, brief, context);
             if (!report.valid) {
-              console.warn(`${genTag}AI generated plan had semantic validation warnings:`, report.errors);
+              console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
             }
             return enrichedPlan;
           },
         });
-        console.info(`${genTag}AI planning succeeded`, JSON.stringify({ model: result.modelUsed }));
+        console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
         await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
           usageId,
           model: result.modelUsed,
@@ -451,7 +480,11 @@ export const generateProjectPlan = action({
         });
         return {
           ...result.value,
-          source: "ai",
+          source: "llm",
+          generationId: args.generationId,
+          apiAttempted: true,
+          apiErrorCategory: null,
+          modelUsed: result.modelUsed,
           generatedAt: Date.now(),
         };
       } catch (innerError) {
@@ -463,11 +496,16 @@ export const generateProjectPlan = action({
         throw innerError;
       }
     } catch (error) {
-      console.warn(`${genTag}AI generation encountered error, serving Smart Fallback Plan:`, error);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
+      const errMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=${errMessage} | API Attempted=true`);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, errMessage);
       return {
         ...fallbackPlan,
-        source: "smart_template",
+        source: "fallback",
+        generationId: args.generationId,
+        fallbackReason: errMessage,
+        apiAttempted: true,
+        apiErrorCategory: error instanceof Error ? error.name : "UNKNOWN_ERROR",
         generatedAt: Date.now(),
       };
     }
@@ -511,14 +549,27 @@ export const generateProjectPlanWithKey = action({
         model: response.modelUsed,
         success: true,
       });
-      console.info(`${genTag}Session BYOK AI request succeeded using model: ${response.modelUsed}`);
-      return { ...value, source: "ai", generatedAt: Date.now() };
+      console.info(`${genTag}[AI OBSERVABILITY] Session BYOK AI request succeeded using model: ${response.modelUsed}`);
+      return {
+        ...value,
+        source: "llm",
+        generationId: args.generationId,
+        apiAttempted: true,
+        apiErrorCategory: null,
+        modelUsed: response.modelUsed,
+        generatedAt: Date.now(),
+      };
     } catch (error) {
-      console.warn(`${genTag}Session BYOK AI request failed, smoothly serving Smart Fallback Plan:`, error);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId);
+      const errMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`${genTag}[AI OBSERVABILITY] Session BYOK AI request failed: ${errMessage}`);
+      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, errMessage);
       return {
         ...fallbackPlan,
-        source: "smart_template",
+        source: "fallback",
+        generationId: args.generationId,
+        fallbackReason: errMessage,
+        apiAttempted: true,
+        apiErrorCategory: error instanceof Error ? error.name : "UNKNOWN_ERROR",
         generatedAt: Date.now(),
       };
     }
