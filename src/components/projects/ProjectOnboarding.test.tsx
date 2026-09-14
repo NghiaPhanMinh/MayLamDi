@@ -65,6 +65,61 @@ describe("ProjectOnboarding", () => {
     expect(teamSize).toHaveValue("1");
   });
 
+  it("inserts an editable example for the selected specialization without submitting", () => {
+    render(
+      <ProjectOnboarding
+        mode="create"
+        currentProfileId={"profile-1" as Id<"userProfiles">}
+        onCancel={vi.fn()}
+        onRoomReady={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /software & web\/app engineering/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    const exampleButton = screen.getByRole("button", { name: "Try example prompt" });
+    expect(exampleButton).toHaveAttribute("type", "button");
+    fireEvent.click(exampleButton);
+
+    const briefField = screen.getByLabelText(/project brief/i);
+    expect(screen.getByRole("heading", { name: /tell us about your project/i })).toBeInTheDocument();
+    expect((briefField as HTMLTextAreaElement).value).toContain("responsive web application");
+    expect((briefField as HTMLTextAreaElement).value).toContain("DEPENDENCIES AND PLANNING:");
+    expect(screen.getByText(/\/ 8,000 chars/)).toHaveTextContent("1977 / 8,000 chars");
+
+    fireEvent.change(briefField, { target: { value: "My edited detailed project brief." } });
+    expect(briefField).toHaveValue("My edited detailed project brief.");
+  });
+
+  it("protects existing brief text until replacement is confirmed", () => {
+    render(
+      <ProjectOnboarding
+        mode="create"
+        currentProfileId={"profile-1" as Id<"userProfiles">}
+        onCancel={vi.fn()}
+        onRoomReady={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+    const briefField = screen.getByLabelText(/project brief/i);
+    fireEvent.change(briefField, { target: { value: "Keep this original project brief." } });
+    fireEvent.click(screen.getByRole("button", { name: "Try example prompt" }));
+
+    expect(screen.getByRole("dialog", { name: /replace your current brief/i })).toBeInTheDocument();
+    expect(briefField).toHaveValue("Keep this original project brief.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(briefField).toHaveValue("Keep this original project brief.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Try example prompt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use example" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect((briefField as HTMLTextAreaElement).value).toContain("responsive web application");
+  });
+
   it("keeps guest planning available and requests Google authentication only at creation", async () => {
     const onAuthenticationRequired = vi.fn().mockResolvedValue(undefined);
     render(

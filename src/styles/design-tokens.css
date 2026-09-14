@@ -4031,7 +4031,7 @@ body:has(.marketing-about-transition-scene) {
   min-height: 52px;
   align-items: center;
   column-gap: clamp(16px, 2vw, 32px);
-  margin-bottom: clamp(28px, 5vh, 72px);
+  margin-bottom: clamp(56px, 7.5vh, 80px);
 }
 
 .marketing-final-cta-arrow {
@@ -4097,8 +4097,14 @@ body:has(.marketing-about-transition-scene) {
   transform: translateX(0) scale(var(--final-cta-scale));
 }
 
+.marketing-final-cta-title-frame {
+  position: relative;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+}
+
 .marketing-final-cta h2 {
-  justify-self: center;
   width: max-content;
   margin: 0;
   color: #1dd851;
@@ -4156,13 +4162,105 @@ body:has(.marketing-about-transition-scene) {
 }
 
 .guest-project-shell > .guided-flow {
-  width: min(1180px, calc(100% - 32px));
+  align-items: stretch;
+  width: min(1080px, calc(100% - 32px));
   margin: var(--mld-space-6) auto 0;
 }
 
+.guest-project-shell .guided-back-link {
+  align-self: flex-start;
+}
+
+.guest-project-shell .guided-stepper,
+.guest-project-shell .guided-card {
+  width: 100%;
+  margin-inline: auto;
+}
+
 .guest-project-auth-error {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1080px, calc(100% - 32px));
   margin: var(--mld-space-4) auto 0;
+}
+
+.brief-primary {
+  display: grid;
+  min-width: 0;
+  gap: var(--mld-space-2);
+}
+
+.brief-primary > label {
+  font-weight: 800;
+}
+
+.brief-example-helper {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--mld-space-2) var(--mld-space-3);
+  margin-block: var(--mld-space-1) var(--mld-space-2);
+}
+
+.brief-example-helper small {
+  color: var(--mld-muted);
+  font-weight: 600;
+}
+
+.brief-example-button {
+  min-height: 38px;
+  padding: var(--mld-space-2) var(--mld-space-3);
+  font-size: var(--mld-label-size);
+}
+
+.brief-character-status {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mld-space-3);
+  color: var(--mld-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.brief-character-status span:last-child {
+  flex: 0 0 auto;
+}
+
+.brief-character-status .is-invalid {
+  color: var(--color-orange, #feaa01);
+}
+
+.brief-example-dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--mld-space-5);
+  background: rgba(7, 18, 22, 0.72);
+}
+
+.brief-example-dialog {
+  display: grid;
+  gap: var(--mld-space-4);
+  width: min(100%, 520px);
+  padding: var(--mld-space-6);
+  border: 2px solid var(--mld-text);
+  border-radius: var(--mld-radius-lg);
+  background: var(--mld-surface-01);
+  color: var(--mld-text);
+  box-shadow: 8px 8px 0 var(--mld-blue);
+}
+
+.brief-example-dialog h2,
+.brief-example-dialog p {
+  margin: 0;
+}
+
+.brief-example-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--mld-space-3);
+  margin-top: var(--mld-space-2);
 }
 
 .marketing-final-cta.is-entered h2 {

@@ -4,6 +4,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { BUILT_IN_FRAMEWORKS } from "../../data/frameworks";
+import { getProjectBriefExample } from "../../data/projectBriefExamples";
 import { getErrorMessage } from "../../lib/errors";
 import { trackEvent } from "../../lib/analytics";
 import { createTelemetryTracker } from "../../lib/telemetry";
@@ -52,6 +53,10 @@ export function ProjectOnboarding({
 
   const pendingDraft = useMemo(() => resumePendingDraft ? loadPendingProjectDraft() : null, [resumePendingDraft]);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const briefTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const examplePromptButtonRef = useRef<HTMLButtonElement | null>(null);
+  const exampleDialogRef = useRef<HTMLElement | null>(null);
+  const exampleDialogCancelRef = useRef<HTMLButtonElement | null>(null);
   const hasResumedCreation = useRef(false);
   const [step, setStep] = useState(pendingDraft ? 5 : 1);
   const [frameworkChoice, setFrameworkChoice] = useState(pendingDraft?.frameworkChoice ?? BUILT_IN_FRAMEWORKS[0].id);
@@ -76,12 +81,39 @@ export function ProjectOnboarding({
   const [displayExperience, setDisplayExperience] = useState<"game" | "tool">("game");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showExampleConfirmation, setShowExampleConfirmation] = useState(false);
 
   useEffect(() => {
     if (!pendingDraft || !currentProfileId || hasResumedCreation.current) return;
     hasResumedCreation.current = true;
     formRef.current?.requestSubmit();
   }, [currentProfileId, pendingDraft]);
+
+  useEffect(() => {
+    if (!showExampleConfirmation) return;
+    exampleDialogCancelRef.current?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowExampleConfirmation(false);
+        requestAnimationFrame(() => examplePromptButtonRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = [...(exampleDialogRef.current?.querySelectorAll<HTMLElement>("button") ?? [])];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showExampleConfirmation]);
 
   const selectedFramework = useMemo(() => {
     if (frameworkChoice === "custom") {
@@ -122,6 +154,26 @@ export function ProjectOnboarding({
 
   const phaseChoices = selectedFramework.phases;
   const effectiveDraftPhaseKey = draftPhaseKey || phaseChoices[0]?.key || "project-work";
+
+  function useExamplePrompt() {
+    setBrief(getProjectBriefExample(frameworkChoice));
+    setError(null);
+    setShowExampleConfirmation(false);
+    requestAnimationFrame(() => briefTextareaRef.current?.focus());
+  }
+
+  function closeExampleConfirmation() {
+    setShowExampleConfirmation(false);
+    requestAnimationFrame(() => examplePromptButtonRef.current?.focus());
+  }
+
+  function handleExamplePrompt() {
+    if (brief.trim()) {
+      setShowExampleConfirmation(true);
+      return;
+    }
+    useExamplePrompt();
+  }
 
   function addDraftTask() {
     if (!draftTitle.trim() || !draftDescription.trim() || !draftDueDate) {
@@ -357,7 +409,39 @@ export function ProjectOnboarding({
           </div>
         </> : null}
 
-        {step === 2 ? <><p className="kicker">Step 2 · Brief</p><h1 className="display-heading" id="create-flow-title">Tell us about your project</h1><div className="guided-field-grid"><label className="guided-field-wide brief-primary"><span>Project brief</span><small>Paste your assignment requirements or project goals (up to 8,000 characters).</small><textarea required minLength={20} maxLength={8000} value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="Paste your full assignment requirements, submission criteria, or project brief here..." /><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", fontWeight: 700, color: brief.length > 8000 || (brief.length > 0 && brief.length < 20) ? "var(--color-orange, #feaa01)" : "var(--color-muted)", marginTop: "0.35rem" }}><span>Paste assignment requirements, deliverables, or goals (20 - 8,000 chars).</span><span>{brief.length} / 8,000 chars</span></div></label><label><span>Project name</span><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label className="deadline-inline-field"><span>Deadline</span><div className="deadline-input-preset-row"><input required type="date" min={dateAfter(1)} value={deadline} onChange={(event) => { setDeadline(event.target.value); setDraftDueDate(event.target.value); }} /><div className="deadline-preset-buttons"><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(7))}>7 days</button><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(14))}>14 days</button></div></div></label><label><span>Team size</span><select value={targetMemberCount} onChange={(event) => setTargetMemberCount(event.target.value)}>{Array.from({ length: 10 }, (_, index) => index + 1).map((size) => <option key={size} value={size}>{size === 1 ? "1 person" : `${size} people`}</option>)}</select></label><label><span>Specialization</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}</select></label></div></> : null}
+        {step === 2 ? <>
+          <p className="kicker">Step 2 · Brief</p>
+          <h1 className="display-heading" id="create-flow-title">Tell us about your project</h1>
+          <div className="guided-field-grid">
+            <div className="guided-field-wide brief-primary">
+              <label htmlFor="project-brief">Project brief</label>
+              <small id="project-brief-description">Paste your assignment requirements or project goals (up to 8,000 characters).</small>
+              <div className="brief-example-helper">
+                <button ref={examplePromptButtonRef} className="secondary-button brief-example-button" type="button" onClick={handleExamplePrompt}>Try example prompt</button>
+                <small>More detail helps MayLamDi create a more accurate task plan.</small>
+              </div>
+              <textarea
+                ref={briefTextareaRef}
+                id="project-brief"
+                required
+                minLength={20}
+                maxLength={8000}
+                value={brief}
+                onChange={(event) => setBrief(event.target.value)}
+                placeholder="Paste your full assignment requirements, submission criteria, or project brief here..."
+                aria-describedby="project-brief-description project-brief-count"
+              />
+              <div className="brief-character-status" id="project-brief-count">
+                <span>Paste assignment requirements, deliverables, or goals (20 - 8,000 chars).</span>
+                <span className={brief.length > 8000 || (brief.length > 0 && brief.length < 20) ? "is-invalid" : ""}>{brief.length} / 8,000 chars</span>
+              </div>
+            </div>
+            <label><span>Project name</span><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+            <label className="deadline-inline-field"><span>Deadline</span><div className="deadline-input-preset-row"><input required type="date" min={dateAfter(1)} value={deadline} onChange={(event) => { setDeadline(event.target.value); setDraftDueDate(event.target.value); }} /><div className="deadline-preset-buttons"><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(7))}>7 days</button><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(14))}>14 days</button></div></div></label>
+            <label><span>Team size</span><select value={targetMemberCount} onChange={(event) => setTargetMemberCount(event.target.value)}>{Array.from({ length: 10 }, (_, index) => index + 1).map((size) => <option key={size} value={size}>{size === 1 ? "1 person" : `${size} people`}</option>)}</select></label>
+            <label><span>Specialization</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}</select></label>
+          </div>
+        </> : null}
 
         {step === 3 ? <><p className="kicker">Step 3 · Plan</p><h1 className="display-heading" id="create-flow-title">Build your project plan</h1><div className="allocation-mode-grid"><button className={taskCreationMode === "ai" ? "allocation-mode-card ai-mode is-recommended is-selected" : "allocation-mode-card ai-mode is-recommended"} type="button" onClick={() => setTaskCreationMode("ai")}><strong>AI-assisted plan · Recommended</strong><span>Start with an editable plan of phases, tasks, descriptions, skills, weights, and due dates. Generate it after the room opens.</span></button><button className={taskCreationMode === "manual" ? "allocation-mode-card is-selected" : "allocation-mode-card"} type="button" onClick={() => setTaskCreationMode("manual")}><strong>Build manually</strong><span>Create the initial task list yourself with the same review and ownership controls.</span></button></div>{taskCreationMode === "manual" ? <section className="onboarding-task-builder"><div className="project-field-grid"><label className="project-field-wide"><span>Title</span><input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label><label className="project-field-wide"><span>Description</span><textarea value={draftDescription} onChange={(event) => setDraftDescription(event.target.value)} /></label><label><span>Phase <small>Groups related tasks into a stage of the project.</small></span><select value={effectiveDraftPhaseKey} onChange={(event) => setDraftPhaseKey(event.target.value)}>{phaseChoices.map((phase) => <option key={phase.key} value={phase.key}>{phase.name}</option>)}</select></label><label><span>Owner</span><select value={draftOwnerMode} onChange={(event) => setDraftOwnerMode(event.target.value as DraftTask["ownerMode"])}><option value="creator">Creator</option><option value="open">Open for claiming</option><option value="unassigned">Unassigned until allocation</option></select></label><label><span>Task Weight <small>How much this task contributes to overall project progress.</small></span><input type="number" min="0.5" max="100" step="0.5" value={draftWeight} onChange={(event) => setDraftWeight(event.target.value)} /></label><label><span>Due Date</span><input type="date" max={deadline} value={draftDueDate} onChange={(event) => setDraftDueDate(event.target.value)} /></label><label className="project-field-wide"><span>Skills</span><input value={draftSkills} onChange={(event) => setDraftSkills(event.target.value)} placeholder="Figma, research" /></label><label><span>Peer Reviewer</span><select disabled><option>Owner chooses later</option></select></label></div><button className="quiet-button" type="button" onClick={addDraftTask}>Add to task list</button><div className="onboarding-draft-list">{draftTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{phaseChoices.find((phase) => phase.key === task.phaseKey)?.name} · due {task.dueDate} · weight {task.weight}</small></div><button type="button" className="text-link" onClick={() => setDraftTasks((current) => current.filter((item) => item.id !== task.id))}>Remove</button></article>)}</div></section> : <p className="ai-safety-note">After the room is created, Project Plan opens with Generate AI Project Plan as the primary action. If providers are busy, build the plan manually.</p>}</> : null}
 
@@ -373,6 +457,21 @@ export function ProjectOnboarding({
           </button>
         </div>
       </form>
+      {showExampleConfirmation ? (
+        <div className="brief-example-dialog-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) closeExampleConfirmation();
+        }}>
+          <section ref={exampleDialogRef} className="brief-example-dialog" role="dialog" aria-modal="true" aria-labelledby="brief-example-dialog-title" aria-describedby="brief-example-dialog-description">
+            <p className="kicker">Project brief</p>
+            <h2 id="brief-example-dialog-title">Replace your current brief with the example prompt?</h2>
+            <p id="brief-example-dialog-description">Your current text will be replaced. You can edit the example after inserting it.</p>
+            <div className="brief-example-dialog-actions">
+              <button ref={exampleDialogCancelRef} className="quiet-button" type="button" onClick={closeExampleConfirmation}>Cancel</button>
+              <button className="primary-button" type="button" onClick={useExamplePrompt}>Use example</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1743,7 +1743,9 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
               )}
             </div>
 
-            <h2 id="marketing-final-title">MayLamDi</h2>
+            <div className="marketing-final-cta-title-frame">
+              <h2 id="marketing-final-title">MayLamDi</h2>
+            </div>
           </div>
         </div>
       </section>
