@@ -1,4 +1,4 @@
-name: Validate and deploy production
+﻿name: Validate and deploy production
 
 on:
   pull_request:
@@ -42,6 +42,9 @@ jobs:
 
       - name: Build application
         run: npm run build
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CONVEX_SITE_URL: ${{ secrets.VITE_CONVEX_SITE_URL }}
 
   deploy:
     name: Deploy Vercel and Convex
@@ -70,13 +73,20 @@ jobs:
 
       - name: Confirm deployment credentials
         run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::The VERCEL_TOKEN repository secret is not configured."
+          if [ -z $VERCEL_TOKEN ]; then
+            echo ::error::The VERCEL_TOKEN repository secret is not configured.
             exit 1
           fi
 
-      - name: Link official Vercel project
-        run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Deploy Convex backend
+        run: npx convex deploy --cmd 'npm run build'
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CONVEX_SITE_URL: ${{ secrets.VITE_CONVEX_SITE_URL }}
 
-      - name: Deploy production
-        run: npx vercel deploy --prod --yes --token="$VERCEL_TOKEN"
+      - name: Link official Vercel project
+        run: npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Deploy production to Vercel
+        run: npx vercel deploy --prod --yes --token=$VERCEL_TOKEN
