@@ -402,15 +402,28 @@ export const generateProjectPlan = action({
       projectId: args.projectId,
     });
 
-    const geminiKey = environmentValue("GEMINI_API_KEY")
-      ?? (environmentValue("AIASSISTANT")?.startsWith("AQ.") || environmentValue("AIASSISTANT")?.startsWith("AIzaSy") ? environmentValue("AIASSISTANT") : undefined);
+    const rawGeminiKey = environmentValue("GEMINI_API_KEY")
+      ?? environmentValue("GEMINI_KEY")
+      ?? environmentValue("GOOGLE_GEMINI_API_KEY")
+      ?? environmentValue("GOOGLE_API_KEY")
+      ?? environmentValue("VITE_GEMINI_API_KEY")
+      ?? environmentValue("AIASSISTANT")
+      ?? environmentValue("AI_ASSISTANT");
+    const geminiKey = rawGeminiKey && (rawGeminiKey.startsWith("AQ.") || rawGeminiKey.startsWith("AIzaSy"))
+      ? rawGeminiKey.trim()
+      : undefined;
     const geminiModelOverride = environmentValue("GEMINI_MODEL");
 
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
-    const openRouterApiKey = tierKey
-      ?? (environmentValue("OPENROUTER_API_KEY")?.startsWith("sk-") ? environmentValue("OPENROUTER_API_KEY") : undefined)
-      ?? (environmentValue("AIASSISTANT")?.startsWith("sk-") ? environmentValue("AIASSISTANT") : undefined)
+    const rawOpenRouterKey = tierKey
+      ?? environmentValue("OPENROUTER_API_KEY")
+      ?? environmentValue("OPENROUTER_KEY")
+      ?? environmentValue("VITE_OPENROUTER_API_KEY")
+      ?? environmentValue("AIASSISTANT")
       ?? environmentValue("AI_ASSISTANT");
+    const openRouterApiKey = rawOpenRouterKey && rawOpenRouterKey.trim().length > 15
+      ? rawOpenRouterKey.trim()
+      : undefined;
     const openRouterModelOverride = environmentValue("OPENROUTER_MODEL");
 
     if (!geminiKey && !openRouterApiKey) {
