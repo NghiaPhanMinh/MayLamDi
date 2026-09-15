@@ -89,35 +89,11 @@ function dateInProject(value: unknown, label: string, context: PlanningContext) 
   return date;
 }
 
-const GENERIC_TITLE_REGEX = /^(research|testing|ui design|ux analysis|backend|frontend|build frontend|build backend|implementation|setup|task \d+|overview|project setup|development|design|testing & qa|ai development|ai testing|technical note|project technical note|asset archive packaging|do research|build website|create content|write paper|make design|do analysis)$/i;
-
 function sanitizeTaskTitle(rawTitle: string): string {
-  const trimmed = rawTitle.trim();
-  if (GENERIC_TITLE_REGEX.test(trimmed) || trimmed.split(" ").length < 2) {
-    if (/testing|qa/i.test(trimmed)) {
-      return "Run usability and functional testing on core project workflow";
-    }
-    if (/ux|design/i.test(trimmed)) {
-      return "Analyse user experience requirements and refine core UI workflow";
-    }
-    if (/backend|api/i.test(trimmed)) {
-      return "Implement core backend API services, data flow, and error handling";
-    }
-    if (/frontend|build|implementation/i.test(trimmed)) {
-      return "Refine core responsive frontend interaction and component workflow";
-    }
-    if (/note|documentation|setup|packaging/i.test(trimmed)) {
-      return "Document architecture, security fallbacks, and technical presentation package";
-    }
-    if (/research|analysis|study/i.test(trimmed)) {
-      return "Conduct target research analysis and synthesize core findings";
-    }
-    if (/content|paper|write|script/i.test(trimmed)) {
-      return "Draft core asset content and detailed project documentation";
-    }
-    return `Develop ${trimmed} Component`;
-  }
-  return trimmed;
+  const trimmed = rawTitle.trim().replace(/\s+/g, " ");
+  if (trimmed.length === 0) return "Project Task";
+  // Capitalize first letter if needed
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
 export function validateAiPlan(value: unknown, context: PlanningContext): ValidatedAiPlan {

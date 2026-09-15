@@ -185,22 +185,29 @@ type AiPlanningContext = {
 
 export function planningPrompts(brief: string, context: AiPlanningContext) {
   const frameworkPhasesText = context.phases
-    .map((p, idx) => `Phase ${idx + 1} (ID: "${p.phaseId}"): Title: "${p.title}" - Description: "${p.description}"`)
+    .map((p, idx) => `Phase ${idx + 1} (ID: "${p.phaseId}"): "${p.title}" — ${p.description}`)
+    .join("\n");
+
+  const membersText = context.members
+    .map((m) => `Profile ID: "${m.profileId}" | Name: "${m.displayName}" | Skills/Role: [${m.skills.join(", ")}] | Workload: ${m.currentWorkload}`)
     .join("\n");
 
   const systemPrompt = [
-    "You are MayLamDi's Senior General-Purpose Project Architect.",
-    "GOAL: Convert the raw project brief into an actionable, context-aware project plan for any domain including creative, design, animation, research, business, marketing, product, software, events, and academic projects.",
-    "CORE PHILOSOPHY: Do NOT turn project briefs into a superficial checklist of deliverables. A deliverable (e.g. 'Playable Game', 'Live Web App', or 'Research Paper') is an end outcome, NOT a task title. Reason deeply about the actual labor, technical design, engineering, or creative construction required to achieve that goal. NEVER create tasks out of grading rubric terms or abstract adjectives (e.g. originality, feasibility, technical exploration, resourcefulness).",
-    "AUTHORITATIVE USER BRIEF RULE: The current user-provided brief is authoritative. Treat any stored project title or description as metadata only and NEVER let them override, contaminate, or conflict with the current brief. All generated tasks MUST strictly reflect the requirements, scope, domain, deliverables, and team specified in the current user brief.",
-    "FRAMEWORK AS PROCESS STRUCTURE (FRAMEWORK SKELETON ADAPTATION): FRAMEWORK = PROCESS STRUCTURE, CURRENT BRIEF = PROJECT CONTENT. Treat context.phases as the process skeleton (HOW work is structured over time e.g. Research -> Design -> Execution -> Verification). The brief determines WHAT tasks, deliverables, technologies, and roles are created. NEVER copy domain-specific tasks from a framework definition into an unrelated project brief. SAME FRAMEWORK != SAME TASKS. For each phase in context.phases, map relevant brief workstreams into that phase, and adapt or skip phases as needed without inventing dummy tasks.",
-    "WORKSTREAM SYNTHESIS & LOGICAL GROUPING: Group closely related deliverables and activities into cohesive, high-value workstreams (e.g. combine 'concept' + 'theme' into 'Develop Exhibition Concept & Theme', or 'venue layout' + 'installation setup' into 'Coordinate Venue Layout & Interactive Installation Setup'). Do NOT output literal 1-to-1 task lists that break single deliverables or phrases into shallow, isolated items.",
-    "ACTIONABLE TASK QUALITY & OUTCOME-DRIVEN DESCRIPTIONS: Every task title MUST be specific and start with an active verb (e.g. 'Model database schema...', 'Draft narrative screenplay...', 'Produce promotional video teasers...'). Task descriptions MUST be detailed and outcome-driven, referencing specific brief metrics, team roles, technical specs, and target deliverables. NEVER output generic filler such as 'Complete X according to project requirements', 'Build website', 'Do research', 'Create content', 'Testing', or 'Setup'.",
-    "DYNAMIC TASK COUNT SCALING: Do NOT use a fixed task count. Determine task count dynamically from the actual project scope, complexity, listed deliverables, team size, and timeline duration in the user brief. For small, simple briefs (e.g. a 1-week 1-person project with 2-3 deliverables), generate 3–5 actionable tasks. For large, complex briefs (e.g. a multi-week project with multiple team members and many deliverables), generate 6–15 actionable tasks to cover all workstreams.",
-    "TEAM & SKILL ALLOCATION: Assign each task to the team member profile ID whose skills match best. Distribute work equitably across available members.",
-    "DEPENDENCIES & FEASIBILITY: Respect logical dependencies between tasks. Upstream tasks must be completed before downstream tasks. All task dates (startDate and dueDate) MUST be within project.startDate and project.deadline.",
-    "Use ONLY supplied phase IDs and member profile IDs. Return VALID structured JSON matching the schema.",
-  ].join(" ");
+    "You are MayLamDi's Senior Project Architect.",
+    "MISSION: Transform the authoritative project brief into an actionable, domain-specific project execution plan.",
+    "",
+    "MANDATORY COGNITIVE PLANNING PIPELINE (Reason internally through these steps before generating tasks):",
+    "1. PROJECT UNDERSTANDING: Deeply analyze the brief to identify the core domain (e.g. 2D game, interactive physical installation, mobile app, exhibition, research paper), target audience/stakeholders, specific constraints, and required final outcomes. Ground all thinking strictly in THIS project.",
+    "2. DISCIPLINARY WORKSTREAMS: Decompose the project into natural, cohesive workstreams (e.g., Narrative & Scriptwriting, Visual Asset Creation, Software/Engine Engineering, Physical/Spatial Setup, Curation, Testing & Quality Assurance). Do NOT create a superficial 1:1 checklist of deliverables or copy sentences verbatim.",
+    "3. FRAMEWORK AS PROCESS GUIDANCE: Treat context.phases as the timeline skeleton (HOW work progresses sequentially over time: e.g. Concept -> Production -> Validation -> Delivery). Map the project's real workstreams into the appropriate phases. NEVER copy generic framework terminology or software/UX tropes into unrelated domains (e.g. do NOT include 'wireframes' or 'database schema' in an art exhibition or physical installation). NEVER duplicate identical tasks across multiple phases.",
+    "4. TASK SYNTHESIS & MEANINGFUL GROUPING: Group closely related activities into cohesive, high-value tasks (e.g. combine 'concept + theme' into a single foundational task, but keep distinct disciplinary ownership separate). Every task title MUST start with an active verb and contain concrete project context (e.g., 'Prototype visitor movement sensor interaction and projected response' rather than 'Design prototype').",
+    "5. CONCRETE, PROJECT-SPECIFIC DESCRIPTIONS: Every task description must explain the exact work, tools, assets, or criteria required FOR THIS PROJECT. Forbid generic filler phrases such as 'Complete according to requirements', 'Gather core requirements', 'Develop features', 'Testing', or 'Setup'.",
+    "6. INTELLIGENT ROLE ALLOCATION: Assign each task's primaryOwnerProfileId and collaborators to the team member whose profile and skills best match the discipline of that work. Distribute work equitably across available team members. NEVER assign all tasks to one person if multiple members exist. Use ONLY provided member profile IDs.",
+    "7. LOGICAL CHRONOLOGICAL DEPENDENCIES: Construct a valid, acyclic dependency graph (DAG). Upstream foundational tasks (e.g. concept, architecture, raw asset creation) must precede downstream integration, testing, and deployment.",
+    "8. DYNAMIC TASK COUNT: Scale task count naturally according to scope and team size (typically 4–12 tasks). Do not force a fixed number.",
+    "",
+    "Return VALID JSON matching the schema strictly using provided phase IDs and member profile IDs."
+  ].join("\n");
 
   const userPrompt = JSON.stringify({
     request: "Analyze current user brief and generate a context-aware, outcome-oriented project plan.",
@@ -212,6 +219,7 @@ export function planningPrompts(brief: string, context: AiPlanningContext) {
     },
     frameworkPhases: frameworkPhasesText,
     phases: context.phases,
+    teamMembers: membersText,
     members: context.members,
     existingTasks: context.existingTasks,
     limits: { milestones: 6, tasks: 15 },
@@ -271,7 +279,7 @@ async function requestPlan(input: {
   userPrompt: string;
 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const timeout = setTimeout(() => controller.abort(), 12_000);
 
   try {
     const response = await fetch(OPENROUTER_URL, {
@@ -290,7 +298,7 @@ async function requestPlan(input: {
             role: "system",
             content: input.mode === "structured"
               ? input.systemPrompt
-              : `${input.systemPrompt} Return exactly one JSON object with no Markdown or commentary. The JSON must match this schema: ${JSON.stringify(planSchema.schema)}`,
+              : `${input.systemPrompt}\n\nReturn exactly one JSON object with no Markdown or commentary. The JSON must match this schema: ${JSON.stringify(planSchema.schema)}`,
           },
           { role: "user", content: input.userPrompt },
         ],
@@ -298,8 +306,8 @@ async function requestPlan(input: {
           ? { response_format: { type: "json_schema", json_schema: planSchema } }
           : {}),
         temperature: 0.1,
-        max_tokens: 1_800,
-        max_completion_tokens: 1_800,
+        max_tokens: 3_500,
+        max_completion_tokens: 3_500,
       }),
     });
     const body = (await response.json().catch(() => ({}))) as OpenRouterResponse;

@@ -107,10 +107,10 @@ describe("AI plan validation", () => {
     expect(() => validateAiPlan(invalidDifficulty, context)).toThrow(/outside the allowed range/i);
   });
 
-  it("sanitizes generic task titles into actionable outcome-oriented task titles", () => {
+  it("cleans and capitalizes task titles without injecting static template strings", () => {
     const plan = validPlan();
-    plan.tasks[0].title = "Do research";
+    plan.tasks[0].title = "   draft narrative screenplay script   ";
     const validated = validateAiPlan(plan, context);
-    expect(validated.tasks[0].title).toBe("Conduct target research analysis and synthesize core findings");
+    expect(validated.tasks[0].title).toBe("Draft narrative screenplay script");
   });
 });
