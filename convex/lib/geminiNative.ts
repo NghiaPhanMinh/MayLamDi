@@ -9,7 +9,6 @@ export const GEMINI_NATIVE_MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-flash-lite-latest",
   "gemini-3.6-flash",
-  "gemini-3.1-flash-lite",
 ] as const;
 
 export type GeminiNativeModel = (typeof GEMINI_NATIVE_MODELS)[number];
@@ -81,7 +80,7 @@ export async function requestGeminiNative(input: {
   schema: Record<string, unknown>;
   timeoutMs?: number;
 }): Promise<{ content: string; modelUsed: string }> {
-  const timeoutMs = input.timeoutMs ?? 25_000;
+  const timeoutMs = input.timeoutMs ?? 15_000;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
