@@ -2,8 +2,6 @@ export const DEFAULT_PRIMARY_FREE_MODEL = "google/gemma-4-31b-it:free";
 export const DEFAULT_FIRST_FREE_FALLBACK = "google/gemma-4-26b-a4b-it:free";
 export const DEFAULT_ADDITIONAL_FREE_FALLBACKS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "nex-agi/nex-n2.5-pro:free",
   "openrouter/free",
 ] as const;
 
