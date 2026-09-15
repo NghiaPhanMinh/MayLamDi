@@ -1178,29 +1178,51 @@ export function BattleScene({
   const [testSimulatedMissedDamage, setTestSimulatedMissedDamage] = useState<number>(0);
   const [testExtraPlayerCount, setTestExtraPlayerCount] = useState<number>(0);
 
+  // Tuned Default Transforms matching user's custom canvas layout across all screens
+  const DEFAULT_LAYER_TRANSFORMS: Record<string, { x: number; y: number; scale: number; visible: boolean }> = {
+    sky: { x: 0, y: 0, scale: 1.05, visible: true },
+    terrain: { x: 0, y: -4, scale: 1, visible: true },
+    village: { x: 0, y: 0, scale: 1, visible: true },
+    goblins: { x: 50, y: 0, scale: 1, visible: true },
+    players: { x: 73, y: 44, scale: 0.95, visible: true },
+    dragon: { x: -22, y: -33, scale: 1.05, visible: true },
+    fx: { x: 0, y: 0, scale: 1.15, visible: true },
+  };
+
+  const DEFAULT_PVZ_BAR_OFFSET = { x: 10, y: 0, width: 482, scale: 1.05, visible: true };
+
+  const DEFAULT_TERRAIN_OFFSETS = {
+    mountain: { x: 2, y: 203, scale: 1 },
+    island: { x: 0, y: 89, scale: 1 },
+    green: { x: 0, y: 86, scale: 1 },
+    cloud: { x: 64, y: 150, scale: 0.95 },
+  };
+
   // Canvas Layer Transforms (All 10 layers customizable in Layout Admin)
   const [layerTransforms, setLayerTransforms] = useState<Record<string, { x: number; y: number; scale: number; visible: boolean }>>(() => {
     try {
       const saved = localStorage.getItem("layer_transforms_config");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.players && (parsed.players.x !== 0 || parsed.players.y !== 0)) {
+          return parsed;
+        }
+      }
     } catch {}
-    return {
-      sky: { x: 0, y: 0, scale: 1.05, visible: true },
-      terrain: { x: 0, y: -4, scale: 1.05, visible: true },
-      village: { x: 0, y: 0, scale: 1, visible: true },
-      goblins: { x: 50, y: 0, scale: 1, visible: true },
-      players: { x: 0, y: 0, scale: 1, visible: true },
-      dragon: { x: 0, y: 0, scale: 1, visible: true },
-      fx: { x: 0, y: 0, scale: 1.15, visible: true },
-    };
+    return DEFAULT_LAYER_TRANSFORMS;
   });
 
   const [pvzBarOffset, setPvzBarOffset] = useState<{ x: number; y: number; width: number; scale: number; visible: boolean }>(() => {
     try {
       const saved = localStorage.getItem("pvz_bar_config");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.width === 482 || parsed.width > 400) {
+          return parsed;
+        }
+      }
     } catch {}
-    return { x: 0, y: 0, width: 380, scale: 1.05, visible: true };
+    return DEFAULT_PVZ_BAR_OFFSET;
   });
 
   useEffect(() => {
@@ -1219,14 +1241,14 @@ export function BattleScene({
   }>(() => {
     try {
       const saved = localStorage.getItem("terrain_elements_config");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.mountain && parsed.mountain.y !== 130 && parsed.island?.y !== 0) {
+          return parsed;
+        }
+      }
     } catch {}
-    return {
-      mountain: { x: 0, y: 130, scale: 1 },
-      island: { x: 0, y: 0, scale: 1 },
-      green: { x: 0, y: 0, scale: 1 },
-      cloud: { x: 0, y: 0, scale: 1 },
-    };
+    return DEFAULT_TERRAIN_OFFSETS;
   });
 
   useEffect(() => {
@@ -1403,15 +1425,8 @@ export function BattleScene({
   const [showDragonEditor, setShowDragonEditor] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
 
-  // Interactive Cutscene Tutorial State (Directly inside game screen for new players)
-  const [showTutorial, setShowTutorial] = useState<boolean>(() => {
-    try {
-      if (typeof window === "undefined") return false;
-      return localStorage.getItem("rpg_tutorial_seen") === null;
-    } catch {
-      return false;
-    }
-  });
+  // Interactive Cutscene Tutorial State (Hidden per user request)
+  const [showTutorial, setShowTutorial] = useState<boolean>(false);
 
   // Sound & Web Push Notification System State
   const [showSoundSettingsModal, setShowSoundSettingsModal] = useState(false);
@@ -2418,60 +2433,50 @@ export function BattleScene({
     }
   }, []);
 
-  // Periodic Web Push Notification and Task/Goblin Reminder Engine
+  // Periodic Web Push Notification Engine (One and done per session, no spam)
   useEffect(() => {
-    const checkReminders = () => {
-      const projectName = workspace?.project?.title || state?.project?.title || "Realm Quest";
-      const now = new Date();
-      const currentHour = now.getHours();
-      const nowMs = now.getTime();
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("rpg_notif_session_checked")) return;
+    sessionStorage.setItem("rpg_notif_session_checked", "true");
 
-      const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+    const projectName = workspace?.project?.title || state?.project?.title || "Realm Quest";
+    const todayStr = new Date().toDateString();
+
+    // 1. Goblin Daily Reminder (At most once per day, only if notifications enabled)
+    const lastGoblinDate = localStorage.getItem("rpg_last_goblin_date");
+    const currentMember = state?.members?.find((m) => m.profileId === state?.currentProfileId);
+    const hasSubmittedToday = Boolean(currentMember?.hasSubmittedToday);
+
+    if (!hasSubmittedToday && lastGoblinDate !== todayStr && areNotificationsEnabled()) {
+      localStorage.setItem("rpg_last_goblin_date", todayStr);
+      sendWebNotification(
+        `${projectName}: VILLAGE IS UNDER ATTACK!`,
+        "Slay the goblin horde now to defend the village!",
+        "fanfare"
+      );
+    }
+
+    // 2. Task Deadline Reminder (Incomplete tasks due within 24 hours, at most once per day)
+    const lastDeadlineDate = localStorage.getItem("rpg_last_deadline_date");
+    if (lastDeadlineDate !== todayStr && areNotificationsEnabled()) {
       const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      const nowMs = Date.now();
+      const userPendingTasks = questTasks.filter((t) => t.isMine && !t.isCompleted && t.dueDate);
+      const nearDeadlineTask = userPendingTasks.find((t) => {
+        const dueMs = new Date(`${t.dueDate}T23:59:59Z`).getTime();
+        const diff = dueMs - nowMs;
+        return diff > 0 && diff <= ONE_DAY_MS;
+      });
 
-      // 1. Goblin Daily Reminder (Every 6h + at 11:00 PM / 23:00)
-      const lastGoblinReminder = parseInt(localStorage.getItem("rpg_last_goblin_reminder") || "0", 10);
-      const is11PM = currentHour === 23;
-      const isDue6Hours = nowMs - lastGoblinReminder >= SIX_HOURS_MS;
-
-      const currentMember = state?.members?.find((m) => m.profileId === state?.currentProfileId);
-      const hasSubmittedToday = Boolean(currentMember?.hasSubmittedToday);
-
-      if (!hasSubmittedToday && (is11PM || isDue6Hours)) {
-        localStorage.setItem("rpg_last_goblin_reminder", String(nowMs));
+      if (nearDeadlineTask) {
+        localStorage.setItem("rpg_last_deadline_date", todayStr);
         sendWebNotification(
-          `${projectName}: VILLAGE IS UNDER ATTACK!`,
-          "Slay the goblin horde now to defend the village!",
-          "fanfare"
+          `${projectName}: BOSS DEADLINE DUE SOON!`,
+          `Task "${nearDeadlineTask.title}" deadline due soon. Submit proof to strike the boss!`,
+          "roar"
         );
-        setShowGoblinAttackAlert(true);
       }
-
-      // 2. Task Deadline Reminder (Incomplete tasks due within 24 hours)
-      const lastDeadlineReminder = parseInt(localStorage.getItem("rpg_last_deadline_reminder") || "0", 10);
-      if (nowMs - lastDeadlineReminder >= SIX_HOURS_MS) {
-        const userPendingTasks = questTasks.filter((t) => t.isMine && !t.isCompleted && t.dueDate);
-        const nearDeadlineTask = userPendingTasks.find((t) => {
-          const dueMs = new Date(`${t.dueDate}T23:59:59Z`).getTime();
-          const diff = dueMs - nowMs;
-          return diff > 0 && diff <= ONE_DAY_MS;
-        });
-
-        if (nearDeadlineTask) {
-          localStorage.setItem("rpg_last_deadline_reminder", String(nowMs));
-          sendWebNotification(
-            `${projectName}: BOSS DEADLINE DUE SOON!`,
-            `Task "${nearDeadlineTask.title}" deadline due soon. Submit proof to strike the boss!`,
-            "roar"
-          );
-          setTaskDeadlineAlertTask(nearDeadlineTask);
-        }
-      }
-    };
-
-    checkReminders();
-    const interval = setInterval(checkReminders, 60000);
-    return () => clearInterval(interval);
+    }
   }, [workspace?.project?.title, state?.project?.title, state?.members, state?.currentProfileId, questTasks]);
 
   // Attack Elemental Sound Effects Trigger (Synchronized looping while visual is active)
@@ -2888,6 +2893,36 @@ export function BattleScene({
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
       {displayMode === "game" ? (
         <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
+        {/* Mode Toggle Button: Canvas Top-Left */}
+        <button
+          type="button"
+          onClick={toggleDisplayMode}
+          style={{
+            position: "absolute",
+            top: "16px",
+            left: "16px",
+            zIndex: 30,
+            background: "#fffded",
+            border: "2px solid #101517",
+            borderRadius: "10px",
+            padding: "8px 14px",
+            fontWeight: 800,
+            fontSize: "0.82rem",
+            boxShadow: "3px 3px 0 #101517",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#101517",
+            userSelect: "none",
+          }}
+          title="Switch to Tool Mode (Plain progress bar & clean dashboard)"
+          aria-label="Switch to Tool Mode"
+        >
+          <BarChart2 size={16} />
+          <span>Tool Mode</span>
+        </button>
+
         {/* Layer 10: Task Progress Bar (TOP, centered text, draggable, responsive width) */}
         <div
           className="pvz-deadline-progress-container project-task-progress-container"
@@ -2961,28 +2996,6 @@ export function BattleScene({
                 (Target passed · No penalty)
               </span>
             )}
-            <button
-              type="button"
-              onClick={toggleDisplayMode}
-              title="Switch to Tool Mode (Plain progress bar, minimal productivity layout)"
-              style={{
-                background: "#f1f5f9",
-                border: "1.5px solid #101517",
-                borderRadius: "6px",
-                padding: "2px 8px",
-                fontSize: "0.68rem",
-                fontWeight: 800,
-                color: "#0f172a",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                marginLeft: "4px",
-              }}
-            >
-              <BarChart2 size={12} />
-              Tool Mode
-            </button>
           </div>
 
           {/* Progress Bar Track */}
@@ -3142,173 +3155,71 @@ export function BattleScene({
           />
         </div>
 
-        {/* Floating Bottom Toolbar (Logos Only, Draggable) */}
-        <div
-          className="rpg-bottom-floating-toolbar"
+        {/* Floating Sound Button (Canvas Bottom-Right Corner) */}
+        <button
+          type="button"
+          className="rpg-btn-icon"
           style={{
             position: "absolute",
-            bottom: `calc(16px - ${toolbarOffset.y}px)`,
-            left: `calc(50% + ${toolbarOffset.x}px)`,
-            transform: "translateX(-50%)",
+            bottom: "16px",
+            right: "16px",
             zIndex: 30,
+            width: "42px",
+            height: "42px",
+            borderRadius: "12px",
+            background: "#fffded",
+            border: "2.5px solid #101517",
+            boxShadow: "3px 3px 0 #101517",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            background: "#fffded",
-            border: "3px solid #101517",
-            boxShadow: "4px 4px 0 rgba(16, 21, 23, 0.72)",
-            borderRadius: "14px",
-            padding: "6px 10px",
-            userSelect: "none",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#101517",
           }}
+          onClick={() => setShowSoundSettingsModal(true)}
+          title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
+          aria-label="Sound and music settings"
         >
-          {/* Grip Drag Handle */}
-          <div
+          {isAudioMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </button>
+
+        {/* Dragon Layout Admin Button (Only if authenticated or open) */}
+        {(showDragonEditor || adminAuthenticated) && (
+          <button
+            type="button"
+            className="rpg-btn-leaderboard rpg-btn-layout-admin"
             style={{
-              cursor: isDraggingToolbar ? "grabbing" : "grab",
+              position: "absolute",
+              bottom: "16px",
+              right: "68px",
+              zIndex: 30,
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              background: "#fffded",
+              border: "2.5px solid #101517",
+              boxShadow: "3px 3px 0 #101517",
               display: "flex",
               alignItems: "center",
-              padding: "4px 2px",
-              color: "#64748b",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "#101517",
             }}
-            onMouseDown={(e) => {
-              setIsDraggingToolbar(true);
-              toolbarDragStartRef.current = {
-                mouseX: e.clientX,
-                mouseY: e.clientY,
-                startX: toolbarOffset.x,
-                startY: toolbarOffset.y,
-              };
-            }}
-            onTouchStart={(e) => {
-              setIsDraggingToolbar(true);
-              toolbarDragStartRef.current = {
-                mouseX: e.touches[0].clientX,
-                mouseY: e.touches[0].clientY,
-                startX: toolbarOffset.x,
-                startY: toolbarOffset.y,
-              };
-            }}
-            title="Drag toolbar"
-            aria-label="Drag toolbar"
-          >
-            <GripHorizontal size={18} />
-          </div>
-
-          {/* 0. Mode Switcher: Game Mode vs Tool Mode */}
-          <button
-            type="button"
-            className="rpg-btn-icon"
-            onClick={toggleDisplayMode}
-            title="Switch to Tool Mode (Plain progress bar & minimal dashboard)"
-            aria-label="Switch to Tool Mode"
-          >
-            <BarChart2 size={20} />
-          </button>
-
-          {/* 1. Tutorial */}
-          <button
-            type="button"
-            className="rpg-btn-icon"
-            onClick={() => setShowTutorial(true)}
-            title="Tutorial Cutscene"
-            aria-label="Tutorial Cutscene"
-          >
-            <BookOpen size={20} />
-          </button>
-
-          {/* 2. Sound & Music */}
-          <button
-            type="button"
-            className="rpg-btn-icon"
-            onClick={() => setShowSoundSettingsModal(true)}
-            title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
-            aria-label="Sound and music settings"
-          >
-            {isAudioMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-          </button>
-
-          {/* 3. Adjust Elements */}
-          <button
-            type="button"
-            className={`rpg-btn-icon ${showAdjustElementsModal ? "active" : ""}`}
-            onClick={() => setShowAdjustElementsModal((prev) => !prev)}
-            title="Adjust Elements Layout & Scale"
-            aria-label="Adjust Elements Layout & Scale"
-          >
-            <Sliders size={20} />
-          </button>
-
-          {/* 4. Testing Attack & Dummy Heroes Generator */}
-          <button
-            type="button"
-            className={`rpg-btn-icon ${isDummyTestingActive || isDummyTaskSubmitted ? "active-attack" : ""}`}
-            onClick={() => setShowDummyTestModal(true)}
-            title="Testing Attack & Dummy Heroes Generator"
-            aria-label="Testing Attack & Dummy Heroes Generator"
-          >
-            <Gamepad2 size={20} />
-          </button>
-
-          {/* 5. Preview Completed */}
-          <button
-            type="button"
-            className={`rpg-btn-icon ${testBossDefeatedPreview ? "active-gold" : ""}`}
-            onClick={() => setTestBossDefeatedPreview((prev) => !prev)}
-            title={testBossDefeatedPreview ? "Exit Completed Preview" : "Preview Project Completed"}
-            aria-label="Preview Project Completed"
-          >
-            <Trophy size={20} />
-          </button>
-
-          {/* 6. Layout Admin */}
-          {(showDragonEditor || adminAuthenticated) && (
-            <button
-              type="button"
-              className="rpg-btn-leaderboard rpg-btn-layout-admin"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "10px",
-                border: "2px solid #101517",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                if (!adminAuthenticated) {
-                  setShowAdminPasswordModal(true);
-                } else {
-                  setShowDragonEditor((prev) => !prev);
-                  if (!selectedDragonPart) {
-                    setSelectedDragonPart("headNeck");
-                  }
+            onClick={() => {
+              if (!adminAuthenticated) {
+                setShowAdminPasswordModal(true);
+              } else {
+                setShowDragonEditor((prev) => !prev);
+                if (!selectedDragonPart) {
+                  setSelectedDragonPart("headNeck");
                 }
-              }}
-              title="Dragon Layout Admin"
-              aria-label="Dragon Layout Admin"
-            >
-              <Shield size={20} />
-            </button>
-          )}
-        </div>
-
-        {/* Interactive Visual Novel Cutscene Tutorial Overlay (Strictly inside game canvas) */}
-        {showTutorial && (
-          <LandscapeTutorial
-            isOpen={showTutorial}
-            onClose={() => setShowTutorial(false)}
-            villageName={funnyVillageName}
-            bossName={funnyBossName}
-            dragonOffsets={dragonOffsets}
-            customShapes={customShapes}
-            dragonFills={dragonFills}
-            deletedShapes={deletedShapes}
-            dragonGeometries={dragonGeometries}
-            layerOrder={layerOrder}
-          />
+              }
+            }}
+            title="Dragon Layout Admin"
+            aria-label="Dragon Layout Admin"
+          >
+            <Shield size={20} />
+          </button>
         )}
       </div>
       ) : (
@@ -3331,58 +3242,73 @@ export function BattleScene({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              background: "#fffded",
-              border: "3px solid #101517",
+              background: "var(--color-surface, #ffffff)",
+              border: "1px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
               padding: "16px 20px",
-              boxShadow: "4px 4px 0 rgba(16,21,23,0.72)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
               flexWrap: "wrap",
               gap: "12px",
             }}
           >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif", color: "#101517" }}>
-                  {workspace?.project?.title || state?.project?.title || "Project Workspace"}
-                </h1>
-                <span
-                  style={{
-                    fontSize: "0.72rem",
-                    fontWeight: 800,
-                    padding: "2px 8px",
-                    borderRadius: "12px",
-                    background: "#e0f2fe",
-                    color: "#0369a1",
-                    border: "1.5px solid #0284c7",
-                  }}
-                >
-                  Tool Mode
-                </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+              {/* Game Mode Switcher on Top-Left */}
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={toggleDisplayMode}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 14px",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+                title="Switch to Game Mode"
+                aria-label="Switch to Game Mode"
+              >
+                <Gamepad2 size={16} />
+                Game Mode
+              </button>
+
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <h1 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                    {workspace?.project?.title || state?.project?.title || "Project Workspace"}
+                  </h1>
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      background: "#f1f5f9",
+                      color: "#475569",
+                      border: "1px solid #cbd5e1",
+                    }}
+                  >
+                    Tool Mode
+                  </span>
+                </div>
+                <p style={{ margin: "3px 0 0 0", fontSize: "0.82rem", color: "#64748b" }}>
+                  Distraction-free productivity view · Team progress & tasks
+                </p>
               </div>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.82rem", color: "#475569" }}>
-                Distraction-free productivity view · Plain progress & tasks
-              </p>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <button
                 type="button"
-                className="rpg-modern-btn is-primary"
-                onClick={toggleDisplayMode}
-                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "0.82rem" }}
-                title="Switch to Game Mode (Full Dragon & RPG visuals)"
-              >
-                <Gamepad2 size={16} />
-                Switch to Game Mode
-              </button>
-              <button
-                type="button"
-                className="rpg-modern-btn is-secondary"
+                className="quiet-button"
                 onClick={() => setShowSoundSettingsModal(true)}
-                style={{ padding: "8px", display: "grid", placeItems: "center" }}
+                style={{ padding: "8px 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "8px" }}
                 title="Sound Settings"
               >
-                <Volume2 size={18} />
+                <Volume2 size={16} />
+                <span>Audio</span>
               </button>
             </div>
           </div>
@@ -3390,36 +3316,36 @@ export function BattleScene({
           {/* Plain Progress Bar Card */}
           <div
             style={{
-              background: "#fffded",
-              border: "3px solid #101517",
+              background: "var(--color-surface, #ffffff)",
+              border: "1px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
-              padding: "18px 20px",
-              boxShadow: "4px 4px 0 rgba(16,21,23,0.72)",
+              padding: "18px 22px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
               display: "grid",
               gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
               <div>
-                <span style={{ fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>Overall Status</span>
-                <div style={{ fontSize: "1.5rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif", color: "#101517" }}>
-                  Team progress: <span style={{ color: "#15803d" }}>{progressPercentage}%</span>
+                <span style={{ fontSize: "0.74rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>Overall Status</span>
+                <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                  Team progress: <span style={{ color: "#16a34a" }}>{progressPercentage}%</span>
                 </div>
               </div>
-              <div style={{ textAlign: "right", fontSize: "0.82rem", color: "#334155" }}>
+              <div style={{ textAlign: "right", fontSize: "0.82rem", color: "#475569" }}>
                 <div><strong>{completedTasksCount}</strong> of <strong>{totalTasksCount}</strong> tasks completed</div>
                 <div>Deadline: <strong>{deadlineStr || "Not set"}</strong> (Day {daysPassed} of {totalDays || 14} · {daysRemaining > 0 ? `${daysRemaining} days left` : "Target passed"})</div>
               </div>
             </div>
 
             {/* Plain Progress Bar Track */}
-            <div style={{ width: "100%", height: "16px", background: "#e2e8f0", border: "2px solid #101517", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ width: "100%", height: "12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "9999px", overflow: "hidden" }}>
               <div
                 style={{
                   width: `${progressPercentage}%`,
                   height: "100%",
-                  background: "linear-gradient(90deg, #15803d, #22c55e)",
-                  borderRadius: "6px",
+                  background: "linear-gradient(90deg, #16a34a, #22c55e)",
+                  borderRadius: "9999px",
                   transition: "width 0.4s ease",
                 }}
               />
@@ -3429,15 +3355,15 @@ export function BattleScene({
           {/* Tasks & Team Section */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
             {/* Tasks List */}
-            <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "18px 20px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "12px" }}>
+            <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
-                  Tasks & Deliverables
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                  My Tasks
                 </h3>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     type="button"
-                    className="rpg-modern-btn is-secondary"
+                    className="secondary-button"
                     style={{ padding: "6px 12px", fontSize: "0.78rem" }}
                     onClick={() => setShowQuestBoardModal(true)}
                   >
@@ -3446,7 +3372,7 @@ export function BattleScene({
                   {workspace?.project?.creatorProfileId === state?.currentProfileId && (
                     <button
                       type="button"
-                      className="rpg-modern-btn is-primary"
+                      className="primary-button"
                       style={{ padding: "6px 12px", fontSize: "0.78rem" }}
                       onClick={() => setShowCreateQuestModal(true)}
                     >
@@ -3459,42 +3385,76 @@ export function BattleScene({
               <div style={{ display: "grid", gap: "8px" }}>
                 {questTasks.map((task) => {
                   const isCompleted = task.isCompleted || task.status === "completed" || task.status === "verified";
-                  const isPendingReview = task.status === "review";
+                  const isPendingReview = task.status === "review" || task.status === "submitted";
                   const isMine = task.isMine;
 
                   return (
                     <div
                       key={task._id}
                       style={{
-                        border: "2px solid #101517",
+                        border: "1px solid var(--color-border, #e2e8f0)",
                         borderRadius: "10px",
                         padding: "12px 14px",
-                        background: isCompleted ? "#f8fafc" : "#ffffff",
+                        background: isCompleted ? "#f8fafc" : "var(--color-surface, #ffffff)",
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
                         gap: "12px",
-                        boxShadow: "2px 2px 0 rgba(16,21,23,0.15)",
+                        opacity: isCompleted ? 0.4 : 1,
+                        transition: "opacity 0.2s ease",
                       }}
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontWeight: 800, fontSize: "0.92rem", color: isCompleted ? "#64748b" : "#101517", textDecoration: isCompleted ? "line-through" : "none" }}>
+                          {isCompleted && (
+                            <CheckCircle2 size={16} style={{ color: "#16a34a", flexShrink: 0 }} />
+                          )}
+                          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: isCompleted ? "#64748b" : "var(--color-text, #101517)", textDecoration: isCompleted ? "line-through" : "none" }}>
                             {task.title}
                           </span>
-                          <span
-                            style={{
-                              fontSize: "0.7rem",
-                              fontWeight: 800,
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              background: isCompleted ? "#dcfce7" : isPendingReview ? "#fef3c7" : "#f1f5f9",
-                              color: isCompleted ? "#15803d" : isPendingReview ? "#b45309" : "#475569",
-                              border: "1px solid #101517",
-                            }}
-                          >
-                            {isCompleted ? "Completed" : isPendingReview ? "Review Pending" : "In Progress"}
-                          </span>
+                          {isCompleted ? (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                                background: "#dcfce7",
+                                color: "#15803d",
+                                border: "1px solid #86efac",
+                              }}
+                            >
+                              ✓ Complete
+                            </span>
+                          ) : isPendingReview ? (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                                background: "#fef3c7",
+                                color: "#b45309",
+                                border: "1px solid #fde68a",
+                              }}
+                            >
+                              In Review
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                                background: "#f1f5f9",
+                                color: "#475569",
+                                border: "1px solid #cbd5e1",
+                              }}
+                            >
+                              {task.status === "in_progress" ? "In Progress" : "To Do"}
+                            </span>
+                          )}
                         </div>
                         {task.description && (
                           <p style={{ margin: "3px 0 0 0", fontSize: "0.78rem", color: "#64748b" }}>
@@ -3511,7 +3471,7 @@ export function BattleScene({
                         {!isCompleted && !isPendingReview && isMine && (
                           <button
                             type="button"
-                            className="rpg-modern-btn is-primary"
+                            className="primary-button"
                             style={{ padding: "5px 12px", fontSize: "0.76rem" }}
                             onClick={() => {
                               setSelectedTaskId(task._id);
@@ -3524,7 +3484,7 @@ export function BattleScene({
                         {isPendingReview && (
                           <button
                             type="button"
-                            className="rpg-modern-btn is-boss"
+                            className="secondary-button"
                             style={{ padding: "5px 12px", fontSize: "0.76rem" }}
                             onClick={() => setReviewingTaskId(task._id)}
                           >
@@ -3534,7 +3494,7 @@ export function BattleScene({
                         {!task.primaryOwnerProfileId && task.isOpen && (
                           <button
                             type="button"
-                            className="rpg-modern-btn is-secondary"
+                            className="secondary-button"
                             style={{ padding: "5px 12px", fontSize: "0.76rem" }}
                             onClick={() => handleClaimQuest(task)}
                           >
@@ -3551,19 +3511,19 @@ export function BattleScene({
             {/* Team Roster & PDF Export */}
             <div style={{ display: "grid", gap: "16px", alignContent: "start" }}>
               {/* Team Members */}
-              <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "16px 18px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "10px" }}>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
+              <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "16px 18px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "10px" }}>
+                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
                   Team Members ({players.length})
                 </h3>
                 <div style={{ display: "grid", gap: "8px" }}>
                   {players.map((p) => (
                     <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#0284c7", border: "1.5px solid #101517", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.82rem" }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#0284c7", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.82rem" }}>
                         {p.displayName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: "0.84rem", color: "#101517" }}>{p.displayName}</div>
-                        <div style={{ fontSize: "0.7rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 700 }}>
+                        <div style={{ fontWeight: 700, fontSize: "0.84rem", color: "var(--color-text, #101517)" }}>{p.displayName}</div>
+                        <div style={{ fontSize: "0.7rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 600 }}>
                           {p.isActiveToday ? "● Active today" : "○ Idle"}
                         </div>
                       </div>
@@ -3573,8 +3533,8 @@ export function BattleScene({
               </div>
 
               {/* Contribution Record Download */}
-              <div style={{ background: "#fffded", border: "3px solid #101517", borderRadius: "14px", padding: "16px 18px", boxShadow: "4px 4px 0 rgba(16,21,23,0.72)", display: "grid", gap: "8px" }}>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 900, fontFamily: "var(--font-heading), sans-serif" }}>
+              <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "16px 18px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "8px" }}>
+                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
                   Contribution Dossier
                 </h3>
                 <p style={{ margin: 0, fontSize: "0.76rem", color: "#64748b" }}>
@@ -3582,9 +3542,9 @@ export function BattleScene({
                 </p>
                 <button
                   type="button"
-                  className="rpg-modern-btn is-secondary"
+                  className="secondary-button"
                   onClick={generateContributionPdf}
-                  style={{ padding: "8px 12px", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", width: "100%" }}
+                  style={{ padding: "8px 12px", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", width: "100%", borderRadius: "8px" }}
                 >
                   <FileDown size={16} />
                   Download PDF Record
@@ -7124,219 +7084,7 @@ export function BattleScene({
         </div>
       )}
 
-      {/* =========================================================================
-          IN-APP ANIMATED GOBLIN ATTACK ALERT BANNER (Theme-matched & Clean Outline)
-         ========================================================================= */}
-      {showGoblinAttackAlert && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            background: "var(--color-surface, #ffffff)",
-            color: "var(--color-text, #101517)",
-            border: "2px solid var(--color-text, #101517)",
-            borderRadius: "14px",
-            padding: "12px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            maxWidth: "94%",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-          }}
-        >
-          {/* Exact In-game Goblin Asset Mini-Panel */}
-          <div
-            style={{
-              width: "60px",
-              height: "46px",
-              background: "#fee2e2",
-              border: "1.5px solid #ef4444",
-              borderRadius: "8px",
-              overflow: "hidden",
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            <svg viewBox="0 0 45 42" width="100%" height="100%">
-              <g transform="translate(6, 4) scale(0.85)">
-                {/* Feet */}
-                <rect x="8" y="34" width="4" height="4" rx="1" fill="#0f172a" />
-                <rect x="18" y="34" width="4" height="4" rx="1" fill="#0f172a" />
-                {/* Body Tunic */}
-                <polygon points="7,20 23,20 21,34 9,34" fill="#feaa01" />
-                {/* Belt & Buckle */}
-                <rect x="8" y="27" width="14" height="2.5" fill="#451a03" />
-                <rect x="13.5" y="26.5" width="3" height="3.5" fill="#facc15" />
-                {/* Left Arm */}
-                <polygon points="7,21 2,28 5,30 9,24" fill="#a3e635" />
-                {/* Right Arm */}
-                <polygon points="23,21 29,26 27,29 21,24" fill="#a3e635" />
-                {/* Spear */}
-                <line x1="28" y1="36" x2="28" y2="3" stroke="#78350f" strokeWidth="2" strokeLinecap="round" />
-                <polygon points="28,-2 24,5 32,5" fill="#f8fafc" />
-                <rect x="26.5" y="5" width="3" height="2" fill="#dc2626" />
-                {/* Head & Pointy Ears */}
-                <circle cx="15" cy="12" r="7" fill="#bef264" />
-                <polygon points="9,10 0,6 8,14" fill="#65a30d" />
-                <polygon points="21,10 30,6 22,14" fill="#65a30d" />
-                {/* Nose */}
-                <polygon points="15,11 13.5,14 16.5,14" fill="#65a30d" />
-                {/* Glowing Crimson Eyes */}
-                <circle cx="12.5" cy="10.5" r="1.3" fill="#ff0033" />
-                <circle cx="17.5" cy="10.5" r="1.3" fill="#ff0033" />
-                {/* Underbite Fangs */}
-                <polygon points="13,15 14,15 13.5,17" fill="#ffffff" />
-                <polygon points="16,15 17,15 16.5,17" fill="#ffffff" />
-              </g>
-            </svg>
-          </div>
 
-          <div style={{ display: "grid", gap: "2px" }}>
-            <span style={{ fontWeight: 900, fontSize: "0.92rem", letterSpacing: "0.03em", color: "#b91c1c" }}>
-              VILLAGE IS UNDER ATTACK!
-            </span>
-            <span style={{ fontSize: "0.8rem", color: "var(--color-text, #101517)", opacity: 0.9 }}>
-              {workspace?.project?.title || state?.project?.title || "Realm"}: Slay the goblin horde now to defend the village!
-            </span>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
-            <button
-              type="button"
-              className="rpg-modern-btn is-primary"
-              style={{ padding: "6px 14px", fontSize: "0.8rem", whiteSpace: "nowrap", background: "#ef4444", color: "#ffffff", borderColor: "#101517" }}
-              onClick={() => {
-                setShowGoblinAttackAlert(false);
-                setShowGoblinModal(true);
-              }}
-            >
-              Defend Village
-            </button>
-            <button
-              type="button"
-              className="rpg-modern-btn is-secondary"
-              style={{ padding: "6px 10px", fontSize: "0.8rem" }}
-              onClick={() => setShowGoblinAttackAlert(false)}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          IN-APP TASK DEADLINE ALERT BANNER (Theme-matched & Clean Outline)
-         ========================================================================= */}
-      {taskDeadlineAlertTask && (
-        <div
-          style={{
-            position: "fixed",
-            top: "84px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            background: "var(--color-surface, #ffffff)",
-            color: "var(--color-text, #101517)",
-            border: "2px solid var(--color-text, #101517)",
-            borderRadius: "14px",
-            padding: "12px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            maxWidth: "94%",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-          }}
-        >
-          {/* Exact In-game Dragon Head Asset Mini-Panel */}
-          <div
-            style={{
-              width: "60px",
-              height: "46px",
-              background: "#ffedd5",
-              border: "1.5px solid #f97316",
-              borderRadius: "8px",
-              overflow: "hidden",
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            <svg viewBox="-30 -38 120 85" width="100%" height="100%">
-              {/* Actual Ingame Dragon Head Polygons & Geometry */}
-              <g transform="translate(0, 0)">
-                {/* Neck plate */}
-                <path d="M 28 50 C 44 42 60 48 68 56 C 54 62 38 58 28 50 Z" fill="#580e0e" />
-                {/* Skull Base */}
-                <path d="M 48 20 L -24 5 L 8 -10 L 62 8 Z" fill="#991b1b" />
-                {/* Snout structure */}
-                <polygon points="-24,5 -8,-1 5,-7 -17,0" fill="#7f1d1d" />
-                {/* Nostril Cavity */}
-                <ellipse cx="-12" cy="2" rx="4" ry="2.2" fill="#260404" />
-                {/* Lower Jawbone */}
-                <path d="M 38 34 L -26 18 L 8 42 Z" fill="#7f1d1d" />
-                {/* Upper Fangs */}
-                <polygon points="-16,7 -22,14 -11,9" fill="#ffffff" />
-                <polygon points="-10,8 -14,16 -5,10" fill="#ffffff" />
-                <polygon points="-4,9 -8,17 1,11" fill="#ffffff" />
-                <polygon points="2,10 0,18 7,12" fill="#ffffff" />
-                <polygon points="8,11 6,19 13,13" fill="#ffffff" />
-                {/* Lower Fangs */}
-                <polygon points="-20,20 -14,12 -15,22" fill="#ffffff" />
-                <polygon points="-12,22 -7,14 -7,24" fill="#ffffff" />
-                <polygon points="-4,24 1,16 1,26" fill="#ffffff" />
-                {/* Lightning Horns */}
-                <path d="M 42 6 L 64 -12 L 54 -14 L 82 -32 L 58 -18 L 66 -16 Z" fill="#260404" />
-                <path d="M 37 2 L 59 -16 L 49 -18 L 77 -36 L 53 -22 L 61 -20 Z" fill="#7f1d1d" />
-                {/* Head Spines */}
-                <polygon points="42,8 55,-4 58,10" fill="#7f1d1d" />
-                <polygon points="30,18 12,14 26,26" fill="#991b1b" />
-                {/* Eye */}
-                <ellipse cx="28" cy="4" rx="8" ry="5" fill="#f59e0b" />
-                <polygon points="28,-1 30,4 28,9 26,4" fill="#000000" />
-                <circle cx="25" cy="2" r="1.8" fill="#ffffff" />
-                <polygon points="18,-2 38,0 36,3 20,1" fill="#260404" />
-              </g>
-            </svg>
-          </div>
-
-          <div style={{ display: "grid", gap: "2px" }}>
-            <span style={{ fontWeight: 900, fontSize: "0.92rem", letterSpacing: "0.03em", color: "#c2410c" }}>
-              BOSS DEADLINE DUE SOON!
-            </span>
-            <span style={{ fontSize: "0.8rem", color: "var(--color-text, #101517)", opacity: 0.9 }}>
-              {workspace?.project?.title || state?.project?.title || "Realm"}: Task "{taskDeadlineAlertTask.title}" deadline due soon. Submit proof to strike the boss!
-            </span>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
-            <button
-              type="button"
-              className="rpg-modern-btn is-boss"
-              style={{ padding: "6px 14px", fontSize: "0.8rem", whiteSpace: "nowrap", background: "#ea580c", color: "#ffffff", borderColor: "#101517" }}
-              onClick={() => {
-                const targetId = taskDeadlineAlertTask._id;
-                setTaskDeadlineAlertTask(null);
-                setSelectedTaskId(targetId);
-                setShowBossModal(true);
-              }}
-            >
-              Submit Proof
-            </button>
-            <button
-              type="button"
-              className="rpg-modern-btn is-secondary"
-              style={{ padding: "6px 10px", fontSize: "0.8rem" }}
-              onClick={() => setTaskDeadlineAlertTask(null)}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* =========================================================================
           SOUND SETTINGS & WEB PUSH NOTIFICATION MODAL
