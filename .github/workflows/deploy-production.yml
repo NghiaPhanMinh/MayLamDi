@@ -46,6 +46,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_onxmvi5aOyVqqCuAdwzG67zP
       VERCEL_PROJECT_ID: prj_GYRbqaDGUlM67ubh5F9fNjsBF1vm
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +55,12 @@ jobs:
 
       - name: Link Vercel project
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Deploy Convex backend to production
+        if: env.CONVEX_DEPLOY_KEY != ''
+        run: npx convex deploy
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Deploy (Vercel builds on their servers using project env vars)
         run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
