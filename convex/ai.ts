@@ -8,6 +8,7 @@ import {
   type ValidatedAiPlan,
 } from "./lib/aiPlanValidation";
 import {
+  buildGeminiModelChain,
   parseGeminiJsonResponse,
   requestGeminiNative,
   runGeminiNativeFallback,
@@ -402,14 +403,17 @@ export const generateProjectPlan = action({
 
     const geminiKey = environmentValue("GEMINI_API_KEY")
       ?? (environmentValue("AIASSISTANT")?.startsWith("AQ.") || environmentValue("AIASSISTANT")?.startsWith("AIzaSy") ? environmentValue("AIASSISTANT") : undefined);
+    const geminiModelOverride = environmentValue("GEMINI_MODEL");
+
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
     const openRouterApiKey = tierKey
       ?? (environmentValue("OPENROUTER_API_KEY")?.startsWith("sk-") ? environmentValue("OPENROUTER_API_KEY") : undefined)
       ?? (environmentValue("AIASSISTANT")?.startsWith("sk-") ? environmentValue("AIASSISTANT") : undefined)
       ?? environmentValue("AI_ASSISTANT");
+    const openRouterModelOverride = environmentValue("OPENROUTER_MODEL");
 
     if (!geminiKey && !openRouterApiKey) {
-      console.info(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=NO_API_KEY | API Attempted=false`);
+      console.warn(`${genTag}[AI INFRA] No API keys configured (missing GEMINI_API_KEY and OPENROUTER_API_KEY). Using Smart Fallback Planner.`);
       const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, "NO_API_KEY");
       return {
         ...fallbackPlan,
@@ -417,73 +421,80 @@ export const generateProjectPlan = action({
         generationId: args.generationId,
         fallbackReason: "NO_API_KEY",
         apiAttempted: false,
-        apiErrorCategory: null,
+        apiErrorCategory: "MISSING_CONFIGURATION",
         generatedAt: Date.now(),
       };
     }
 
-    try {
-      const { systemPrompt, userPrompt } = planningPrompts(brief, context);
-      console.info(`${genTag}[AI OBSERVABILITY] Prompts constructed. User prompt length: ${userPrompt.length}`);
-      const generationLimit = access.entitlement.platformPlanGenerationsPerProject;
-      const usageId = await ctx.runMutation(internal.aiUsage.reservePlatformGeneration, {
-        projectId: args.projectId,
-        profileId: access.profileId,
-        limit: generationLimit ?? undefined,
-      });
+    const { systemPrompt, userPrompt } = planningPrompts(brief, context);
+    const generationLimit = access.entitlement.platformPlanGenerationsPerProject;
+    const usageId = await ctx.runMutation(internal.aiUsage.reservePlatformGeneration, {
+      projectId: args.projectId,
+      profileId: access.profileId,
+      limit: generationLimit ?? undefined,
+    });
 
-      // 1. Try Native Google Gemini first if key available
-      if (geminiKey) {
-        try {
-          console.info(`${genTag}[AI OBSERVABILITY] Requesting plan via Native Google Gemini API...`);
-          const result = await runGeminiNativeFallback({
-            apiKey: geminiKey,
-            systemPrompt,
-            userPrompt,
-            schema: planSchema.schema,
-            validate: (content) => {
-              const plan = validateAiPlan(parseGeminiJsonResponse(content), context);
-              const report = validatePlanAgainstBrief(plan, brief, context);
-              if (!report.valid) {
-                console.warn(`${genTag}[AI OBSERVABILITY] Gemini plan validation warnings:`, report.errors);
-              }
-              return plan;
-            },
-          });
+    let geminiFailureReason: string | null = null;
 
-          console.info(`${genTag}[AI OBSERVABILITY] Native Gemini succeeded. ModelUsed=${result.modelUsed}`);
-          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-            usageId,
-            model: result.modelUsed,
-            success: true,
-          });
-          return {
-            ...result.value,
-            source: "llm",
-            generationId: args.generationId,
-            apiAttempted: true,
-            apiErrorCategory: null,
-            modelUsed: result.modelUsed,
-            generatedAt: Date.now(),
-          };
-        } catch (geminiError) {
-          console.warn(`${genTag}[AI OBSERVABILITY] Native Gemini attempt failed:`, geminiError);
-          if (!openRouterApiKey) {
-            await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-              usageId,
-              model: "failed",
-              success: false,
-            });
-            throw geminiError;
-          }
-        }
+    // STEP 1: PRIMARY PROVIDER -> Native Google Gemini API
+    if (geminiKey) {
+      try {
+        const geminiModels = buildGeminiModelChain(geminiModelOverride);
+        console.info(`${genTag}[AI INFRA] Primary Provider: Google Gemini | Models: ${geminiModels.join(", ")} | OutputTokenBudget: 8192`);
+        const result = await runGeminiNativeFallback({
+          apiKey: geminiKey,
+          models: geminiModels,
+          systemPrompt,
+          userPrompt,
+          schema: planSchema.schema,
+          validate: (content) => {
+            let parsed: unknown;
+            try {
+              parsed = parseGeminiJsonResponse(content);
+            } catch (parseErr) {
+              const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+              console.error(`${genTag}[AI INFRA] Gemini JSON parsing failed:`, msg);
+              throw parseErr;
+            }
+            const plan = validateAiPlan(parsed, context);
+            const report = validatePlanAgainstBrief(plan, brief, context);
+            if (!report.valid) {
+              console.warn(`${genTag}[AI INFRA] Gemini plan validation warnings:`, report.errors);
+            }
+            return plan;
+          },
+        });
+
+        console.info(`${genTag}[AI INFRA] Gemini SUCCESS | ModelUsed=${result.modelUsed} | Plan validated | OpenRouter NOT called`);
+        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+          usageId,
+          model: result.modelUsed,
+          success: true,
+        });
+        return {
+          ...result.value,
+          source: "llm",
+          generationId: args.generationId,
+          apiAttempted: true,
+          apiErrorCategory: null,
+          modelUsed: result.modelUsed,
+          generatedAt: Date.now(),
+        };
+      } catch (geminiError) {
+        geminiFailureReason = geminiError instanceof Error ? geminiError.message : String(geminiError);
+        console.warn(`${genTag}[AI INFRA] Primary Gemini FAILED: ${geminiFailureReason} | Switching to OpenRouter Backup...`);
       }
+    } else {
+      geminiFailureReason = "GEMINI_API_KEY_NOT_CONFIGURED";
+      console.warn(`${genTag}[AI INFRA] GEMINI_API_KEY not configured. Switching directly to OpenRouter Backup.`);
+    }
 
-      // 2. OpenRouter fallback if configured
-      if (openRouterApiKey) {
+    // STEP 2: BACKUP PROVIDER -> OpenRouter
+    if (openRouterApiKey) {
+      try {
         const configuredTierModel = access.tier === "free"
-          ? environmentValue("OPENROUTER_MODEL_FREE")
-          : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
+          ? (openRouterModelOverride ?? environmentValue("OPENROUTER_MODEL_FREE"))
+          : (openRouterModelOverride ?? environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`));
         const freeModels = buildFreeModelChain({
           primary: configuredTierModel ?? environmentValue("OPENROUTER_MODEL"),
           firstFallback: environmentValue("OPENROUTER_FALLBACK_MODEL"),
@@ -493,66 +504,77 @@ export const generateProjectPlan = action({
           ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
           : freeModels;
 
-        try {
-          console.info(`${genTag}[AI OBSERVABILITY] Requesting plan from OpenRouter models:`, models);
-          const result = await runFreeModelFallback({
-            models,
-            attempt: ({ model, mode }) => requestPlan({
-              apiKey: openRouterApiKey,
-              model,
-              mode,
-              systemPrompt,
-              userPrompt,
-            }),
-            validate: (content) => {
-              const plan = validateAiPlan(parseJsonResponse(content), context);
-              const report = validatePlanAgainstBrief(plan, brief, context);
-              if (!report.valid) {
-                console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
-              }
-              return plan;
-            },
-          });
-          console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
-          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-            usageId,
-            model: result.modelUsed,
-            success: true,
-          });
-          return {
-            ...result.value,
-            source: "llm",
-            generationId: args.generationId,
-            apiAttempted: true,
-            apiErrorCategory: null,
-            modelUsed: result.modelUsed,
-            generatedAt: Date.now(),
-          };
-        } catch (innerError) {
-          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-            usageId,
-            model: "failed",
-            success: false,
-          });
-          throw innerError;
-        }
-      }
+        console.info(`${genTag}[AI INFRA] Backup Provider: OpenRouter | Models: ${models.join(", ")}`);
+        const result = await runFreeModelFallback({
+          models,
+          attempt: ({ model, mode }) => requestPlan({
+            apiKey: openRouterApiKey,
+            model,
+            mode,
+            systemPrompt,
+            userPrompt,
+          }),
+          validate: (content) => {
+            let parsed: unknown;
+            try {
+              parsed = parseJsonResponse(content);
+            } catch (parseErr) {
+              const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+              console.error(`${genTag}[AI INFRA] OpenRouter JSON parsing failed:`, msg);
+              throw parseErr;
+            }
+            const plan = validateAiPlan(parsed, context);
+            const report = validatePlanAgainstBrief(plan, brief, context);
+            if (!report.valid) {
+              console.warn(`${genTag}[AI INFRA] OpenRouter plan validation warnings:`, report.errors);
+            }
+            return plan;
+          },
+        });
 
-      throw new Error("AI_GENERATION_FAILED");
-    } catch (error) {
-      const errMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=${errMessage} | API Attempted=true`);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, errMessage);
-      return {
-        ...fallbackPlan,
-        source: "fallback",
-        generationId: args.generationId,
-        fallbackReason: errMessage,
-        apiAttempted: true,
-        apiErrorCategory: error instanceof Error ? error.name : "UNKNOWN_ERROR",
-        generatedAt: Date.now(),
-      };
+        console.info(`${genTag}[AI INFRA] OpenRouter Backup SUCCESS | ModelUsed=${result.modelUsed} | Plan validated`);
+        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+          usageId,
+          model: result.modelUsed,
+          success: true,
+        });
+        return {
+          ...result.value,
+          source: "llm",
+          generationId: args.generationId,
+          apiAttempted: true,
+          apiErrorCategory: null,
+          modelUsed: result.modelUsed,
+          generatedAt: Date.now(),
+        };
+      } catch (openRouterError) {
+        const orMsg = openRouterError instanceof Error ? openRouterError.message : String(openRouterError);
+        console.warn(`${genTag}[AI INFRA] OpenRouter Backup FAILED: ${orMsg} | Switching to Smart Fallback (Last Resort)...`);
+        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+          usageId,
+          model: "failed",
+          success: false,
+        });
+      }
+    } else {
+      console.warn(`${genTag}[AI INFRA] OPENROUTER_API_KEY not configured. Switching directly to Smart Fallback.`);
     }
+
+    // STEP 3: LAST RESORT -> Smart Fallback Planner
+    const combinedReason = geminiFailureReason
+      ? `Gemini failed: ${geminiFailureReason}`
+      : "ALL_AI_PROVIDERS_UNAVAILABLE";
+    console.warn(`${genTag}[AI INFRA] Final Safety Net: Smart Fallback Planner engaged | Reason: ${combinedReason}`);
+    const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, combinedReason);
+    return {
+      ...fallbackPlan,
+      source: "fallback",
+      generationId: args.generationId,
+      fallbackReason: combinedReason,
+      apiAttempted: true,
+      apiErrorCategory: "PROVIDER_FAILOVER_EXHAUSTED",
+      generatedAt: Date.now(),
+    };
   },
 });
 

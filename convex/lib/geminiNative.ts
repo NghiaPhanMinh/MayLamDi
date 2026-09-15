@@ -14,15 +14,34 @@ export const GEMINI_NATIVE_MODELS = [
 
 export type GeminiNativeModel = (typeof GEMINI_NATIVE_MODELS)[number];
 
+export type GeminiErrorKind =
+  | "auth"
+  | "invalid_model"
+  | "permission"
+  | "rate_limit"
+  | "capacity"
+  | "invalid_json"
+  | "validation"
+  | "timeout"
+  | "unknown";
+
 export class GeminiNativeError extends Error {
   constructor(
-    readonly kind: "rate_limit" | "capacity" | "auth" | "invalid_json" | "timeout" | "unknown",
+    readonly kind: GeminiErrorKind,
     message: string,
     readonly status?: number,
   ) {
     super(message);
     this.name = "GeminiNativeError";
   }
+}
+
+export function buildGeminiModelChain(overrideModel?: string): string[] {
+  if (overrideModel && overrideModel.trim()) {
+    const custom = overrideModel.trim();
+    return [custom, ...GEMINI_NATIVE_MODELS.filter((m) => m !== custom)];
+  }
+  return [...GEMINI_NATIVE_MODELS];
 }
 
 export function parseGeminiJsonResponse(content: string): unknown {
@@ -66,7 +85,7 @@ export async function requestGeminiNative(input: {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent?key=${encodeURIComponent(input.apiKey)}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`;
 
   try {
     const response = await fetch(url, {
@@ -110,13 +129,19 @@ export async function requestGeminiNative(input: {
     if (!response.ok || body.error) {
       const errCode = body.error?.code ?? response.status;
       const errMsg = body.error?.message ?? `HTTP ${response.status}`;
-      if (errCode === 401 || errCode === 403) {
+      if (errCode === 401) {
         throw new GeminiNativeError("auth", errMsg, errCode);
+      }
+      if (errCode === 403) {
+        throw new GeminiNativeError("permission", errMsg, errCode);
+      }
+      if (errCode === 404) {
+        throw new GeminiNativeError("invalid_model", errMsg, errCode);
       }
       if (errCode === 429) {
         throw new GeminiNativeError("rate_limit", errMsg, errCode);
       }
-      if (errCode === 503 || errCode === 500) {
+      if ([500, 502, 503, 504].includes(errCode)) {
         throw new GeminiNativeError("capacity", errMsg, errCode);
       }
       throw new GeminiNativeError("unknown", errMsg, errCode);
@@ -152,6 +177,7 @@ export async function runGeminiNativeFallback<T>(input: {
 
   for (const model of models) {
     try {
+      console.info(`[AI INFRA] Primary Attempt: Gemini | Model=${model}`);
       const result = await requestGeminiNative({
         apiKey: input.apiKey,
         model,
@@ -161,13 +187,19 @@ export async function runGeminiNativeFallback<T>(input: {
       });
 
       const validated = input.validate(result.content);
+      console.info(`[AI INFRA] Gemini SUCCESS | Model=${result.modelUsed} | Response Length=${result.content.length} | Validated`);
       return { value: validated, modelUsed: result.modelUsed };
     } catch (error) {
-      errors.push(error instanceof Error ? error : new Error(String(error)));
-      if (error instanceof GeminiNativeError && error.kind === "auth") {
-        throw error; // Don't retry other models if key is invalid
+      const err = error instanceof Error ? error : new Error(String(error));
+      errors.push(err);
+      const kind = error instanceof GeminiNativeError ? error.kind : "unknown";
+      const status = error instanceof GeminiNativeError ? error.status : undefined;
+      console.warn(`[AI INFRA] Gemini Model FAILED | Model=${model} | Kind=${kind} | Status=${status ?? "N/A"} | Error=${err.message}`);
+
+      if (error instanceof GeminiNativeError && (error.kind === "auth" || error.kind === "permission")) {
+        throw error; // Immediate failover to backup provider if key authentication/permission fails
       }
-      // Continue to next model in fallback chain
+      // Continue to next model in Gemini chain
     }
   }
 
