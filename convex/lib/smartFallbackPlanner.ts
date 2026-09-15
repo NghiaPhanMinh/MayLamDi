@@ -52,12 +52,12 @@ function getDomainTaskTemplates(brief: string, phaseTitle: string, phaseIndex: n
 
   // Domain detection
   const isGame = /game|narrative|player|playable|adventure|puzzle/i.test(text);
-  const isInstallation = /installation|projection|sensor|spatial|touchdesigner|gallery space/i.test(text) && !/exhibition/i.test(text);
+  const isInstallation = /installation|projection mapping|pressure pad|touchdesigner/i.test(text) && !/exhibition/i.test(text);
   const isExhibition = /exhibition|curat|artworks|catalogue|placard|museum|heritage/i.test(text);
-  const isMarketing = /marketing|campaign|brand|packaging|tea|beverage|pop-up|influencer/i.test(text);
-  const isMisinfoOrEdu = /misinformation|fake news|educational|quiz|lesson plan|curriculum/i.test(text);
-  const isMobileOrApp = /mobile|app|figma|react native|endpoint|schedule|timer/i.test(text);
-  const isWebOrSoftware = /software|saas|web|database|frontend|backend|api/i.test(text);
+  const isMisinfoOrEdu = /misinformation|fake news|quiz curriculum|lesson plan|fact-checking/i.test(text);
+  const isMarketing = /retail packaging|die-cut|tea brand|beverage|pop-up tasting|press kit|marketing campaign/i.test(text);
+  const isMobileOrApp = /figma|wcag|wireframe|usability|mobile|app|ui\/ux|design system|user flow|support-finding/i.test(text);
+  const isWebOrSoftware = /software|saas|web|database|frontend|backend|api|react/i.test(text);
 
   if (isGame) {
     if (isFirst) {
@@ -289,45 +289,91 @@ function getDomainTaskTemplates(brief: string, phaseTitle: string, phaseIndex: n
     };
   }
 
-  if (isMobileOrApp || isWebOrSoftware) {
+  if (isMobileOrApp) {
     if (isFirst) {
       return {
+        title: "Conduct User Research & Journey Mapping",
+        desc: "Synthesize user research findings, map primary user journeys, and document baseline accessibility and contrast criteria.",
+        skills: ["User Research", "Journey Mapping"],
+        effort: 14,
+        difficulty: 2,
+      };
+    }
+    if (isSecond) {
+      return {
+        title: "Draft Low-Fidelity Wireframes & Flow Architecture",
+        desc: "Create preliminary wireframe screen flows, validate information architecture, and review navigation steps against WCAG AA standards.",
+        skills: ["Wireframing", "Figma", "Information Architecture"],
+        effort: 16,
+        difficulty: 3,
+      };
+    }
+    if (isThird || (phaseIndex === 1 && totalPhases < 4)) {
+      return {
         title: "Design Figma UI Design System & Component Library",
-        desc: "Establish mobile screen navigation flows, calendar layout tokens, and focus timer user experience components.",
-        skills: ["Figma", "Mobile UI"],
+        desc: "Build scalable Figma UI components, color typography tokens, and interactive screen states meeting WCAG contrast guidelines.",
+        skills: ["Figma", "UI/UX Design", "Design Systems"],
+        effort: 22,
+        difficulty: 4,
+      };
+    }
+    if (!isLast) {
+      return {
+        title: "Build Clickable Prototype & Main Flow Interactions",
+        desc: "Connect user interaction transitions, assemble end-to-end clickable prototype flows, and prepare user task scenarios in Figma.",
+        skills: ["Prototyping", "Interaction Design"],
+        effort: 20,
+        difficulty: 3,
+      };
+    }
+    return {
+      title: "Conduct Usability Testing Sessions & Final Presentation",
+      desc: "Run structured usability testing with participants, measure completion without guidance, and compile final evidence presentation deck.",
+      skills: ["Usability Testing", "Evaluation", "Presentation"],
+      effort: 12,
+      difficulty: 2,
+    };
+  }
+
+  if (isWebOrSoftware) {
+    if (isFirst) {
+      return {
+        title: "Establish Software Architecture & API Specification",
+        desc: "Define database schemas, API contracts, backend service boundaries, and frontend component architectural requirements.",
+        skills: ["System Architecture", "API Design"],
         effort: 14,
         difficulty: 3,
       };
     }
     if (isSecond) {
       return {
-        title: "Architect Backend API Endpoints & Data Model",
-        desc: "Design database schemas, user authentication services, and sync handlers for schedule analytics endpoints.",
-        skills: ["Backend Architecture", "API Design"],
-        effort: 16,
+        title: "Implement Core Backend Services & Data Models",
+        desc: "Build database models, secure endpoint handlers, user authentication middleware, and data validation routines.",
+        skills: ["Backend Development", "Database"],
+        effort: 18,
         difficulty: 4,
       };
     }
     if (isThird || (phaseIndex === 1 && totalPhases < 4)) {
       return {
-        title: "Develop Cross-Platform Application Codebase & State",
-        desc: "Build schedule management views, calendar synchronization services, and local push notification triggers.",
-        skills: ["React Native", "TypeScript"],
+        title: "Develop Responsive Frontend Views & State Logic",
+        desc: "Build user interface views, client state synchronization handlers, and integrate client-side API communications.",
+        skills: ["Frontend Development", "TypeScript"],
         effort: 24,
         difficulty: 4,
       };
     }
     if (!isLast) {
       return {
-        title: "Integrate Authentication Services & Push Notifications",
-        desc: "Connect client application state to cloud backend APIs, OAuth flows, and background push notification queues.",
-        skills: ["Integration", "Cloud API"],
-        effort: 20,
-        difficulty: 4,
+        title: "Integrate End-to-End Workflows & CI/CD Pipelines",
+        desc: "Configure automated build pipelines, run integration tests, and connect third-party service dependencies.",
+        skills: ["DevOps", "Integration Testing"],
+        effort: 18,
+        difficulty: 3,
       };
     }
     return {
-      title: "Perform Quality Verification & Prepare App Release Package",
+      title: "Perform Quality Verification & Prepare Release Package",
       desc: "Execute end-to-end device testing, verify notification edge cases, and compile production app store release archives.",
       skills: ["QA Testing", "DevOps"],
       effort: 12,

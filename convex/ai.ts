@@ -293,7 +293,7 @@ async function requestPlan(input: {
   userPrompt: string;
 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 35_000);
 
   try {
     const response = await fetch(OPENROUTER_URL, {

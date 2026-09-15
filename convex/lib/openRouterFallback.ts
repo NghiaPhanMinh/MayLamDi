@@ -1,8 +1,9 @@
 export const DEFAULT_PRIMARY_FREE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 export const DEFAULT_FIRST_FREE_FALLBACK = "cohere/north-mini-code:free";
 export const DEFAULT_ADDITIONAL_FREE_FALLBACKS = [
+  "nex-agi/nex-n2.5-pro:free",
   "google/gemma-4-26b-a4b-it:free",
-  "poolside/laguna-s-2.1:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
   "openrouter/free",
 ] as const;
 
