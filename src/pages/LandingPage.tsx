@@ -6,6 +6,7 @@ import { ArrowDown, CheckCircle2, Sparkles } from "lucide-react";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { SubscriptionComparisonValue } from "../components/subscription/SubscriptionComparisonValue";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
+import { hasActiveFeatureBodies, stepFeatureBodies, wakeFeatureBodyForDrag, type FeatureBodyMap } from "../lib/featureTagPhysics";
 import {
   SUBSCRIPTION_COMPARISON_ROWS,
   SUBSCRIPTION_PLANS,
@@ -182,22 +183,6 @@ type FeatureTagPosition = {
   delay: number;
 };
 
-type FeatureBody = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  angle: number;
-  angularVelocity: number;
-  width: number;
-  height: number;
-  spawnDelay: number;
-  spawned: boolean;
-  opacity: number;
-};
-
-type FeatureBodyMap = Record<string, FeatureBody>;
-
 type FeatureDrag = {
   id: string;
   offsetX: number;
@@ -368,136 +353,11 @@ function createFeatureBodies(): FeatureBodyMap {
       spawnDelay: INITIAL_FEATURE_TAG_POSITIONS[tag.id].delay,
       spawned: false,
       opacity: 0,
+      sleeping: false,
+      quietTime: 0,
     };
     return bodies;
   }, {});
-}
-
-function stepFeatureBodies(
-  bodies: FeatureBodyMap,
-  width: number,
-  height: number,
-  floorY: number,
-  deltaSeconds: number,
-  draggingTagId: string | null,
-): FeatureBodyMap {
-  const next = Object.fromEntries(Object.entries(bodies).map(([id, body]) => [id, { ...body }])) as FeatureBodyMap;
-  const gravity = 1180;
-  const restitution = 0.18;
-  const friction = 0.84;
-  const airFriction = Math.pow(0.992, deltaSeconds * 60);
-
-  Object.entries(next).forEach(([id, body]) => {
-    if (!body.spawned) {
-      body.spawnDelay = Math.max(0, body.spawnDelay - deltaSeconds * 1000);
-      if (body.spawnDelay <= 0) {
-        body.spawned = true;
-        body.opacity = 1;
-      }
-    }
-    if (!body.spawned || id === draggingTagId) return;
-
-    body.vy += gravity * deltaSeconds;
-    body.vx *= airFriction;
-    body.vy *= airFriction;
-    body.angularVelocity *= airFriction;
-    body.x += body.vx * deltaSeconds;
-    body.y += body.vy * deltaSeconds;
-    body.angle += body.angularVelocity * deltaSeconds;
-
-    const maxX = Math.max(0, width - body.width);
-    if (body.x < 0) {
-      body.x = 0;
-      body.vx = Math.abs(body.vx) * restitution;
-      body.angularVelocity += 0.5;
-    } else if (body.x > maxX) {
-      body.x = maxX;
-      body.vx = -Math.abs(body.vx) * restitution;
-      body.angularVelocity -= 0.5;
-    }
-
-    const maxY = Math.max(0, floorY - body.height);
-    if (body.y > maxY) {
-      body.y = maxY;
-      if (body.vy > 0) body.vy *= -restitution;
-      body.vx *= friction;
-      body.angularVelocity *= 0.82;
-      if (Math.abs(body.vy) < 14) body.vy = 0;
-      if (Math.abs(body.vx) < 2) body.vx = 0;
-      if (Math.abs(body.angularVelocity) < 0.04) body.angularVelocity = 0;
-    }
-  });
-
-  const ids = Object.keys(next);
-  for (let iteration = 0; iteration < 4; iteration += 1) {
-    for (let index = 0; index < ids.length; index += 1) {
-      for (let otherIndex = index + 1; otherIndex < ids.length; otherIndex += 1) {
-        const first = next[ids[index]];
-        const second = next[ids[otherIndex]];
-        if (!first.spawned || !second.spawned) continue;
-
-        const overlapX = Math.min(first.x + first.width, second.x + second.width) - Math.max(first.x, second.x);
-        const overlapY = Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y);
-        if (overlapX <= 0 || overlapY <= 0) continue;
-
-        const firstDragging = ids[index] === draggingTagId;
-        const secondDragging = ids[otherIndex] === draggingTagId;
-        const horizontal = overlapX < overlapY;
-        const normal = horizontal
-          ? (first.x < second.x ? 1 : -1)
-          : (first.y < second.y ? 1 : -1);
-        const amount = (horizontal ? overlapX : overlapY) + 2;
-        if (firstDragging && !secondDragging) {
-          if (horizontal) second.x += amount * normal;
-          else second.y += amount * normal;
-        } else if (secondDragging && !firstDragging) {
-          if (horizontal) first.x -= amount * normal;
-          else first.y -= amount * normal;
-        } else {
-          if (horizontal) {
-            first.x -= (amount / 2) * normal;
-            second.x += (amount / 2) * normal;
-          } else {
-            first.y -= (amount / 2) * normal;
-            second.y += (amount / 2) * normal;
-          }
-        }
-
-        if (horizontal) {
-          const relativeVelocity = (second.vx - first.vx) * normal;
-          if (relativeVelocity < 0) {
-            const impulse = -relativeVelocity * (1 + restitution) * 0.5;
-            if (!firstDragging) first.vx -= impulse * normal;
-            if (!secondDragging) second.vx += impulse * normal;
-          }
-          first.vx *= friction;
-          second.vx *= friction;
-          first.angularVelocity += normal * 0.06;
-          second.angularVelocity -= normal * 0.06;
-        } else {
-          const relativeVelocity = (second.vy - first.vy) * normal;
-          if (relativeVelocity < 0) {
-            const impulse = -relativeVelocity * (1 + restitution) * 0.5;
-            if (!firstDragging) first.vy -= impulse * normal;
-            if (!secondDragging) second.vy += impulse * normal;
-          }
-          first.vy *= 0.94;
-          second.vy *= 0.94;
-        }
-      }
-    }
-
-    Object.values(next).forEach((body) => {
-      body.x = Math.min(Math.max(body.x, 0), Math.max(0, width - body.width));
-      body.y = Math.min(Math.max(body.y, 0), Math.max(0, floorY - body.height));
-    });
-  }
-
-  Object.values(next).forEach((body) => {
-    body.x = Math.min(Math.max(body.x, 0), Math.max(0, width - body.width));
-    body.y = Math.min(Math.max(body.y, 0), Math.max(0, floorY - body.height));
-  });
-  return next;
 }
 
 function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
@@ -619,6 +479,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
           spawnDelay: reducedMotion || isMobile ? 0 : position.delay,
           spawned: reducedMotion || isMobile,
           opacity: reducedMotion || isMobile ? 1 : 0,
+          sleeping: reducedMotion || isMobile,
         };
       });
       commitBodies(next);
@@ -632,19 +493,21 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
     let previousTime = performance.now();
     const animate = (time: number) => {
       if (document.hidden || !isInView) return;
+      if (!draggingTagId && !hasActiveFeatureBodies(bodiesRef.current)) return;
       const geometry = getCanvasGeometry();
       if (!geometry) return;
       const deltaSeconds = Math.min(0.034, Math.max(0.001, (time - previousTime) / 1000));
       previousTime = time;
-      commitBodies(stepFeatureBodies(
+      const next = stepFeatureBodies(
         bodiesRef.current,
         geometry.width,
         geometry.height,
         geometry.floorY,
         deltaSeconds,
         draggingTagId,
-      ));
-      animationFrame = window.requestAnimationFrame(animate);
+      );
+      commitBodies(next);
+      if (draggingTagId || hasActiveFeatureBodies(next)) animationFrame = window.requestAnimationFrame(animate);
     };
     animationFrame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(animationFrame);
@@ -716,6 +579,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
       lastY: event.clientY,
       lastTime: event.timeStamp || 0,
     };
+    commitBodies(wakeFeatureBodyForDrag(bodiesRef.current, tagId));
     setDraggingTagId(tagId);
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -746,6 +610,8 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
       vy: ((event.clientY - drag.lastY) / elapsed) * 1000,
       opacity: 1,
       spawned: true,
+      sleeping: false,
+      quietTime: 0,
     };
     drag.lastX = event.clientX;
     drag.lastY = event.clientY;
@@ -761,7 +627,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
     if (drag) {
       const body = bodiesRef.current[drag.id];
       const next = Object.fromEntries(Object.entries(bodiesRef.current).map(([id, current]) => [id, { ...current }])) as FeatureBodyMap;
-      next[drag.id] = { ...body, vy: body.vy + 80 };
+      next[drag.id] = { ...body, vy: body.vy + 80, sleeping: false, quietTime: 0 };
       commitBodies(next);
     }
     dragState.current = null;
@@ -781,6 +647,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
               aria-label={tag.label}
               className={`marketing-feature-tag${tagsDropped ? " is-dropped" : ""}${body.spawned ? " is-visible" : ""}${reducedMotion ? " is-reduced" : ""}${draggingTagId === tag.id ? " is-dragging" : ""}`}
               key={tag.id}
+              data-physics-state={body.sleeping ? "sleeping" : "awake"}
               onClick={() => showFeatureInfo(tag.id)}
               onFocus={() => showFeatureInfo(tag.id)}
               onBlur={scheduleInfoHide}

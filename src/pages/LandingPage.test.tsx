@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
 import { LandingPage } from "./LandingPage";
+import * as featurePhysics from "../lib/featureTagPhysics";
 
 vi.mock("@convex-dev/auth/react", () => ({
   useAuthActions: () => ({ signIn: vi.fn() }),
@@ -19,6 +20,7 @@ describe("MayLamDi landing page", () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -138,6 +140,109 @@ describe("MayLamDi landing page", () => {
 
     fireEvent.mouseLeave(aiTag);
     expect(description).toHaveClass("is-visible");
+  });
+
+  it("stops desktop physics at rest, leaves hover and offscreen return still, and sleeps again after dragging", () => {
+    let frameId = 0;
+    let time = performance.now();
+    let canvasTop = 0;
+    const frames = new Map<number, FrameRequestCallback>();
+    vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => {
+      frames.set(++frameId, callback);
+      return frameId;
+    }));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn((id: number) => frames.delete(id)));
+    vi.stubGlobal("PointerEvent", MouseEvent);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function getRect(this: HTMLElement) {
+      const canvas = this.classList.contains("marketing-features-tag-canvas");
+      const title = this.id === "features-title";
+      const section = this.id === "features";
+      const tag = this.classList.contains("marketing-feature-tag");
+      const top = canvas || section ? canvasTop : title ? canvasTop + 522 : tag ? 100 : 10000;
+      const height = canvas || section ? 680 : 44;
+      return { top, bottom: top + height, left: 0, right: 1000, width: 1000, height, x: 0, y: top, toJSON: vi.fn() };
+    });
+    const step = vi.spyOn(featurePhysics, "stepFeatureBodies");
+    const consoleError = vi.spyOn(console, "error");
+    const advance = (count: number) => {
+      for (let i = 0; i < count; i += 1) {
+        time += 1000 / 60;
+        act(() => {
+          const current = Array.from(frames.values());
+          frames.clear();
+          current.forEach((callback) => callback(time));
+        });
+      }
+    };
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const tags = Array.from(container.querySelectorAll<HTMLElement>(".marketing-feature-tag"));
+    const transforms = () => tags.map((tag) => ["--tag-x", "--tag-y", "--tag-rotation"].map((key) => tag.style.getPropertyValue(key)));
+    advance(600);
+    expect(tags.every((tag) => tag.dataset.physicsState === "sleeping")).toBe(true);
+    const resting = transforms();
+    const callsAtRest = step.mock.calls.length;
+    advance(600);
+    expect(transforms()).toEqual(resting);
+    expect(step).toHaveBeenCalledTimes(callsAtRest);
+
+    for (const tag of tags.slice(0, 3)) {
+      fireEvent.mouseEnter(tag);
+      advance(2);
+      expect(container.querySelector(".marketing-features-description strong")).toHaveTextContent(tag.textContent!);
+      expect(transforms()).toEqual(resting);
+      fireEvent.mouseLeave(tag);
+    }
+    expect(step).toHaveBeenCalledTimes(callsAtRest);
+    canvasTop = -9000;
+    fireEvent.scroll(window);
+    advance(2);
+    canvasTop = 0;
+    fireEvent.scroll(window);
+    advance(2);
+    expect(transforms()).toEqual(resting);
+    expect(step).toHaveBeenCalledTimes(callsAtRest);
+
+    fireEvent.pointerDown(tags[0], { clientX: 100, clientY: 110 });
+    expect(tags[0]).toHaveAttribute("data-physics-state", "awake");
+    fireEvent.pointerMove(tags[0], { clientX: 600, clientY: 210 });
+    fireEvent.pointerUp(tags[0], { clientX: 600, clientY: 210 });
+    advance(600);
+    expect(step.mock.calls.length).toBeGreaterThan(callsAtRest);
+    expect(tags.every((tag) => tag.dataset.physicsState === "sleeping")).toBe(true);
+    const afterDrop = transforms();
+    const callsAfterDrop = step.mock.calls.length;
+    advance(600);
+    expect(transforms()).toEqual(afterDrop);
+    expect(step).toHaveBeenCalledTimes(callsAfterDrop);
+    expect(consoleError).not.toHaveBeenCalled();
+    step.mockRestore();
+  }, 30000);
+
+  it.each(["mobile", "reduced-motion"])("preserves the %s fallback without starting physics", (mode) => {
+    vi.stubGlobal("innerWidth", mode === "mobile" ? 375 : 1200);
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
+      matches: mode === "reduced-motion", addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    }));
+    const frames = new Map<number, FrameRequestCallback>();
+    let id = 0;
+    vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => {
+      frames.set(++id, callback);
+      return id;
+    }));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn((frame: number) => frames.delete(frame)));
+    const step = vi.spyOn(featurePhysics, "stepFeatureBodies");
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    for (let i = 0; i < 4; i += 1) {
+      act(() => {
+        const current = Array.from(frames.values());
+        frames.clear();
+        current.forEach((callback) => callback(performance.now() + i * 16));
+      });
+    }
+    const tags = container.querySelectorAll<HTMLElement>(".marketing-feature-tag");
+    expect(tags).toHaveLength(mode === "mobile" ? 7 : 10);
+    expect(Array.from(tags).every((tag) => tag.dataset.physicsState === "sleeping")).toBe(true);
+    expect(step).not.toHaveBeenCalled();
   });
 
   it("marks feel shared with a responsive hand-drawn annotation", () => {
