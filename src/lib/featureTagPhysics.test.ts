@@ -98,4 +98,39 @@ describe("feature tag sleeping physics", () => {
     expect(next.airborne.sleeping).toBe(false);
     expect(next.airborne.quietTime).toBe(0);
   });
+
+  it.each([0, 1, 84, 96])("settles real desktop tag widths with uneven frame timing (seed %s)", (seed) => {
+    const widths = [151, 178, 235, 165, 237, 260, 226, 208, 151, 192];
+    const width = seed === 1 ? 1280 : 780;
+    let next = Object.fromEntries([8, 29, 56, 78, 15, 43, 72, 4, 31, 63].map((left, i) => [String(i), body({
+      x: left / 100 * (width - widths[i]), y: -44 - (i % 3) * 26, width: widths[i],
+      vx: -26 + (i % 5) * 13, angularVelocity: -0.55 + (i % 4) * 0.33,
+      spawnDelay: 60 + i * 90, spawned: false, opacity: 0,
+    })]));
+    let time = 0;
+    let frame = 0;
+    while (time < 10) {
+      const dt = 0.001 + ((Math.sin((frame++ + seed) * 12.9898) * 43758.5453 % 1 + 1) / 2) * 0.033;
+      time += dt;
+      next = stepFeatureBodies(next, width, 900, 684, dt, null);
+    }
+    expect(hasActiveFeatureBodies(next)).toBe(false);
+    for (let i = 0; i < 600; i += 1) {
+      expect(stepFeatureBodies(next, width, 900, 684, 1 / 60, null)).toEqual(next);
+    }
+  });
+
+  it("keeps a near-rest bridge still throughout its sleep countdown at changing frame rates", () => {
+    let next = {
+      left: body({ x: 100, y: 486, sleeping: true, vx: 0, vy: 0, angularVelocity: 0 }),
+      right: body({ x: 265, y: 486, sleeping: true, vx: 0, vy: 0, angularVelocity: 0 }),
+      bridge: body({ x: 200, y: 442.4, quietTime: 0.01, vx: 0, vy: 0, angularVelocity: 0 }),
+    } as FeatureBodyMap;
+    const resting = { x: next.bridge.x, y: next.bridge.y, angle: next.bridge.angle };
+    for (let i = 0; i < 120; i += 1) {
+      next = stepFeatureBodies(next, 1000, 680, 530, [0.034, 0.001, 1 / 60][i % 3], null);
+      expect({ x: next.bridge.x, y: next.bridge.y, angle: next.bridge.angle }).toEqual(resting);
+    }
+    expect(next.bridge.sleeping).toBe(true);
+  });
 });

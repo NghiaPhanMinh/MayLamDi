@@ -21,6 +21,7 @@ const REST_SECONDS = 1.25;
 // pressure must not be mistaken for a new impact.
 const WAKE_IMPACT_SPEED = 60;
 const CONTACT_SLOP = 0.4;
+const SUPPORT_TOLERANCE = 2.4;
 
 export function hasActiveFeatureBodies(bodies: FeatureBodyMap): boolean {
   return Object.values(bodies).some((body) => !body.spawned || !body.sleeping);
@@ -47,7 +48,8 @@ export function wakeFeatureBodyForDrag(bodies: FeatureBodyMap, tagId: string): F
     // without waking unrelated members of the pile.
     Object.entries(next).forEach(([otherId, other]) => {
       if (other.spawned && other.sleeping && other.y < support.y
-        && Math.abs(other.y + other.height - support.y) <= 1.5
+        && other.y + other.height - support.y >= -CONTACT_SLOP
+        && other.y + other.height - support.y <= SUPPORT_TOLERANCE
         && Math.min(other.x + other.width, support.x + support.width) - Math.max(other.x, support.x) > 1) {
         pending.push(otherId);
       }
@@ -58,10 +60,11 @@ export function wakeFeatureBodyForDrag(bodies: FeatureBodyMap, tagId: string): F
 
 function isSupported(body: FeatureBody, bodies: FeatureBodyMap, floorY: number): boolean {
   const bottom = body.y + body.height;
-  if (Math.abs(bottom - floorY) <= 1.5) return true;
+  if (Math.abs(bottom - floorY) <= 0.01) return true;
   return Object.values(bodies).some((other) => other !== body && other.spawned
     && other.y > body.y
-    && Math.abs(bottom - other.y) <= 1.5
+    && bottom - other.y >= -CONTACT_SLOP
+    && bottom - other.y <= SUPPORT_TOLERANCE
     && Math.min(body.x + body.width, other.x + other.width) - Math.max(body.x, other.x) > 1);
 }
 
@@ -92,6 +95,13 @@ export function stepFeatureBodies(
     }
     if (!body.spawned || id === draggingTagId || body.sleeping) return;
 
+    // A supported, zero-energy contact already cancels gravity. Keep it still
+    // during the sleep countdown instead of integrating gravity and correcting
+    // the resulting penetration again every frame. The collision solver below
+    // still responds to a new impact, and losing support restores free fall.
+    if (body.quietTime > 0 && body.vx === 0 && body.vy === 0 && body.angularVelocity === 0
+      && isSupported(bodies[id], bodies, floorY)) return;
+
     body.vy += gravity * deltaSeconds;
     body.vx *= airFriction;
     body.vy *= airFriction;
@@ -112,7 +122,7 @@ export function stepFeatureBodies(
     const maxY = Math.max(0, floorY - body.height);
     if (body.y > maxY) {
       body.y = maxY;
-      if (body.vy > 0) body.vy *= -restitution;
+      if (body.vy > 0) body.vy = body.vy > WAKE_IMPACT_SPEED ? -body.vy * restitution : 0;
       body.vx *= friction;
       body.angularVelocity *= 0.82;
       if (Math.abs(body.vy) < 14) body.vy = 0;
@@ -157,7 +167,8 @@ export function stepFeatureBodies(
         }
 
         if (relativeVelocity < 0) {
-          const impulse = -relativeVelocity * (1 + restitution) / mass;
+          // Resting contacts are inelastic; bounce only genuine impacts.
+          const impulse = -relativeVelocity * (1 + (meaningfulImpact ? restitution : 0)) / mass;
           if (horizontal) {
             first.vx -= impulse * normal * firstMass;
             second.vx += impulse * normal * secondMass;
