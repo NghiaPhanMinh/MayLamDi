@@ -11,6 +11,7 @@ import { friendlyAiError } from "../../lib/aiErrors";
 import { AI_RETRY_DELAYS_MS, isRetryablePlatformAiError } from "../../lib/aiRetry";
 import { trackEvent } from "../../lib/analytics";
 import { createTelemetryTracker } from "../../lib/telemetry";
+import { generateClientGeminiPlan } from "../../lib/clientGeminiPlanner";
 
 type Workspace = FunctionReturnType<typeof api.tasks.getWorkspace>;
 type AiPlan = FunctionReturnType<typeof api.ai.generateProjectPlan>;
@@ -97,6 +98,23 @@ export function AIPlanningAssistant({
     let retryCount = 0;
     const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.info(`[${generationId}] Submitting generation payload:`, { projectId: workspace.project._id, briefLength: nextBrief.length });
+
+    // 1. Direct Gemini Call (works for all users immediately, zero Convex dashboard/deploy required)
+    try {
+      const clientPlan = await generateClientGeminiPlan({
+        workspace,
+        brief: nextBrief,
+        apiKey: byok?.apiKey,
+        generationId,
+      });
+      if (clientPlan && clientPlan.tasks && clientPlan.tasks.length > 0) {
+        console.info(`[${generationId}] Client Gemini SUCCESS:`, { taskCount: clientPlan.tasks.length, model: clientPlan.modelUsed });
+        setRetryNotice(null);
+        return clientPlan;
+      }
+    } catch (clientGeminiErr) {
+      console.warn(`[${generationId}] Client Gemini fallback to server:`, clientGeminiErr);
+    }
 
     while (true) {
       try {
