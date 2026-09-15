@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
@@ -48,7 +49,7 @@ export function PersonalTasks({ onOpenRoom }: { onOpenRoom: (roomId: Id<"teams">
       <header className="focused-page-heading"><div><h1 className="display-heading" id="personal-tasks-title">My Tasks</h1></div></header>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {groups === undefined ? <p aria-busy="true">Loading your tasks…</p> : null}
-      {groups?.length === 0 ? <div className="project-empty"><strong>You are all clear.</strong><p>Assigned work and review requests will appear here.</p></div> : null}
+      {groups?.length === 0 ? <div className="project-empty"><strong>No tasks or review requests yet.</strong><p>Assigned work and review requests will appear here.</p></div> : null}
 
       {[...taskSections.entries()].map(([section, tasks]) => tasks.length ? (
         <section key={section} className={`personal-status-section personal-${section.toLowerCase().replaceAll(" ", "-")}`}>
@@ -62,12 +63,12 @@ export function PersonalTasks({ onOpenRoom }: { onOpenRoom: (roomId: Id<"teams">
             >
               <div className="personal-task-header-row">
                 <div className="personal-task-tags">
-                  <span className="project-badge-tag">📁 {task.projectTitle}</span>
+                  <span className="project-badge-tag"><UiIcon name="Folder" /> {task.projectTitle}</span>
                   <span className="room-phase-tag">{task.roomName} • {task.phaseName}</span>
                   <span className="due-date-tag">Due {task.dueDate}</span>
                 </div>
                 <button className="text-link open-room-link" type="button" onClick={(e) => { e.stopPropagation(); onOpenRoom(task.roomId); }}>
-                  Open room ↗
+                  Open room <UiIcon name="ArrowUpRight" />
                 </button>
               </div>
               <h3>{task.title}</h3>

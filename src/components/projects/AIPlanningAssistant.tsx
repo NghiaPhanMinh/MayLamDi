@@ -351,7 +351,7 @@ export function AIPlanningAssistant({
             <Clock size={18} style={{ color: "var(--color-yellow)", flexShrink: 0 }} /> Waiting for Room Leader to Generate AI Plan...
           </strong>
           <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9 }}>
-            The room leader is preparing the project brief and generating task allocations. You will see the draft preview right here as soon as it is generated!
+            The room leader has not generated a plan yet. The draft will appear here when it is ready.
           </p>
         </div>
       ) : null}
@@ -374,7 +374,7 @@ export function AIPlanningAssistant({
             Upgrade Your Plan to Generate More AI Drafts
           </h3>
           <p style={{ margin: "0 0 1rem", fontSize: "0.92rem", lineHeight: "1.5", opacity: 0.9 }}>
-            Free tier includes 1 AI plan &amp; 1 allocation per project. Upgrade your plan on the Subscription page to unlock unlimited AI project plan regenerations, workload balancing, and priority AI execution!
+            Free includes one AI plan and allocation per project. MayLamDi+ includes 30 AI actions per month for regeneration, workload balancing and other adjustments.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
             <Link to="/subscription" className="primary-button hero-save-plan-button" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", minHeight: "auto", fontSize: "1rem", textDecoration: "none" }}>
@@ -631,7 +631,7 @@ export function AIPlanningAssistant({
             <div className="ai-notes-grid">
               <section><h4>Risks to check</h4><ul>{draft.risks.map((risk) => <li key={risk}>{risk}</li>)}</ul></section>
               <section><h4>Assumptions to verify</h4><ul>{draft.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul></section>
-              <section><h4>Meeting suggestions</h4><p>Open Team in the project workspace to use deterministic calendar overlap. AI never invents availability.</p></section>
+              <section><h4>Meeting suggestions</h4><p>Open Team to find meeting times from your teammates’ saved busy hours.</p></section>
             </div>
             <p className="ai-model-note">Generated through a free AI route. This draft is not saved.</p>
           </details>
@@ -640,9 +640,9 @@ export function AIPlanningAssistant({
             <div className="ai-save-actions-hero">
               <div className="ai-save-notice">
                 <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                  <Sparkles size={18} style={{ color: "var(--color-pink)" }} /> Ready to Launch Your Project?
+                  <Sparkles size={18} style={{ color: "var(--color-pink)" }} /> Save the reviewed plan
                 </strong>
-                <p>Clicking confirm saves all AI generated tasks, assigns team responsibilities, and unlocks the Battle Board, Tasks, and Progress tabs!</p>
+                <p>Confirm to save these tasks and their owners, then open the project workspace.</p>
               </div>
               <button className="primary-button hero-save-plan-button" type="button" disabled={isGenerating} onClick={() => void handleSavePlan()}>
                 {isGenerating ? <><Rocket size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Saving &amp; Launching Project…</> : <><CheckCircle2 size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Confirm &amp; Save Plan</>}

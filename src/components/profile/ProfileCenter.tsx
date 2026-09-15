@@ -172,7 +172,7 @@ export function ProfileCenter({
     setMessage(null);
     try {
       await saveProfile({ skills, softwareSkills, weeklyCapacity });
-      setMessage("Profile saved. Project creation and joining are now unlocked.");
+      setMessage("Profile saved. You can now create or join a project.");
     } catch (caughtError) {
       setError(getErrorMessage(caughtError, "Your profile could not be saved."));
     } finally {
@@ -188,7 +188,7 @@ export function ProfileCenter({
           <h1 className="display-heading" id="profile-page-title">
             {setupRequired ? "Complete your profile" : "How you work"}
           </h1>
-          <p className="profile-subtext">Save these preferences once. MayLamDi reuses them when planning fair project work.</p>
+          <p className="profile-subtext">Your saved skills and weekly capacity inform task owner suggestions.</p>
         </div>
       </header>
 
@@ -285,10 +285,10 @@ export function ProfileCenter({
                 <label>
                   <span>AI Engine (Mô hình AI)</span>
                   <select disabled={!useOwnKey} value={model} onChange={(event) => setModel(event.target.value)} className="profile-select-input" style={{ width: "100%", padding: "0.6rem", borderRadius: "0.375rem", border: "1px solid var(--border-color, #ccc)" }}>
-                    <option value="deepseek/deepseek-chat">🔥 DeepSeek V3 (Phân tích chuyên sâu & Tối ưu nhất)</option>
-                    <option value="deepseek/deepseek-r1">🧠 DeepSeek R1 (Suy luận Chain-of-Thought)</option>
-                    <option value="anthropic/claude-3.5-sonnet">🌟 Claude 3.5 Sonnet (Cao cấp)</option>
-                    <option value="google/gemini-2.0-flash">⚡ Gemini 2.0 Flash (Tốc độ cao)</option>
+                    <option value="deepseek/deepseek-chat"> DeepSeek V3</option>
+                    <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="google/gemini-2.0-flash"> Gemini 2.0 Flash</option>
                   </select>
                 </label>
               </div>

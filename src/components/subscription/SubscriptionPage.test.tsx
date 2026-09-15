@@ -28,9 +28,9 @@ describe("subscription experience", () => {
   it("renders both student-friendly plans and marks Free as current", () => {
     render(<MemoryRouter><SubscriptionPage currentPlan="free" /></MemoryRouter>);
 
-    expect(screen.getByRole("heading", { name: "Choose the support your team needs." })).toBeInTheDocument();
-    expect(screen.getByText("Get the team moving.")).toBeInTheDocument();
-    expect(screen.getByText("More AI when plans change.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Compare Free and MayLamDi+." })).toBeInTheDocument();
+    expect(screen.getByText("Two active projects.")).toBeInTheDocument();
+    expect(screen.getByText("30 AI actions a month.")).toBeInTheDocument();
     expect(screen.getByText("39K₫")).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "MayLamDi subscription plan comparison" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Current plan" })).toBeDisabled();

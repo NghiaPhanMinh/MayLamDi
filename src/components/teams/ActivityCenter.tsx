@@ -108,7 +108,7 @@ export function ActivityCenter({ teamId }: ActivityCenterProps) {
             </button>
           </div>
           <p className="notification-scope-note">
-            In-app updates only. MayLamDi does not claim to send email, browser, or phone push notifications.
+            Updates appear here in the app. This panel does not send email, browser or phone notifications.
           </p>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
           {status === "LoadingFirstPage" ? (

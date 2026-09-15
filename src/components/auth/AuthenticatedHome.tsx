@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -120,7 +121,7 @@ export function AuthenticatedHome() {
       <main className="auth-state-page" aria-busy="true">
         <BrandLogo />
         <p className="kicker">Setting up your workspace</p>
-        <h1 className="display-heading">Making room for your team.</h1>
+        <h1 className="display-heading">Loading your profile.</h1>
         <p role="status">Preparing your MayLamDi profile…</p>
       </main>
     );
@@ -172,7 +173,7 @@ export function AuthenticatedHome() {
           } else {
             setSidebarOpen((current) => !current);
           }
-        }}>☰</button>
+        }}><UiIcon name="Menu" /></button>
         <Link className="nav-brand" to="/" aria-label="MayLamDi home">
           <BrandLogo compact />
           <span>MayLamDi</span>
@@ -194,7 +195,7 @@ export function AuthenticatedHome() {
         <nav>
           {MAIN_NAV_ITEMS.map((item) => (
             <button key={item.id} className={activeSection === item.id ? "is-active" : ""} type="button" onClick={() => handleNavClick(item)}>
-              <span aria-hidden="true">{item.icon}</span><strong>{item.label}</strong>
+              <span aria-hidden="true"><UiIcon name={item.icon} /></span><strong>{item.label}</strong>
             </button>
           ))}
           <div className="sidebar-room-tree" aria-label="Project rooms">

@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { MousePointerClick, AlertOctagon, Scroll, Flame, Clock, Eye } from "lucide-react";
 import type { UnifiedAnalyticsPayload } from "../../types/analytics";
 
@@ -28,7 +29,7 @@ export function UxFrictionTab({ data }: UxFrictionTabProps) {
           rel="noopener noreferrer"
           style={{ backgroundColor: "var(--color-pink)", textDecoration: "none", color: "var(--color-ink)", fontWeight: 800, padding: "0.5rem 1rem", borderRadius: "8px", border: "2px solid var(--color-ink)" }}
         >
-          🎬 Open Clarity Replays
+          <UiIcon name="Clapperboard" /> Open Clarity Replays
         </a>
       </div>
 

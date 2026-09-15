@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 
@@ -92,18 +93,18 @@ export function DailyEvidenceFeed({ projectId }: DailyEvidenceFeedProps) {
         {/* Live Validation Counters */}
         <div className="daily-validation-status-bar">
           <span className={`validation-counter ${wordCount >= 20 ? "is-valid" : ""}`}>
-            📝 {wordCount}/20 words {wordCount >= 20 ? "✓" : ""}
+            <UiIcon name="FileText" /> {wordCount}/20 words {wordCount >= 20 ? <><UiIcon name="Check" /></> : ""}
           </span>
           <span className={`validation-counter ${imageCount >= 2 ? "is-valid" : ""}`}>
-            🖼️ {imageCount}/2 pictures {imageCount >= 2 ? "✓" : ""}
+            <UiIcon name="Image" /> {imageCount}/2 pictures {imageCount >= 2 ? <><UiIcon name="Check" /></> : ""}
           </span>
           {isValidSubmission ? (
             <span className="validation-result-badge is-valid-badge">
-              ⚔️ Valid Submission — Defeats Today’s Goblin!
+              <UiIcon name="Swords" /> Valid evidence. Defeats today’s goblin.
             </span>
           ) : (
             <span className="validation-result-badge is-warning-badge">
-              ⚠️ Needs 20 words or 2 images to count towards goblin defense
+              <UiIcon name="TriangleAlert" /> Needs 20 words or 2 images to count towards goblin defense
             </span>
           )}
         </div>
@@ -147,7 +148,7 @@ export function DailyEvidenceFeed({ projectId }: DailyEvidenceFeedProps) {
         {posts === undefined ? (
           <p>Loading daily evidence feed...</p>
         ) : posts.length === 0 ? (
-          <p className="empty-feed-notice">No daily evidence posted yet today. Be the first to post!</p>
+          <p className="empty-feed-notice">No daily evidence posted today.</p>
         ) : (
           posts.map((post) => (
             <article key={post._id} className={`daily-feed-card ${post.isValid ? "feed-card-valid" : "feed-card-invalid"}`}>
@@ -162,9 +163,9 @@ export function DailyEvidenceFeed({ projectId }: DailyEvidenceFeedProps) {
                 <span className="feed-author-name">{post.authorName}</span>
                 <time className="feed-post-time">{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
                 {post.isValid ? (
-                  <span className="feed-status-tag valid-tag">🛡️ Goblin Slayed</span>
+                  <span className="feed-status-tag valid-tag"><UiIcon name="ShieldCheck" /> Goblin defeated</span>
                 ) : (
-                  <span className="feed-status-tag invalid-tag">⚠️ Logged (Short)</span>
+                  <span className="feed-status-tag invalid-tag"><UiIcon name="TriangleAlert" /> Logged (Short)</span>
                 )}
               </header>
               <p className="feed-post-text">{post.text}</p>

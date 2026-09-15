@@ -117,7 +117,7 @@ export function GameLayerPreview() {
       <div className="game-layer-heading">
         <div>
           <p className="kicker">Game functions lab</p>
-          <h2 className="display-heading" id="game-layer-title">Progress becomes the encounter.</h2>
+          <h2 className="display-heading" id="game-layer-title">Preview task progress in the game.</h2>
           <p>
             This preview demonstrates the presentation layer. Real saved
             progress will come only from weighted project tasks and milestones,

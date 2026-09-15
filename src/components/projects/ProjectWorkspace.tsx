@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -174,7 +175,7 @@ function RoomAssemblyLobby({
               style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
               onClick={() => void copyCode()}
             >
-              {copied ? "Copied! ✓" : "Copy Code"}
+              {copied ? <>Copied! <UiIcon name="Check" /></> : "Copy Code"}
             </button>
           </div>
         ) : null}
@@ -389,7 +390,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         return { task, label: "Accept task", actionType: "Task request pending your acceptance", kind: "accept" as const, priority: 1 };
       }
       if (task.reviewerProfileId === workspace.currentProfileId && ["submitted", "review"].includes(task.status)) {
-        return { task, label: "MayReviewDi", actionType: "Ready for review · Evidence submitted successfully", kind: "review" as const, priority: 2 };
+        return { task, label: "MayReviewDi", actionType: "Ready for review · Evidence submitted", kind: "review" as const, priority: 2 };
       }
       if (workspace.canManageProject && task.status === "awaiting_creator") {
         return { task, label: "Approve completion", actionType: "Task waiting for creator approval", kind: "approve" as const, priority: 3 };
@@ -408,7 +409,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         const statusLabel = STATUS_LABELS[task.status as TaskStatus] ?? "In Progress";
         return {
           task,
-          label: `🔔 Remind ${ownerName}`,
+          label: `Remind ${ownerName}`,
           actionType: `${ownerName} · ${statusLabel}`,
           kind: "remind" as const,
           priority: 7,
@@ -674,7 +675,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 <Zap size={18} style={{ color: "var(--color-yellow)", flexShrink: 0 }} /> Team Assembled! AI Brief Analysis Activated ({workspace.members.length} Members)
               </strong>
               <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9 }}>
-                AI is analyzing your project brief and automatically generating task allocations for your assembled team members. Review the generated plan and click <strong>Confirm &amp; Save Plan</strong> to officially start your project!
+                AI is analyzing your project brief and automatically generating task allocations for your assembled team members. Review the generated plan and click <strong>Confirm &amp; Save Plan</strong> to save the reviewed tasks and owners.
               </p>
             </div>
           )}
@@ -961,7 +962,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             <button
               type="button"
               className="secondary-button project-deck-btn"
-              title="Communicate, upload daily evidence to check."
+              title="Post messages and daily evidence."
               style={{
                 flex: "1 1 230px",
                 padding: "0.75rem 1.15rem",
@@ -998,7 +999,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 </span>
               </div>
               <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#64748b", lineHeight: 1.2 }}>
-                Communicate, upload daily evidence to check.
+                Post messages and daily evidence.
               </span>
             </button>
           </div>
@@ -1040,7 +1041,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               </button>
             </div>
             <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "#475569", fontWeight: 700 }}>
-              Everything in this chat will be recorded and put into the PDF download. Post daily updates to see proof and have your contribution recorded.
+              Messages and daily updates are included in the project’s contribution PDF.
             </p>
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
               <TeamMessengerChat projectId={workspace.project._id} />

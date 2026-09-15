@@ -40,10 +40,9 @@ export function CustomFrameworkSection({
       <div className="custom-framework-heading">
         <div>
           <p className="kicker">Team-owned templates</p>
-          <h2 className="display-heading" id="custom-framework-title">Shape a process that fits.</h2>
+          <h2 className="display-heading" id="custom-framework-title">Create a team framework.</h2>
           <p>
-            Build from scratch or copy a preset, then reorder phases and define
-            outputs, skills, dependencies, overlap, and review points.
+            Create a framework or copy a preset. Set its phases, outputs, skills, dependencies and review points.
           </p>
         </div>
         {!builderOpen ? (

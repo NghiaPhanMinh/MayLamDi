@@ -28,6 +28,7 @@ describe("MayLamDi landing page", () => {
     render(<MemoryRouter><LandingPage /></MemoryRouter>);
 
     expect(screen.queryByRole("button", { name: /continue with google/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/create or join a project room/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /go to projects/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /see what maylamdi does/i })).toHaveAttribute(
       "href",
@@ -51,7 +52,7 @@ describe("MayLamDi landing page", () => {
     const features = container.querySelector<HTMLElement>("#features");
 
     expect(screen.getByText("About Us")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /group projects should feel shared.*not carried by one person/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /share the work on group projects.*give each task an owner/i })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /simplified maylamdi project workspace/i })).toBeInTheDocument();
     expect(purpose?.parentElement?.nextElementSibling).toBe(transition);
     expect(transition?.nextElementSibling).toBe(features);
@@ -136,7 +137,7 @@ describe("MayLamDi landing page", () => {
     const description = container.querySelector<HTMLElement>(".marketing-features-description");
     expect(description).toHaveClass("is-visible");
     expect(screen.getByText("Feature info")).toBeInTheDocument();
-    expect(screen.getByText("Turns your brief into editable plans, tasks, and allocation suggestions.")).toBeInTheDocument();
+    expect(screen.getByText("Draft tasks and owner suggestions from your assignment brief, then review and edit them.")).toBeInTheDocument();
 
     fireEvent.mouseLeave(aiTag);
     expect(description).toHaveClass("is-visible");
@@ -285,7 +286,7 @@ describe("MayLamDi landing page", () => {
     const subscription = container.querySelector("#subscription");
 
     expect(howItWorks?.nextElementSibling).toBe(subscription);
-    expect(screen.getByRole("heading", { name: "Choose the support your team needs." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Compare Free and MayLamDi+." })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "FREE PLAN" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "CURRENT PLAN" })).toBeDisabled();
     const dotTransition = container.querySelector(".marketing-how-it-works-dot-transition");

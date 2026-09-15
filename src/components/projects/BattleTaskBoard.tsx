@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { AlertTriangle, Lock } from "lucide-react";
 import {
   getBattleTaskAction,
@@ -128,7 +129,7 @@ function BattleTaskNote({
         ) : null}
         {action === "waiting_review" ? <span className="battle-task-waiting">{task.isReviewer ? REVIEW_WAITING_MESSAGE : "Waiting for Review"}</span> : null}
         {action === "waiting_approval" ? <span className="battle-task-waiting">Waiting for Approval</span> : null}
-        {action === "complete" ? <span className="battle-task-complete">Completed ✓</span> : null}
+        {action === "complete" ? <span className="battle-task-complete">Completed <UiIcon name="Check" /></span> : null}
         {action === "details" ? (
           <button className="text-link" type="button" onClick={() => onOpenDetails(task.id)}>View details</button>
         ) : null}

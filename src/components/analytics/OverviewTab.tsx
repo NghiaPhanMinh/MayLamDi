@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import {
   AreaChart,
   Area,
@@ -85,7 +86,7 @@ export function OverviewTab({ data }: OverviewTabProps) {
       <div style={{ background: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <div>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 900 }}>📈 Daily Users & Sessions Activity</h3>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 900 }}><UiIcon name="TrendingUp" /> Daily Users & Sessions Activity</h3>
             <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>Real-time user engagement over time</p>
           </div>
         </div>
@@ -109,7 +110,7 @@ export function OverviewTab({ data }: OverviewTabProps) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "1.5rem" }}>
         {/* Main Conversion Funnel */}
         <div style={{ background: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
-          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "1rem" }}>🎯 Conversion Funnel Summary</h3>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "1rem" }}><UiIcon name="Target" /> Conversion Funnel Summary</h3>
           <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={funnel.slice(0, 5)} layout="vertical">
@@ -126,20 +127,20 @@ export function OverviewTab({ data }: OverviewTabProps) {
         <div style={{ background: "#1DD85115", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
             <h3 style={{ fontSize: "1.15rem", fontWeight: 900, color: "#17A738", marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Zap size={20} /> Actionable Key Insights
+              <Zap size={20} /> Reported metrics
             </h3>
             <ul style={{ listStyle: "none", display: "grid", gap: "0.75rem", fontSize: "0.9rem", fontWeight: 700 }}>
               <li style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                 <CheckCircle size={18} style={{ color: "#17A738", flexShrink: 0, marginTop: "2px" }} />
-                <span>Conversion rate is at <strong>{overview.conversionRate}%</strong> with strong AI plan generation retention.</span>
+                <span>Conversion rate: <strong>{overview.conversionRate}%</strong>.</span>
               </li>
               <li style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                 <ShieldAlert size={18} style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }} />
-                <span>Recorded <strong>{overview.rageClicks} rage clicks</strong> on project step buttons — monitor step validation prompts.</span>
+                <span>Recorded <strong>{overview.rageClicks} rage clicks</strong>. Check session replays to investigate repeated clicks.</span>
               </li>
               <li style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                 <CheckCircle size={18} style={{ color: "#17A738", flexShrink: 0, marginTop: "2px" }} />
-                <span>User engagement rate remains high at <strong>{overview.engagementRate}%</strong> across desktop and mobile.</span>
+                <span>Engagement rate: <strong>{overview.engagementRate}%</strong>.</span>
               </li>
             </ul>
           </div>

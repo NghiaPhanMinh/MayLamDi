@@ -1,3 +1,4 @@
+import { UiIcon } from "../components/common/UiIcon";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type RefObject } from "react";
 import { Link } from "react-router-dom";
@@ -40,13 +41,13 @@ const PIXEL_COLOR_SEQUENCES = [
 const BURST_COLORS = ["#fff73f", "#ff8ae7", "#4ca0fe", "#1dd851", "#feaa01"];
 
 const PURPOSE_PHRASES = [
-  "Group projects should feel shared,",
-  "not carried by one person.",
+  "Share the work on group projects.",
+  "Give each task an owner.",
   "MayLamDi helps university teams",
-  "plan work fairly,",
-  "see who owns what,",
-  "and keep contribution visible",
-  "from start to finish.",
+  "plan tasks around skills and capacity,",
+  "track deadlines and progress,",
+  "and review evidence of the work",
+  "before marking tasks complete.",
 ] as const;
 
 const PURPOSE_PIXEL_CELLS = Array.from({ length: 16 }, (_, columnIndex) => {
@@ -80,42 +81,42 @@ const FEATURE_TAGS = [
   {
     id: "ai-assistant",
     label: "AI ASSISTANT",
-    description: "Turns your brief into editable plans, tasks, and allocation suggestions.",
+    description: "Draft tasks and owner suggestions from your assignment brief, then review and edit them.",
   },
   {
     id: "team-tracking",
     label: "TEAM TRACKING",
-    description: "See ownership, deadlines, workload, and progress in one shared view.",
+    description: "Check task owners, deadlines and progress in the project room.",
   },
   {
     id: "fair-task-allocation",
     label: "FAIR TASK ALLOCATION",
-    description: "Suggests ownership using skills, workload, capacity, and team context.",
+    description: "AI suggests task owners based on skills, workload and weekly capacity.",
   },
   {
     id: "gamification",
     label: "GAMIFICATION",
-    description: "Turns real project progress into shared quests and team outcomes.",
+    description: "Reviewed tasks damage the dragon. Daily evidence helps defend the village.",
   },
   {
     id: "real-time-workspace",
     label: "REAL-TIME WORKSPACE",
-    description: "Keeps project changes and team progress visible as they happen.",
+    description: "Teammates see task updates in the project room as you save them.",
   },
   {
     id: "contribution-evidence",
     label: "CONTRIBUTION EVIDENCE",
-    description: "Attach proof of work so contribution stays visible throughout the project.",
+    description: "Upload notes, links, images or PDFs for teammates to review.",
   },
   {
     id: "workload-visibility",
     label: "WORKLOAD VISIBILITY",
-    description: "Spot uneven effort early and rebalance the plan together.",
+    description: "Compare assigned task hours with each teammate's weekly capacity.",
   },
   {
     id: "project-planning",
     label: "PROJECT PLANNING",
-    description: "Move from brief to phases, milestones, tasks, and owners.",
+    description: "Organise your brief into project phases, tasks, deadlines and owners.",
   },
   {
     id: "peer-review",
@@ -125,7 +126,7 @@ const FEATURE_TAGS = [
   {
     id: "human-control",
     label: "HUMAN CONTROL",
-    description: "AI suggests; your team reviews, edits, and decides.",
+    description: "The room creator reviews the AI draft before saving tasks or assigning owners.",
   },
 ] as const;
 
@@ -140,21 +141,21 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "02",
     title: "BUILD A\nFAIR PLAN",
-    description: "AI suggests tasks and ownership, while the team reviews, edits or rejects every suggestion.",
+    description: "Review the AI's task and owner suggestions, edit what you need, then save the plan.",
     visual: "plan",
     visualLabel: "Editable AI task plan interface",
   },
   {
     number: "03",
-    title: "WORK & STAY\nVISIBLE",
-    description: "Complete tasks, upload evidence, review work and keep workload and contribution visible.",
+    title: "SUBMIT &\nREVIEW WORK",
+    description: "Upload evidence for finished tasks. Teammates review it before the room creator marks the task complete.",
     visual: "work",
     visualLabel: "Shared task board with visible ownership",
   },
   {
     number: "04",
-    title: "MOVE FORWARD\nTOGETHER",
-    description: "Real progress powers the shared game while the team works toward the deadline together.",
+    title: "DEFEND THE\nVILLAGE",
+    description: "Reviewed tasks damage the dragon. Post daily evidence to defend the village until the deadline.",
     visual: "together",
     visualLabel: "Shared team game progress interface",
   },
@@ -324,7 +325,7 @@ function PurposeWorkspaceVisual({ visualRef }: { visualRef: RefObject<HTMLDivEle
         <div className="marketing-purpose-workspace-content">
           <span className="card-eyebrow">Launch week · Shared plan</span>
           <div className="marketing-purpose-progress-heading">
-            <strong>72% visible progress</strong>
+            <strong>72% complete</strong>
             <span>3 teammates</span>
           </div>
           <div className="progress-track"><span style={{ width: "72%" }} /></div>
@@ -740,7 +741,7 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
             <div className="how-works-visual-board-column" key={heading}>
               <strong>{heading}</strong>
               <div><span>{first}</span><b>2</b></div>
-              <div><span>{second}</span><b>✓</b></div>
+              <div><span>{second}</span><b><UiIcon name="Check" /></b></div>
             </div>
           ))}
         </div>
@@ -749,10 +750,10 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
       {step.visual === "together" ? (
         <div className="how-works-visual-game">
           <div className="how-works-visual-game-status"><span>SHARED QUEST</span><b>LIVE</b></div>
-          <div className="how-works-visual-shield"><span>✓</span></div>
+          <div className="how-works-visual-shield"><span><UiIcon name="Check" /></span></div>
           <strong className="how-works-visual-boss">PROJECT GOAL</strong>
           <div className="how-works-visual-hp"><span style={{ width: "72%" }} /></div>
-          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% visible progress</span></div>
+          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% complete</span></div>
         </div>
       ) : null}
     </div>
@@ -849,7 +850,7 @@ function SubscriptionComparisonChart({
       <div className="marketing-subscription-comparison-row marketing-subscription-comparison-head" role="row">
         <div className="marketing-subscription-comparison-feature" role="columnheader">
           <span>Compare plans</span>
-          <small>Shared project work, with room to grow.</small>
+          <small>Project limits and AI access.</small>
         </div>
         <div className="marketing-subscription-comparison-plan marketing-subscription-comparison-plan--free" role="columnheader">
           <strong>{SUBSCRIPTION_PLANS.free.name}</strong>
@@ -883,7 +884,7 @@ function SubscriptionComparisonChart({
       <div className="marketing-subscription-comparison-row marketing-subscription-comparison-actions" role="row">
         <div className="marketing-subscription-comparison-feature" role="rowheader" style={lineStyle(freeContentProgress, lineCount - 1)}>
           <strong>Choose your starting point</strong>
-          <small>Core teamwork stays available for every team.</small>
+          <small>Both plans include task management and evidence tracking.</small>
         </div>
         <div className="marketing-subscription-comparison-value marketing-subscription-comparison-value--free" role="cell" style={lineStyle(freeContentProgress, lineCount - 1)}>
           <span className="marketing-subscription-comparison-value-label">Free</span>
@@ -1358,17 +1359,13 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
               </span>
             </button>
           </h1>
-          <p className="marketing-copy">
-            Create or join a project room, then move from brief to plan to execution
-            together with less guesswork.
-          </p>
           <a className="marketing-scroll-cue" href="#why-maylamdi">
             See what MayLamDi does <ArrowDown aria-hidden="true" />
           </a>
           <div className="marketing-proof" aria-label="MayLamDi principles">
-            <span><CheckCircle2 aria-hidden="true" /> Clear project plans</span>
-            <span><CheckCircle2 aria-hidden="true" /> Explainable allocation</span>
-            <span><CheckCircle2 aria-hidden="true" /> Supportive progress tracking</span>
+            <span><CheckCircle2 aria-hidden="true" /> Editable task plans</span>
+            <span><CheckCircle2 aria-hidden="true" /> Skills-based owner suggestions</span>
+            <span><CheckCircle2 aria-hidden="true" /> Task and evidence tracking</span>
           </div>
         </div>
 
@@ -1457,7 +1454,7 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
       >
         <div className="marketing-features-intro">
           <p>What MayLamDi offers</p>
-          <span>Everything your team needs to plan fairly, stay visible, and keep moving.</span>
+          <span>Plan tasks, assign owners and review completed work in one project room.</span>
         </div>
         <FeatureTagComposition tagsDropped={featureTagsDropped} />
         <div className="marketing-how-it-works-transition" ref={howItWorksTransition} aria-hidden="true">
@@ -1554,8 +1551,8 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
           <div className="marketing-subscription-sticky">
             <header className="marketing-subscription-heading" style={{ "--subscription-title-progress": subscriptionTitleProgress } as CSSProperties}>
               <p className="marketing-subscription-kicker">Subscription</p>
-              <h2 id="marketing-subscription-title">Choose the support your team needs.</h2>
-              <p>Keep the core project experience free, then add more AI room when your team needs it.</p>
+              <h2 id="marketing-subscription-title">Compare Free and MayLamDi+.</h2>
+              <p>Free includes two active projects and one AI plan per project. Plus includes 30 AI actions a month.</p>
             </header>
             <SubscriptionComparisonChart
               cardProgress={subscriptionCardProgress}

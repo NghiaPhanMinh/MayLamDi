@@ -43,8 +43,8 @@ export function SubscriptionPage({ currentPlan }: { currentPlan: SubscriptionPla
       <header className="subscription-page-heading">
         <div>
           <p className="kicker">Subscription</p>
-          <h1 className="display-heading" id="subscription-page-title">Choose the support your team needs.</h1>
-          <p>Free keeps the core project experience fully usable. Plus adds more AI support, flexibility, and richer team insights.</p>
+          <h1 className="display-heading" id="subscription-page-title">Compare Free and MayLamDi+.</h1>
+          <p>Free includes two active projects and one AI plan per project. Plus includes 30 AI actions a month.</p>
         </div>
         <aside className={`subscription-current-plan is-${currentPlan}`} aria-label={`Your current plan is ${currentPlanLabel}`}>
           <span>Your plan</span>
@@ -57,7 +57,7 @@ export function SubscriptionPage({ currentPlan }: { currentPlan: SubscriptionPla
         <div className="subscription-comparison-row subscription-comparison-head" role="row">
           <div className="subscription-comparison-feature" role="columnheader">
             <span>Compare plans</span>
-            <small>Keep the core project experience free, then add more AI room.</small>
+            <small>Project limits and AI access.</small>
           </div>
           <div className="subscription-comparison-plan subscription-comparison-plan--free" role="columnheader">
             <strong>{SUBSCRIPTION_PLANS.free.name}</strong>
@@ -91,7 +91,7 @@ export function SubscriptionPage({ currentPlan }: { currentPlan: SubscriptionPla
         <div className="subscription-comparison-row subscription-comparison-actions" role="row">
           <div className="subscription-comparison-feature" role="rowheader">
             <strong>Choose your starting point</strong>
-            <small>Core teamwork stays available for every team.</small>
+            <small>Both plans include task management and evidence tracking.</small>
           </div>
           <div className="subscription-comparison-value subscription-comparison-value--free" role="cell">
             <span className="subscription-comparison-value-label">Free</span>
@@ -111,7 +111,7 @@ export function SubscriptionPage({ currentPlan }: { currentPlan: SubscriptionPla
       </div>
 
       {upgradeMessage ? <p className="subscription-upgrade-note" role="status">{upgradeMessage}</p> : null}
-      <p className="subscription-core-note"><strong>Core access stays free.</strong> You can still plan projects, manage tasks, track evidence, and collaborate with your team without Plus.</p>
+      <p className="subscription-core-note"><strong>Free includes the core tools.</strong> You can manage tasks, review evidence and use team chat on Free.</p>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { BarChart3, Users, HelpCircle, AlertTriangle, ArrowRight, CheckCircle2, TrendingUp, Sparkles, LogOut } from "lucide-react";
@@ -14,7 +15,7 @@ export function AdminAnalyticsDashboard() {
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "1rem", borderBottom: "2px solid color-mix(in srgb, var(--color-text) 15%, transparent)", paddingBottom: "1rem", marginBottom: "1.5rem" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, fontFamily: "var(--font-heading)" }}>
-            📈 Remote Analytics & User Insights
+            <UiIcon name="TrendingUp" /> Remote Analytics & User Insights
           </h2>
           <p style={{ margin: "0.25rem 0 0", fontSize: "0.88rem", color: "var(--color-muted)" }}>
             Monitor user step drop-offs, skill tendencies, and GA4 funnel report setups in real time.
@@ -97,7 +98,7 @@ export function AdminAnalyticsDashboard() {
           </div>
 
           <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "0.75rem" }}>
-            📊 Phân Tích Chi Tiết Tỷ Lệ Hoàn Thành & Điểm Thoát (Project Creation Wizard)
+            <UiIcon name="BarChart3" /> Phân Tích Chi Tiết Tỷ Lệ Hoàn Thành & Điểm Thoát (Project Creation Wizard)
           </h3>
 
           <div style={{ display: "grid", gap: "0.85rem" }}>
@@ -125,7 +126,7 @@ export function AdminAnalyticsDashboard() {
                     </div>
 
                     <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem", fontWeight: 700 }}>
-                      <span style={{ color: "#17A738" }}>✓ Hoàn thành: {completionRate}% ({step.completions})</span>
+                      <span style={{ color: "#17A738" }}><UiIcon name="Check" /> Hoàn thành: {completionRate}% ({step.completions})</span>
                       <span style={{ color: "#e53e3e", display: "flex", alignItems: "center", gap: "0.25rem" }}>
                         <LogOut size={14} /> Thoát out: {exitRate}% ({step.abandonments})
                       </span>
@@ -222,12 +223,11 @@ export function AdminAnalyticsDashboard() {
           {/* Team Fit Recommendations */}
           <div style={{ marginTop: "1.25rem", border: "2px solid var(--color-ink, #101517)", borderRadius: "12px", padding: "1.25rem", background: "#1DD85115" }}>
             <h3 style={{ margin: "0 0 0.5rem", fontSize: "1rem", fontWeight: 900, color: "#17A738" }}>
-              💡 Gợi Ý Độ Phù Hợp Nhóm (Team Affinity Recommendations)
+              <UiIcon name="Lightbulb" /> Gợi Ý Độ Phù Hợp Nhóm (Team Affinity Recommendations)
             </h3>
             <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.88rem", display: "grid", gap: "0.4rem" }}>
-              <li><strong>Design & Creative Team</strong>: Phù hợp cho 70%+ người dùng có kỹ năng Figma & UI/UX (Khuyên dùng framework <em>Nonlinear Design Process</em>).</li>
-              <li><strong>Agile Software Development</strong>: Phù hợp cho người dùng có kỹ năng React, VS Code, Git (Khuyên dùng framework <em>Agile Software Engineering</em>).</li>
-              <li><strong>Media & Content Production</strong>: Phù hợp cho nhóm làm việc có dung lượng rảnh 15 - 20h/tuần.</li>
+              <li>Đối chiếu kỹ năng và thời gian rảnh của từng thành viên trước khi phân công công việc.</li>
+              <li>Chọn framework theo yêu cầu dự án, đầu ra và các bước cần review.</li>
             </ul>
           </div>
         </div>
@@ -237,10 +237,10 @@ export function AdminAnalyticsDashboard() {
       {activeTab === "ga4_guide" ? (
         <div style={{ fontSize: "0.9rem", lineHeight: "1.6" }}>
           <h3 style={{ fontSize: "1.1rem", fontWeight: 900, margin: "0 0 0.75rem" }}>
-            🛠️ Hướng Dẫn Cấu Hình Báo Cáo Phễu (Funnel Exploration) Trong Google Analytics 4 (GA4)
+            <UiIcon name="Wrench" /> Hướng Dẫn Cấu Hình Báo Cáo Phễu (Funnel Exploration) Trong Google Analytics 4 (GA4)
           </h3>
           <p>
-            Như màn hình Google Analytics 4 bạn đã mở, để xem chính xác người dùng thoát ra ở bước nào trong GA4, hãy thực hiện theo 3 bước sau:
+            Để xem người dùng rời khỏi quy trình ở bước nào, tạo báo cáo phễu trong GA4 theo các bước sau:
           </p>
 
           <ol style={{ paddingLeft: "1.25rem", display: "grid", gap: "0.85rem", margin: "1rem 0" }}>
@@ -263,7 +263,7 @@ export function AdminAnalyticsDashboard() {
                 <code>Step 4</code>: Tên sự kiện = <code>project_created</code> (Tạo phòng thành công)<br />
               </div>
               <p style={{ margin: "0.4rem 0 0", color: "#17A738", fontWeight: 700 }}>
-                &rarr; GA4 sẽ tự động vẽ biểu đồ hình phễu màu xanh nhạt chỉ rõ phần trăm % người dùng rớt lại (drop-off) tại từng bước!
+                Báo cáo phễu hiển thị tỷ lệ người dùng tiếp tục hoặc rời đi ở từng bước.
               </p>
             </li>
           </ol>

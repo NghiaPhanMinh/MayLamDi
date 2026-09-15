@@ -75,7 +75,7 @@ export function AcquisitionTab({ data }: AcquisitionTabProps) {
             <Users size={20} /> New vs Returning Users Ratio
           </h3>
           <p style={{ fontSize: "0.88rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-            Evaluating long-term app retention and new user acquisition rate.
+            Users visiting for the first time compared with returning users.
           </p>
         </div>
         <div style={{ display: "flex", gap: "1.5rem" }}>

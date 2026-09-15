@@ -45,11 +45,9 @@ export function FrameworkLibrary({ onDuplicate, hideHeader = false }: FrameworkL
         <div className="framework-library-heading">
           <div>
             <p className="kicker">Seven built-in frameworks</p>
-            <h2 className="display-heading" id="framework-title">A strong structure, never a straitjacket.</h2>
+            <h2 className="display-heading" id="framework-title">Choose a project framework.</h2>
             <p>
-              Preview typical phases, outputs, skills, dependencies, overlap, and
-              review points. Every framework will use the same shared planning
-              engine.
+              Compare the phases, outputs, skills and review points before choosing a framework for your project.
             </p>
           </div>
           <span className="version-badge">

@@ -182,7 +182,7 @@ export function TeamSystem({
         <header className="signed-in-welcome">
           <p className="kicker">Welcome back</p>
           <h1 className="display-heading" id="signed-in-home-title">{profile.displayName}</h1>
-          <p>{rooms.length === 0 ? "Create a project room or join your team with a code." : "Pick up the clearest next action for your group project."}</p>
+          <p>{rooms.length === 0 ? "Create a project room or join your team with a code." : "Continue a task or open your project room."}</p>
         </header>
 
         <div className="home-next-grid">

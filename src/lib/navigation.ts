@@ -7,10 +7,10 @@ export type MainSection =
 
 export type ProjectsView = "index" | "create" | "join" | "room" | "personal-tasks" | "resources";
 
-export const MAIN_NAV_ITEMS: { id: MainSection; label: string; icon: string; path: string }[] = [
-  { id: "home", label: "Home", icon: "⌂", path: "/home" },
-  { id: "profile", label: "Profile", icon: "☺", path: "/profile" },
-  { id: "projects", label: "Projects", icon: "▣", path: "/projects" },
+export const MAIN_NAV_ITEMS: { id: MainSection; label: string; icon: "Home" | "UserRound" | "FolderKanban"; path: string }[] = [
+  { id: "home", label: "Home", icon: "Home", path: "/home" },
+  { id: "profile", label: "Profile", icon: "UserRound", path: "/profile" },
+  { id: "projects", label: "Projects", icon: "FolderKanban", path: "/projects" },
 ];
 
 export function getPathForSection(section: MainSection, view?: ProjectsView, roomId?: string): string {

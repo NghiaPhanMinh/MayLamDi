@@ -1,3 +1,5 @@
+import { Ghost } from "lucide-react";
+
 type GoblinInfo = {
   id: string;
   memberId: string;
@@ -123,8 +125,9 @@ export function LandscapeGoblins({ goblins }: LandscapeGoblinsProps) {
                       <circle cx="13.5" cy="7.5" r="1" fill="#1e3a8a" />
                       <circle cx="16.5" cy="7.5" r="1" fill="#1e3a8a" />
                       {/* Ghost Text Label */}
+                      <Ghost aria-hidden="true" x="-9" y="-11" width="8" height="8" color="#60a5fa" />
                       <text x="15" y="-3" textAnchor="middle" fill="#60a5fa" fontSize="8.5" fontWeight="900" style={{ letterSpacing: "0.03em" }}>
-                        👻 Ghost
+                        Ghost
                       </text>
                     </g>
                   </g>

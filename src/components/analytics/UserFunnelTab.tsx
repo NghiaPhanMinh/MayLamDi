@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { CheckCircle, LogOut, Clock, AlertCircle } from "lucide-react";
 import type { UnifiedAnalyticsPayload } from "../../types/analytics";
 
@@ -13,7 +14,7 @@ export function UserFunnelTab({ data }: UserFunnelTabProps) {
       {/* Header Info */}
       <div style={{ backgroundColor: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
         <h3 style={{ fontSize: "1.2rem", fontWeight: 900, marginBottom: "0.3rem" }}>
-          🎯 End-to-End User Conversion Funnel (8-Stage Flow)
+          <UiIcon name="Target" /> End-to-End User Conversion Funnel (8-Stage Flow)
         </h3>
         <p style={{ fontSize: "0.88rem", color: "var(--color-text-muted)" }}>
           Track user progression from initial landing page visit down to task completion.
@@ -97,9 +98,9 @@ export function UserFunnelTab({ data }: UserFunnelTabProps) {
 
       {/* Funnel Insights Card */}
       <div style={{ backgroundColor: "#FF8AE722", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
-        <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "0.5rem" }}>💡 User Funnel Friction Analysis</h3>
+        <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "0.5rem" }}><UiIcon name="Lightbulb" /> User Funnel Friction Analysis</h3>
         <p style={{ fontSize: "0.88rem", color: "var(--color-ink)", lineHeight: 1.5, fontWeight: 700 }}>
-          The strongest conversion momentum occurs between <strong>AI Plan Generation ➔ Task Allocation</strong>. Users who utilize the AI Assistant are <strong>2.4x more likely</strong> to complete tasks compared to manual task entry.
+          Compare retention and drop-off at each stage to see where users leave the flow.
         </p>
       </div>
     </div>

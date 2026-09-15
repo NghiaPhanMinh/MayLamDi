@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { Image as ImageIcon, Send, X } from "lucide-react";
@@ -177,8 +178,8 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
           gap: "6px",
         }}
       >
-        <span>📄</span>
-        <span>Everything in this chat will be recorded and put into the PDF download. Post daily updates to see proof and have your contribution recorded.</span>
+        <span><UiIcon name="FileText" /></span>
+        <span>Messages and daily updates are included in the project’s contribution PDF.</span>
       </div>
 
       {/* Scrollable Messenger Bubble Feed */}
@@ -204,7 +205,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
               padding: "20px",
             }}
           >
-            💬 No messages yet. Start the conversation with your team!
+            <UiIcon name="MessageCircle" /> No messages yet.
           </div>
         ) : (
           sortedMessages.map((msg: any) => {

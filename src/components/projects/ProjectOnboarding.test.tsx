@@ -158,6 +158,6 @@ describe("ProjectOnboarding", () => {
       "#FF8AE7", "#FFF73F", "#FEAA01", "#1DD851", "#FD39E4", "#4CA0FE", "#17A738", "#FF8AE7", "#FFF73F",
     ]);
     expect(choices[0]).toHaveClass("is-selected");
-    expect(choices[0].querySelector(".framework-selected-mark")).toHaveTextContent("✓");
+    expect(choices[0].querySelector(".framework-selected-mark svg")).toHaveClass("lucide-check");
   });
 });
