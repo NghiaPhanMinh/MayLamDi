@@ -4019,7 +4019,7 @@ body:has(.marketing-about-transition-scene) {
 .marketing-final-cta-lockup {
   align-self: center;
   display: grid;
-  width: calc(100vw - (2 * clamp(20px, 2vw, 40px)));
+  width: 100vw;
 }
 
 .marketing-final-cta-action-row {
@@ -4027,7 +4027,7 @@ body:has(.marketing-about-transition-scene) {
   z-index: 4;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  width: 100%;
+  width: calc(100% - clamp(20px, 3vw, 48px));
   min-height: 52px;
   align-items: center;
   column-gap: clamp(16px, 2vw, 32px);
@@ -4085,7 +4085,7 @@ body:has(.marketing-about-transition-scene) {
   pointer-events: auto;
   cursor: pointer;
   opacity: 0;
-  transform: translateX(64px) scale(var(--final-cta-scale));
+  transform: scale(0.96);
   white-space: nowrap;
 }
 
@@ -4099,7 +4099,8 @@ body:has(.marketing-about-transition-scene) {
 
 .marketing-final-cta-title-frame {
   position: relative;
-  left: 50%;
+  left: calc(50% - 0.5vw);
+  top: clamp(3px, 0.45vw, 18px);
   width: max-content;
   padding-right: clamp(11.2px, 2.38vw, 95.5px);
   transform: translateX(-50%);
@@ -4320,7 +4321,7 @@ body:has(.marketing-about-transition-scene) {
 }
 
 @keyframes marketing-final-explore-in {
-  from { opacity: 0; transform: translateX(64px) scale(1); }
+  from { opacity: 0; transform: translateX(0) scale(0.96); }
   to { opacity: 1; transform: translateX(0) scale(var(--final-cta-scale)); }
 }
 
