@@ -2,22 +2,23 @@ import { describe, expect, it } from "vitest";
 
 import { BUILT_IN_FRAMEWORKS } from "./frameworks";
 
-describe("built-in project specialization templates", () => {
-  it("contains the ten required versioned domain specializations", () => {
-    expect(BUILT_IN_FRAMEWORKS).toHaveLength(10);
-    expect(BUILT_IN_FRAMEWORKS.map((framework) => framework.shortName)).toEqual([
-      "Software & Web/App",
-      "UI/UX & Product",
-      "Game Dev & 3D",
-      "Data Science & AI",
-      "Creative & Video",
-      "Architecture & Interior",
-      "Event & Exhibition",
-      "Marketing & Growth",
-      "E-Commerce & Retail",
-      "Academic Research",
-    ]);
-    expect(new Set(BUILT_IN_FRAMEWORKS.map((framework) => framework.id)).size).toBe(10);
+describe("built-in framework templates", () => {
+  it("contains the seven required versioned templates", () => {
+    expect(BUILT_IN_FRAMEWORKS).toHaveLength(7);
+    expect(BUILT_IN_FRAMEWORKS.map((framework) => framework.shortName)).toEqual(
+      [
+        "Design & Creative",
+        "Marketing & Communications",
+        "Business & Entrepreneurship",
+        "Architecture & Spatial Design",
+        "Film, Animation & Media",
+        "Software & IT",
+        "Academic Research",
+      ],
+    );
+    expect(
+      new Set(BUILT_IN_FRAMEWORKS.map((framework) => framework.id)).size,
+    ).toBe(7);
     expect(
       BUILT_IN_FRAMEWORKS.every(
         (framework) => framework.isBuiltIn && framework.version === 1,
@@ -25,7 +26,7 @@ describe("built-in project specialization templates", () => {
     ).toBe(true);
   });
 
-  it("gives every specialization phase complete planning metadata", () => {
+  it("gives every phase complete reusable planning metadata", () => {
     for (const framework of BUILT_IN_FRAMEWORKS) {
       const phaseIds = framework.phases.map(
         (frameworkPhase) => frameworkPhase.id,
@@ -36,7 +37,7 @@ describe("built-in project specialization templates", () => {
       expect(framework.disciplines.length).toBeGreaterThanOrEqual(3);
 
       framework.phases.forEach((frameworkPhase, index) => {
-        expect(frameworkPhase.description.length).toBeGreaterThan(15);
+        expect(frameworkPhase.description.length).toBeGreaterThan(20);
         expect(frameworkPhase.suggestedDeliverables.length).toBeGreaterThan(0);
         expect(frameworkPhase.suggestedSkills.length).toBeGreaterThan(0);
 
@@ -54,16 +55,31 @@ describe("built-in project specialization templates", () => {
     }
   });
 
-  it("verifies specialization domain IDs", () => {
-    const software = BUILT_IN_FRAMEWORKS.find(
-      (framework) => framework.id === "software-web-app",
-    );
+  it("represents nonlinear and dependency-aware behaviour as data", () => {
     const design = BUILT_IN_FRAMEWORKS.find(
-      (framework) => framework.id === "ui-ux-product-strategy",
+      (framework) => framework.id === "design-nonlinear",
+    );
+    const architecture = BUILT_IN_FRAMEWORKS.find(
+      (framework) => framework.id === "architecture-spatial",
+    );
+    const software = BUILT_IN_FRAMEWORKS.find(
+      (framework) => framework.id === "software-agile",
     );
 
-    expect(software?.name).toBe("Software & Web/App Engineering");
-    expect(design?.name).toBe("UI/UX Design & Product Strategy");
-    expect(software?.phases).toHaveLength(7);
+    expect(
+      design?.phases.filter((frameworkPhase) => frameworkPhase.canOverlap)
+        .length,
+    ).toBeGreaterThanOrEqual(5);
+    expect(
+      architecture?.phases.some(
+        (frameworkPhase) => frameworkPhase.name === "Review and Revision",
+      ),
+    ).toBe(true);
+    expect(software?.description).toMatch(/sprints/i);
+    expect(
+      software?.phases.find(
+        (frameworkPhase) => frameworkPhase.id === "software-development",
+      )?.defaultDependencies,
+    ).toEqual(["backlog-planning", "ux-technical-design"]);
   });
 });

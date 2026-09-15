@@ -368,7 +368,7 @@ export function ProjectOnboarding({
     );
   }
 
-  const stepLabels = ["Specialization", "Brief", "Plan", "Allocate", "Create"];
+  const stepLabels = ["Structure", "Brief", "Plan", "Allocate", "Create"];
   return (
     <section className="guided-flow" aria-labelledby="create-flow-title">
       <button
@@ -390,9 +390,9 @@ export function ProjectOnboarding({
       <ol className="guided-stepper" aria-label="Create project progress">{stepLabels.map((label, index) => <li key={label} className={step === index + 1 ? "is-current" : step > index + 1 ? "is-complete" : ""}><span>{index + 1}</span><small>{label}</small></li>)}</ol>
       <form className="guided-card" onSubmit={handleCreate} ref={formRef}>
         {step === 1 ? <>
-          <p className="kicker">Step 1 · Project Specialization</p>
-          <h1 className="display-heading" id="create-flow-title">Project Specialization</h1>
-          <p className="guided-helper">Select your project specialization domain.</p>
+          <p className="kicker">Step 1 · Structure</p>
+          <h1 className="display-heading" id="create-flow-title">Choose your project structure</h1>
+          <p className="guided-helper">Choose how this project will be organised into phases.</p>
           <div className="framework-choice-grid">
             {BUILT_IN_FRAMEWORKS.map((framework, index) => (
               <button
@@ -403,10 +403,55 @@ export function ProjectOnboarding({
                 onClick={() => setFrameworkChoice(framework.id)}
               >
                 <strong>{framework.name}</strong>
+                <span>{framework.description.split(".")[0]}.</span>
+                <small>{framework.phases.length} phases</small>
                 {frameworkChoice === framework.id ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
               </button>
             ))}
+            <button
+              className={frameworkChoice === "custom" ? "framework-choice is-selected" : "framework-choice"}
+              style={{ "--mld-framework-color": paletteColorAt(MAYLAMDI_FRAMEWORK_COLORS, BUILT_IN_FRAMEWORKS.length) } as CSSProperties}
+              type="button"
+              onClick={() => setFrameworkChoice("custom")}
+            >
+              <strong>Custom Framework</strong>
+              <span>Name your own phase sequence.</span>
+              <small>Saved to the new room</small>
+              {frameworkChoice === "custom" ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
+            </button>
+            <button
+              className={frameworkChoice === "none" ? "framework-choice is-selected" : "framework-choice"}
+              style={{ "--mld-framework-color": paletteColorAt(MAYLAMDI_FRAMEWORK_COLORS, BUILT_IN_FRAMEWORKS.length + 1) } as CSSProperties}
+              type="button"
+              onClick={() => setFrameworkChoice("none")}
+            >
+              <strong>Simple / skip framework</strong>
+              <span>Use one flexible project phase.</span>
+              <small>Editable after creation</small>
+              {frameworkChoice === "none" ? <span className="framework-selected-mark" aria-label="Selected">✓</span> : null}
+            </button>
           </div>
+          {frameworkChoice === "custom" ? (
+            <div className="custom-framework-fields" style={{ marginTop: "16px", display: "grid", gap: "12px" }}>
+              <label>
+                <span>Framework name</span>
+                <input
+                  required
+                  value={customFrameworkName}
+                  onChange={(event) => setCustomFrameworkName(event.target.value)}
+                />
+              </label>
+              <label className="project-field-wide">
+                <span>Phase names <small>(Comma-separated list)</small></span>
+                <input
+                  required
+                  value={customPhaseNames}
+                  onChange={(event) => setCustomPhaseNames(event.target.value)}
+                  placeholder="Discover, Make, Review, Deliver"
+                />
+              </label>
+            </div>
+          ) : null}
         </> : null}
 
         {step === 2 ? <>
@@ -439,7 +484,7 @@ export function ProjectOnboarding({
             <label><span>Project name</span><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
             <label className="deadline-inline-field"><span>Deadline</span><div className="deadline-input-preset-row"><input required type="date" min={dateAfter(1)} value={deadline} onChange={(event) => { setDeadline(event.target.value); setDraftDueDate(event.target.value); }} /><div className="deadline-preset-buttons"><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(7))}>7 days</button><button className="preset-pill-btn" type="button" onClick={() => setDeadline(dateAfter(14))}>14 days</button></div></div></label>
             <label><span>Team size</span><select value={targetMemberCount} onChange={(event) => setTargetMemberCount(event.target.value)}>{Array.from({ length: 10 }, (_, index) => index + 1).map((size) => <option key={size} value={size}>{size === 1 ? "1 person" : `${size} people`}</option>)}</select></label>
-            <label><span>Specialization</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}</select></label>
+            <label><span>Framework</span><select value={frameworkChoice} onChange={(event) => setFrameworkChoice(event.target.value)}>{BUILT_IN_FRAMEWORKS.map((framework) => <option key={framework.id} value={framework.id}>{framework.name}</option>)}<option value="custom">Custom Framework</option><option value="none">Simple / Skip Framework</option></select></label>
           </div>
         </> : null}
 

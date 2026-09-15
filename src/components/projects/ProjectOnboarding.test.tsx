@@ -16,7 +16,7 @@ describe("ProjectOnboarding", () => {
     window.sessionStorage.clear();
   });
 
-  it("uses the new specialization-to-create flow and retains earlier input", () => {
+  it("uses the new structure-to-create flow and retains earlier input", () => {
     render(
       <ProjectOnboarding
         mode="create"
@@ -26,9 +26,9 @@ describe("ProjectOnboarding", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /project specialization/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /choose your project structure/i })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "1Specialization",
+      "1Structure",
       "2Brief",
       "3Plan",
       "4Allocate",
@@ -65,61 +65,6 @@ describe("ProjectOnboarding", () => {
     expect(teamSize).toHaveValue("1");
   });
 
-  it("inserts an editable example for the selected specialization without submitting", () => {
-    render(
-      <ProjectOnboarding
-        mode="create"
-        currentProfileId={"profile-1" as Id<"userProfiles">}
-        onCancel={vi.fn()}
-        onRoomReady={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /software & web\/app engineering/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
-
-    const exampleButton = screen.getByRole("button", { name: "Try example prompt" });
-    expect(exampleButton).toHaveAttribute("type", "button");
-    fireEvent.click(exampleButton);
-
-    const briefField = screen.getByLabelText(/project brief/i);
-    expect(screen.getByRole("heading", { name: /tell us about your project/i })).toBeInTheDocument();
-    expect((briefField as HTMLTextAreaElement).value).toContain("responsive web application");
-    expect((briefField as HTMLTextAreaElement).value).toContain("DEPENDENCIES AND PLANNING:");
-    expect(screen.getByText(/\/ 8,000 chars/)).toHaveTextContent("1977 / 8,000 chars");
-
-    fireEvent.change(briefField, { target: { value: "My edited detailed project brief." } });
-    expect(briefField).toHaveValue("My edited detailed project brief.");
-  });
-
-  it("protects existing brief text until replacement is confirmed", () => {
-    render(
-      <ProjectOnboarding
-        mode="create"
-        currentProfileId={"profile-1" as Id<"userProfiles">}
-        onCancel={vi.fn()}
-        onRoomReady={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
-    const briefField = screen.getByLabelText(/project brief/i);
-    fireEvent.change(briefField, { target: { value: "Keep this original project brief." } });
-    fireEvent.click(screen.getByRole("button", { name: "Try example prompt" }));
-
-    expect(screen.getByRole("dialog", { name: /replace your current brief/i })).toBeInTheDocument();
-    expect(briefField).toHaveValue("Keep this original project brief.");
-
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(briefField).toHaveValue("Keep this original project brief.");
-
-    fireEvent.click(screen.getByRole("button", { name: "Try example prompt" }));
-    fireEvent.click(screen.getByRole("button", { name: "Use example" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect((briefField as HTMLTextAreaElement).value).toContain("responsive web application");
-  });
-
   it("keeps guest planning available and requests Google authentication only at creation", async () => {
     const onAuthenticationRequired = vi.fn().mockResolvedValue(undefined);
     render(
@@ -153,7 +98,7 @@ describe("ProjectOnboarding", () => {
   it("resumes a saved guest draft after Google authentication", async () => {
     window.sessionStorage.setItem(PENDING_PROJECT_DRAFT_KEY, JSON.stringify({
       version: 1,
-      frameworkChoice: "ui-ux-product-strategy",
+      frameworkChoice: "design-nonlinear",
       customFrameworkName: "My framework",
       customPhaseNames: "Discover, Make, Review, Deliver",
       title: "Saved guest project",
@@ -196,7 +141,7 @@ describe("ProjectOnboarding", () => {
     expect(screen.getByRole("button", { name: /join room/i })).toBeInTheDocument();
   });
 
-  it("keeps every specialization colourful while selection stays independently visible", () => {
+  it("keeps every framework colourful while selection stays independently visible", () => {
     const { container } = render(
       <ProjectOnboarding
         mode="create"
@@ -208,7 +153,10 @@ describe("ProjectOnboarding", () => {
 
     const choices = [...container.querySelectorAll<HTMLElement>(".framework-choice")];
 
-    expect(choices).toHaveLength(10);
+    expect(choices).toHaveLength(9);
+    expect(choices.map((choice) => choice.style.getPropertyValue("--mld-framework-color"))).toEqual([
+      "#FF8AE7", "#FFF73F", "#FEAA01", "#1DD851", "#FD39E4", "#4CA0FE", "#17A738", "#FF8AE7", "#FFF73F",
+    ]);
     expect(choices[0]).toHaveClass("is-selected");
     expect(choices[0].querySelector(".framework-selected-mark")).toHaveTextContent("✓");
   });
