@@ -59,7 +59,7 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
 
       // Stage 1: Prompt Construction
       const { systemPrompt, userPrompt } = planningPrompts(item.brief, mockPlanningContext);
-      expect(systemPrompt).toContain("MANDATORY COGNITIVE PLANNING PIPELINE");
+      expect(systemPrompt).toContain("COGNITIVE PLANNING PIPELINE");
       expect(systemPrompt).toContain("PROJECT UNDERSTANDING");
       expect(userPrompt).toContain(item.brief.slice(0, 30));
 
@@ -366,8 +366,8 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
 
     // 1. Verify Prompt Construction
     const { systemPrompt, userPrompt } = planningPrompts(museumBrief, museumContext);
-    expect(systemPrompt).toContain("MANDATORY COGNITIVE PLANNING PIPELINE");
-    expect(systemPrompt).toContain("NEVER create tasks named after framework phases");
+    expect(systemPrompt).toContain("COGNITIVE PLANNING PIPELINE");
+    expect(systemPrompt).toContain("NEVER name tasks after framework phases");
     expect(userPrompt).toContain("Experience Designer");
     expect(userPrompt).toContain("Cultural Researcher");
 

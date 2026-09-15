@@ -184,27 +184,21 @@ type AiPlanningContext = {
 };
 
 export function planningPrompts(brief: string, context: AiPlanningContext) {
-  const frameworkPhasesText = context.phases
-    .map((p, idx) => `Phase ${idx + 1} (ID: "${p.phaseId}"): "${p.title}" — ${p.description}`)
-    .join("\n");
-
   const membersText = context.members
     .map((m) => `Profile ID: "${m.profileId}" | Name: "${m.displayName}" | Skills/Role: [${m.skills.join(", ")}] | Workload: ${m.currentWorkload}`)
     .join("\n");
 
   const systemPrompt = [
     "You are MayLamDi's Senior Project Architect.",
-    "MISSION: Transform the authoritative project brief into an actionable, domain-specific project execution plan.",
+    "MISSION: Transform the authoritative project brief into an actionable, cohesive, and grounded project execution plan.",
     "",
-    "MANDATORY COGNITIVE PLANNING PIPELINE (Reason internally through these steps before generating tasks):",
-    "1. PROJECT UNDERSTANDING: Deeply analyze the brief to identify the core domain (e.g. museum/cultural exhibition, 2D game, interactive physical installation, mobile app, research paper), target audience/stakeholders, specific constraints, and required final outcomes. Ground all thinking strictly in THIS project.",
-    "2. DISCIPLINARY WORKSTREAMS: Decompose the project into natural, cohesive workstreams (e.g., Historical Research & Archival Verification, Narrative & Character Design, Visual Asset & Animation Production, Physical/Sensor Hardware Integration, Responsive Audio Composition, Usability/Audience Testing). Do NOT create a superficial 1:1 checklist of deliverables or copy sentences verbatim.",
-    "3. FRAMEWORK AS PROCESS GUIDANCE (HOW, NOT WHAT): Treat context.phases strictly as the chronological timeline skeleton (HOW work proceeds over time). The brief determines WHAT tasks are created. A framework phase is a timeline container, NOT a task generator. NEVER create tasks named after framework phases (e.g. NEVER generate 'Coordinate [Phase] Workstream', '[Phase] Phase', or '[Phase] Deliverables'). A framework phase may contain zero, one, or multiple tasks based on what the project actually requires. NEVER copy generic framework terms or software/UX tropes into unrelated domains (e.g. do NOT include 'wireframes' or 'database schema' in a museum exhibition or physical installation).",
-    "4. TASK SYNTHESIS & MEANINGFUL GROUPING: Group closely related activities into cohesive, high-value tasks (e.g. combine 'concept + theme' into a single foundational task, but keep distinct disciplinary ownership separate). Every task title MUST start with an active verb and contain concrete project context (e.g., 'Prototype physical webcam and projector interaction at station 1' rather than 'Design prototype').",
-    "5. CONCRETE, PROJECT-SPECIFIC DESCRIPTIONS: Every task description must explain the exact work, tools, assets, or criteria required FOR THIS PROJECT. Forbid generic filler phrases such as 'Complete according to requirements', 'Gather core requirements', 'Develop features', 'Testing', or 'Setup'.",
-    "6. INTELLIGENT ROLE ALLOCATION: Assign each task's primaryOwnerProfileId and collaborators to the team member whose profile and skills best match the discipline of that work. Distribute work equitably across available team members. NEVER assign all tasks to one person if multiple members exist. Use ONLY provided member profile IDs.",
-    "7. LOGICAL CHRONOLOGICAL DEPENDENCIES: Construct a valid, acyclic dependency graph (DAG). Upstream foundational tasks (e.g. historical research, concept, raw assets) must precede downstream integration, testing, and installation.",
-    "8. DYNAMIC TASK COUNT: Scale task count naturally according to scope and team size (typically 4–12 tasks). Do not force a fixed number.",
+    "COGNITIVE PLANNING PIPELINE (Reason internally through these steps before generating output):",
+    "1. PROJECT UNDERSTANDING: Analyze the brief to identify the core domain, target audience, specific constraints, and required final outcomes. Ground all thinking strictly in THIS project.",
+    "2. REQUIRED WORK & MEANINGFUL WORK UNITS: Determine what meaningful labor is actually required to build the project. Do NOT mechanically convert 1 deliverable = 1 task, and do NOT mechanically create 1 task per framework phase. Group tightly coupled activities that share purpose, ownership, and workflow into cohesive tasks.",
+    "3. FRAMEWORK AS PROCESS GUIDANCE (HOW, NOT WHAT): Treat context.phases strictly as timeline containers to organize and sequence the derived work chronologically over time. A phase may contain zero, one, or multiple tasks based on project needs. NEVER name tasks after framework phases (e.g. do NOT create 'Coordinate [Phase] Workstream' or '[Phase] Phase'). NEVER copy generic software/UX tropes into non-software projects.",
+    "4. GROUNDED, PROJECT-SPECIFIC TITLES & DESCRIPTIONS: Every task title MUST start with an active verb and state what is being produced for THIS project (e.g., 'Build Low-Fidelity Interactive Prototype', 'Draft Narrative Storyboards', 'Conduct Usability Test with Peers'). Descriptions must explain the concrete labor, methods, or formats specified by or directly relevant to the brief. NEVER invent fictional tools, participant counts, or external facts not supported by the brief.",
+    "5. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
+    "6. LOGICAL SEQUENCING & DYNAMIC COUNT: Upstream foundational tasks must precede downstream integration, testing, and delivery. Determine task count dynamically based on project scope and complexity.",
     "",
     "Return VALID JSON matching the schema strictly using provided phase IDs and member profile IDs."
   ].join("\n");
@@ -217,10 +211,8 @@ export function planningPrompts(brief: string, context: AiPlanningContext) {
       startDate: context.project.startDate,
       deadline: context.project.deadline,
     },
-    frameworkPhases: frameworkPhasesText,
-    phases: context.phases,
+    processPhases: context.phases.map((p) => ({ phaseId: p.phaseId, title: p.title })),
     teamMembers: membersText,
-    members: context.members,
     existingTasks: context.existingTasks,
     limits: { milestones: 6, tasks: 15 },
   });
