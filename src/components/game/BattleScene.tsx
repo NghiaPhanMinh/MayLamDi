@@ -1818,6 +1818,20 @@ export function BattleScene({
     );
   }, [workspace]);
 
+  // All tasks assigned to the current user (active, in review, and completed)
+  const myAllTasks = useMemo(() => {
+    if (!workspace || !workspace.currentProfileId) return [];
+    return workspace.tasks
+      .filter((t) => t.primaryOwnerProfileId === workspace.currentProfileId)
+      .sort((a, b) => {
+        const aCompleted = a.status === "completed" || a.status === "verified";
+        const bCompleted = b.status === "completed" || b.status === "verified";
+        if (aCompleted && !bCompleted) return 1;
+        if (!aCompleted && bCompleted) return -1;
+        return 0;
+      });
+  }, [workspace]);
+
   // Goblin verification counters
   const goblinWordCount = goblinText.trim().length > 0 ? goblinText.trim().split(/\s+/).filter(Boolean).length : 0;
   const goblinImageCount = goblinImageUrls.length;
@@ -3352,204 +3366,47 @@ export function BattleScene({
             </div>
           </div>
 
-          {/* Tasks & Team Section */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
-            {/* Tasks List */}
+          {/* Team Roster & Contribution Dossier */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+            {/* Team Members */}
             <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
-                  My Tasks
-                </h3>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    style={{ padding: "6px 12px", fontSize: "0.78rem" }}
-                    onClick={() => setShowQuestBoardModal(true)}
-                  >
-                    Open Tasks Board
-                  </button>
-                  {workspace?.project?.creatorProfileId === state?.currentProfileId && (
-                    <button
-                      type="button"
-                      className="primary-button"
-                      style={{ padding: "6px 12px", fontSize: "0.78rem" }}
-                      onClick={() => setShowCreateQuestModal(true)}
-                    >
-                      + Add Task
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gap: "8px" }}>
-                {questTasks.map((task) => {
-                  const isCompleted = task.isCompleted || task.status === "completed" || task.status === "verified";
-                  const isPendingReview = task.status === "review" || task.status === "submitted";
-                  const isMine = task.isMine;
-
-                  return (
-                    <div
-                      key={task._id}
-                      style={{
-                        border: "1px solid var(--color-border, #e2e8f0)",
-                        borderRadius: "10px",
-                        padding: "12px 14px",
-                        background: isCompleted ? "#f8fafc" : "var(--color-surface, #ffffff)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                        opacity: isCompleted ? 0.4 : 1,
-                        transition: "opacity 0.2s ease",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          {isCompleted && (
-                            <CheckCircle2 size={16} style={{ color: "#16a34a", flexShrink: 0 }} />
-                          )}
-                          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: isCompleted ? "#64748b" : "var(--color-text, #101517)", textDecoration: isCompleted ? "line-through" : "none" }}>
-                            {task.title}
-                          </span>
-                          {isCompleted ? (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "2px 8px",
-                                borderRadius: "6px",
-                                background: "#dcfce7",
-                                color: "#15803d",
-                                border: "1px solid #86efac",
-                              }}
-                            >
-                              ✓ Complete
-                            </span>
-                          ) : isPendingReview ? (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "2px 8px",
-                                borderRadius: "6px",
-                                background: "#fef3c7",
-                                color: "#b45309",
-                                border: "1px solid #fde68a",
-                              }}
-                            >
-                              In Review
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "2px 8px",
-                                borderRadius: "6px",
-                                background: "#f1f5f9",
-                                color: "#475569",
-                                border: "1px solid #cbd5e1",
-                              }}
-                            >
-                              {task.status === "in_progress" ? "In Progress" : "To Do"}
-                            </span>
-                          )}
-                        </div>
-                        {task.description && (
-                          <p style={{ margin: "3px 0 0 0", fontSize: "0.78rem", color: "#64748b" }}>
-                            {task.description}
-                          </p>
-                        )}
-                        <div style={{ display: "flex", gap: "12px", marginTop: "4px", fontSize: "0.74rem", color: "#64748b" }}>
-                          <span>Assignee: <strong>{task.assigneeName || "Open"}</strong></span>
-                          <span>Due: <strong>{task.dueDate || "No date"}</strong></span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                        {!isCompleted && !isPendingReview && isMine && (
-                          <button
-                            type="button"
-                            className="primary-button"
-                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
-                            onClick={() => {
-                              setSelectedTaskId(task._id);
-                              setShowBossModal(true);
-                            }}
-                          >
-                            Submit Proof
-                          </button>
-                        )}
-                        {isPendingReview && (
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
-                            onClick={() => setReviewingTaskId(task._id)}
-                          >
-                            Review
-                          </button>
-                        )}
-                        {!task.primaryOwnerProfileId && task.isOpen && (
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            style={{ padding: "5px 12px", fontSize: "0.76rem" }}
-                            onClick={() => handleClaimQuest(task)}
-                          >
-                            Claim
-                          </button>
-                        )}
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                Team Members ({players.length})
+              </h3>
+              <div style={{ display: "grid", gap: "10px" }}>
+                {players.map((p) => (
+                  <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#0284c7", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.85rem" }}>
+                      {p.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "var(--color-text, #101517)" }}>{p.displayName}</div>
+                      <div style={{ fontSize: "0.72rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 600 }}>
+                        {p.isActiveToday ? "● Active today" : "○ Idle"}
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Team Roster & PDF Export */}
-            <div style={{ display: "grid", gap: "16px", alignContent: "start" }}>
-              {/* Team Members */}
-              <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "16px 18px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "10px" }}>
-                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
-                  Team Members ({players.length})
-                </h3>
-                <div style={{ display: "grid", gap: "8px" }}>
-                  {players.map((p) => (
-                    <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#0284c7", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.82rem" }}>
-                        {p.displayName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: "0.84rem", color: "var(--color-text, #101517)" }}>{p.displayName}</div>
-                        <div style={{ fontSize: "0.7rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 600 }}>
-                          {p.isActiveToday ? "● Active today" : "○ Idle"}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Contribution Record Download */}
-              <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "16px 18px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "8px" }}>
-                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
-                  Contribution Dossier
-                </h3>
-                <p style={{ margin: 0, fontSize: "0.76rem", color: "#64748b" }}>
-                  Verifiable PDF report with contribution breakdown and review history.
-                </p>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={generateContributionPdf}
-                  style={{ padding: "8px 12px", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", width: "100%", borderRadius: "8px" }}
-                >
-                  <FileDown size={16} />
-                  Download PDF Record
-                </button>
-              </div>
+            {/* Contribution Dossier */}
+            <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px", alignContent: "start" }}>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                Contribution Dossier
+              </h3>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+                Verifiable PDF report with contribution breakdown and review history.
+              </p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={generateContributionPdf}
+                style={{ padding: "10px 14px", minHeight: "unset", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
+              >
+                <FileDown size={16} />
+                Download PDF Record
+              </button>
             </div>
           </div>
         </div>
@@ -4343,7 +4200,7 @@ export function BattleScene({
       )}
 
       {/* =========================================================================
-          MY TASKS MODAL (Only shows user's tasks, no new task button, no 4 filter tabs, no bottom line)
+          MY TASKS MODAL (Clean website design, shows all tasks, 40% transparent for completed)
          ========================================================================= */}
       {showMyTasksModal && (
         <div className="rpg-modal-backdrop" onClick={() => setShowMyTasksModal(false)}>
@@ -4357,50 +4214,65 @@ export function BattleScene({
               display: "flex",
               flexDirection: "column",
               boxSizing: "border-box",
-              background: "#fffded",
-              border: "3px solid #101517",
-              boxShadow: "6px 6px 0 #101517",
+              background: "var(--color-surface, #ffffff)",
+              border: "1px solid var(--color-border, #e2e8f0)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               borderRadius: "16px",
-              padding: "20px",
+              padding: "22px 24px",
             }}
           >
-            {/* Header: Title "My Tasks" + count badge, and Red Close Button. NO "+ New Task" button! */}
+            {/* Header: Title "My Tasks" + count badges, and clean close button */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h3 className="rpg-modern-title" style={{ fontSize: "1.35rem", margin: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
                   My Tasks
                 </h3>
                 <span
                   style={{
-                    background: "#fff73f",
-                    color: "#101517",
-                    border: "2px solid #101517",
-                    borderRadius: "12px",
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "999px",
                     padding: "2px 10px",
-                    fontSize: "0.78rem",
-                    fontWeight: 900,
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
                   }}
                 >
-                  {myAssignableTasks.length} {myAssignableTasks.length === 1 ? "Task" : "Tasks"}
+                  {myAllTasks.length} {myAllTasks.length === 1 ? "task" : "tasks"}
                 </span>
+                {myAllTasks.filter((t) => t.status === "completed" || t.status === "verified").length > 0 && (
+                  <span
+                    style={{
+                      background: "#dcfce7",
+                      color: "#15803d",
+                      border: "1px solid #86efac",
+                      borderRadius: "999px",
+                      padding: "2px 10px",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓ {myAllTasks.filter((t) => t.status === "completed" || t.status === "verified").length} completed
+                  </span>
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowMyTasksModal(false)}
                 style={{
-                  background: "#ef4444",
-                  color: "#fff",
-                  border: "2px solid #101517",
+                  background: "transparent",
+                  color: "#64748b",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                   width: "32px",
                   height: "32px",
                   display: "grid",
                   placeItems: "center",
                   cursor: "pointer",
-                  fontWeight: 900,
-                  fontSize: "1rem",
-                  boxShadow: "2px 2px 0 #101517",
+                  fontWeight: 700,
+                  fontSize: "0.95rem",
+                  transition: "all 0.15s ease",
                 }}
                 title="Close"
               >
@@ -4408,13 +4280,13 @@ export function BattleScene({
               </button>
             </div>
 
-            {/* Body: NO the 4 buttons ("All Tasks", "My Tasks", "Reviews", "Daily Proof")! */}
+            {/* Body: Task list with status handling */}
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "4px 2px" }}>
-              {myAssignableTasks.length === 0 ? (
+              {myAllTasks.length === 0 ? (
                 <div
                   style={{
-                    background: "rgba(16,21,23,0.04)",
-                    border: "2px dashed #94a3b8",
+                    background: "#f8fafc",
+                    border: "1px dashed #cbd5e1",
                     borderRadius: "12px",
                     padding: "36px 16px",
                     textAlign: "center",
@@ -4422,22 +4294,16 @@ export function BattleScene({
                     margin: "12px 0",
                   }}
                 >
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: "1rem", color: "#101517" }}>
-                    No tasks assigned to you yet!
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "var(--color-text, #101517)" }}>
+                    No tasks assigned to you yet
                   </p>
-                  <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem" }}>
-                    All your active tasks will appear here. When you have tasks, click them to submit proof and damage the dragon.
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.82rem" }}>
+                    Tasks assigned to you will appear here with live completion and review statuses.
                   </p>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                    gap: "14px",
-                  }}
-                >
-                  {myAssignableTasks.map((task) => {
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {myAllTasks.map((task) => {
                     const isCompleted = task.status === "completed" || task.status === "verified";
                     const isPendingReview = task.status === "review" || task.status === "submitted" || task.status === "awaiting_creator";
                     const creator = workspace?.members.find((m) => m?.profileId === task.createdByProfileId);
@@ -4446,69 +4312,114 @@ export function BattleScene({
                     return (
                       <div
                         key={task._id}
-                        onClick={() => {
-                          setSelectedTaskId(task._id);
-                          if (task.reviewerProfileId) {
-                            setSelectedReviewerId(task.reviewerProfileId);
-                          }
-                          setShowBossModal(true);
-                          setShowMyTasksModal(false);
-                        }}
                         style={{
-                          background: "#ffffff",
-                          border: "2px solid #101517",
-                          borderRadius: "12px",
-                          padding: "14px",
-                          cursor: "pointer",
-                          boxShadow: "3px 3px 0 #101517",
+                          border: "1px solid var(--color-border, #e2e8f0)",
+                          borderRadius: "10px",
+                          padding: "14px 16px",
+                          background: isCompleted ? "#f8fafc" : "var(--color-surface, #ffffff)",
                           display: "flex",
-                          flexDirection: "column",
                           justifyContent: "space-between",
-                          gap: "10px",
-                          transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow = "4px 4px 0 #101517";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "none";
-                          e.currentTarget.style.boxShadow = "3px 3px 0 #101517";
+                          alignItems: "center",
+                          gap: "14px",
+                          opacity: isCompleted ? 0.4 : 1,
+                          transition: "opacity 0.2s ease, border-color 0.2s ease",
                         }}
                       >
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "6px" }}>
-                            <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900, color: "#101517", lineHeight: 1.3 }}>
-                              {task.title}
-                            </h4>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                            {isCompleted && (
+                              <CheckCircle2 size={16} style={{ color: "#16a34a", flexShrink: 0 }} />
+                            )}
                             <span
                               style={{
-                                fontSize: "0.68rem",
-                                fontWeight: 900,
-                                padding: "2px 6px",
-                                borderRadius: "6px",
-                                border: "1.5px solid #101517",
-                                background: isCompleted ? "#86efac" : isPendingReview ? "#fde047" : "#fed7aa",
-                                color: "#101517",
-                                whiteSpace: "nowrap",
+                                fontWeight: 700,
+                                fontSize: "0.92rem",
+                                color: isCompleted ? "#64748b" : "var(--color-text, #101517)",
+                                textDecoration: isCompleted ? "line-through" : "none",
                               }}
                             >
-                              {isCompleted ? "Verified" : isPendingReview ? "In Review" : "In Progress"}
+                              {task.title}
                             </span>
+                            {isCompleted ? (
+                              <span
+                                style={{
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  padding: "2px 8px",
+                                  borderRadius: "6px",
+                                  background: "#dcfce7",
+                                  color: "#15803d",
+                                  border: "1px solid #86efac",
+                                }}
+                              >
+                                ✓ Complete
+                              </span>
+                            ) : isPendingReview ? (
+                              <span
+                                style={{
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  padding: "2px 8px",
+                                  borderRadius: "6px",
+                                  background: "#fef3c7",
+                                  color: "#b45309",
+                                  border: "1px solid #fde68a",
+                                }}
+                              >
+                                In Review
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  padding: "2px 8px",
+                                  borderRadius: "6px",
+                                  background: "#f1f5f9",
+                                  color: "#475569",
+                                  border: "1px solid #cbd5e1",
+                                }}
+                              >
+                                {task.status === "in_progress" ? "In Progress" : "To Do"}
+                              </span>
+                            )}
                           </div>
 
                           {task.description && (
-                            <p style={{ margin: "4px 0 8px 0", fontSize: "0.8rem", color: "#475569", lineHeight: 1.35, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                            <p style={{ margin: "4px 0 0 0", fontSize: "0.8rem", color: "#64748b", lineHeight: 1.4 }}>
                               {task.description}
                             </p>
                           )}
+
+                          <div style={{ display: "flex", gap: "12px", marginTop: "6px", fontSize: "0.75rem", color: "#64748b" }}>
+                            <span>Due: <strong style={{ color: task.dueDate ? "#334155" : "#94a3b8" }}>{task.dueDate || "No deadline"}</strong></span>
+                            <span>Created by: <strong>{creatorName}</strong></span>
+                          </div>
                         </div>
 
-                        <div style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #cbd5e1", paddingTop: "8px" }}>
-                          <span>By: {creatorName}</span>
-                          <span style={{ fontWeight: 700, color: task.dueDate ? "#b91c1c" : "#64748b" }}>
-                            Due: {task.dueDate || "No deadline"}
-                          </span>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
+                          {!isCompleted && !isPendingReview && (
+                            <button
+                              type="button"
+                              className="primary-button"
+                              style={{ padding: "6px 14px", minHeight: "unset", fontSize: "0.8rem", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
+                              onClick={() => {
+                                setSelectedTaskId(task._id);
+                                if (task.reviewerProfileId) {
+                                  setSelectedReviewerId(task.reviewerProfileId);
+                                }
+                                setShowBossModal(true);
+                                setShowMyTasksModal(false);
+                              }}
+                            >
+                              Submit Proof
+                            </button>
+                          )}
+                          {isPendingReview && (
+                            <span style={{ fontSize: "0.76rem", color: "#b45309", fontWeight: 700, background: "#fef3c7", padding: "4px 10px", borderRadius: "6px", border: "1px solid #fde68a" }}>
+                              Awaiting peer review
+                            </span>
+                          )}
                         </div>
                       </div>
                     );
