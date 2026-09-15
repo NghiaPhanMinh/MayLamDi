@@ -84,7 +84,7 @@ export async function requestGeminiNative(input: {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent?key=${encodeURIComponent(input.apiKey)}`;
 
   try {
     const response = await fetch(url, {
@@ -92,7 +92,7 @@ export async function requestGeminiNative(input: {
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": input.apiKey,
+        "X-goog-api-key": input.apiKey,
       },
       body: JSON.stringify({
         system_instruction: {
