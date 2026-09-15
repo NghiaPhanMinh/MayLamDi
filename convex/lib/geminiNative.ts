@@ -80,7 +80,7 @@ export async function requestGeminiNative(input: {
   schema: Record<string, unknown>;
   timeoutMs?: number;
 }): Promise<{ content: string; modelUsed: string }> {
-  const timeoutMs = input.timeoutMs ?? 15_000;
+  const timeoutMs = input.timeoutMs ?? 90_000;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 

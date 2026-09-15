@@ -221,6 +221,7 @@ export function planningPrompts(brief: string, context: AiPlanningContext) {
     "5. Use an appropriate dynamic number of meaningful tasks (up to 15) and milestones (up to 6).",
     "6. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
     "7. LOGICAL SEQUENCING: Upstream foundational tasks must precede downstream integration, testing, and delivery.",
+    "8. REVIEWER ASSIGNMENT: reviewerProfileId must be a DIFFERENT team member from primaryOwnerProfileId. If the team has only 1 member, reviewerProfileId MUST be null.",
     "",
     "The final response must contain ONLY the JSON object matching the required schema using provided phase IDs and member profile IDs."
   ].join("\n");
@@ -293,7 +294,7 @@ async function requestPlan(input: {
   userPrompt: string;
 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
 
   try {
     const response = await fetch(OPENROUTER_URL, {
