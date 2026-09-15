@@ -84,11 +84,11 @@ describe("runFreeModelFallback", () => {
 
   it("uses the tested provider-diverse production defaults in order", () => {
     expect(buildFreeModelChain({})).toEqual([
+      "openrouter/free",
       "meta-llama/llama-3.3-70b-instruct:free",
-      "google/gemini-2.0-flash-lite-preview:free",
+      "google/gemini-2.0-flash-exp:free",
       "qwen/qwen-2.5-coder-32b-instruct:free",
       "google/gemini-2.5-flash-lite:free",
-      "openrouter/free",
     ]);
   });
 

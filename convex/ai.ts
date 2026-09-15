@@ -288,14 +288,12 @@ async function requestPlan(input: {
         messages: [
           {
             role: "system",
-            content: input.mode === "structured"
-              ? input.systemPrompt
-              : `${input.systemPrompt}\n\nReturn exactly one JSON object with no Markdown or commentary. The JSON must match this schema: ${JSON.stringify(planSchema.schema)}`,
+            content: `${input.systemPrompt}\n\nCRITICAL: Respond ONLY with a valid JSON object matching this schema with no markdown codeblocks, no thought tags, and no surrounding text:\n${JSON.stringify(planSchema.schema)}`,
           },
           { role: "user", content: input.userPrompt },
         ],
         ...(input.mode === "structured"
-          ? { response_format: { type: "json_schema", json_schema: planSchema } }
+          ? { response_format: { type: "json_object" } }
           : {}),
         temperature: 0.1,
         max_tokens: 3_500,
@@ -333,13 +331,7 @@ async function requestPlan(input: {
       if (effectiveStatus === 429) {
         throw new AiRouteFailure("rate_limit", "AI_RATE_LIMIT", retryAfterMs);
       }
-      if (
-        effectiveStatus === 400
-        && (providerMessage.includes("response_format")
-          || providerMessage.includes("structured")
-          || providerMessage.includes("json_schema")
-          || providerMessage.includes("unsupported"))
-      ) {
+      if (effectiveStatus === 400) {
         throw new AiRouteFailure("unsupported", "AI_STRUCTURED_OUTPUT_UNSUPPORTED");
       }
       if ([402, 404, 409, 425, 500, 502, 503, 504, 529].includes(effectiveStatus)) {
