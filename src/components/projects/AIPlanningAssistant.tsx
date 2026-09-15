@@ -99,21 +99,22 @@ export function AIPlanningAssistant({
     const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.info(`[${generationId}] Submitting generation payload:`, { projectId: workspace.project._id, briefLength: nextBrief.length });
 
-    // 1. Direct Gemini Call (works for all users immediately, zero Convex dashboard/deploy required)
-    try {
-      const clientPlan = await generateClientGeminiPlan({
-        workspace,
-        brief: nextBrief,
-        apiKey: byok?.apiKey,
-        generationId,
-      });
-      if (clientPlan && clientPlan.tasks && clientPlan.tasks.length > 0) {
-        console.info(`[${generationId}] Client Gemini SUCCESS:`, { taskCount: clientPlan.tasks.length, model: clientPlan.modelUsed });
-        setRetryNotice(null);
-        return clientPlan;
+    // 1. Server-side Gemini Proxy Call (uses Vercel serverless /api/generate-plan with server GEMINI_API_KEY)
+    if (!byok) {
+      try {
+        const proxyPlan = await generateClientGeminiPlan({
+          workspace,
+          brief: nextBrief,
+          generationId,
+        });
+        if (proxyPlan && proxyPlan.tasks && proxyPlan.tasks.length > 0) {
+          console.info(`[${generationId}] Serverless Gemini Proxy SUCCESS:`, { taskCount: proxyPlan.tasks.length, model: proxyPlan.modelUsed });
+          setRetryNotice(null);
+          return proxyPlan;
+        }
+      } catch (proxyErr) {
+        console.warn(`[${generationId}] Serverless Gemini proxy fallback to Convex:`, proxyErr);
       }
-    } catch (clientGeminiErr) {
-      console.warn(`[${generationId}] Client Gemini fallback to server:`, clientGeminiErr);
     }
 
     while (true) {
