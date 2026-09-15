@@ -932,10 +932,10 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 borderRadius: "14px",
                 fontSize: "1rem",
                 fontWeight: 800,
-                border: "3px solid #101517",
-                boxShadow: "4px 4px 0 #101517",
+                border: "3px solid var(--color-outline, #101517)",
+                boxShadow: "4px 4px 0 var(--color-outline, #101517)",
                 background: needsMyReviewCount > 0 ? "var(--color-yellow, #fff73f)" : "var(--color-surface, #ffffff)",
-                color: "#101517",
+                color: needsMyReviewCount > 0 ? "#101517" : "var(--color-text, #101517)",
                 cursor: "pointer",
               }}
               onClick={() => setActiveBattleAction("peer_review")}
@@ -972,10 +972,10 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 justifyContent: "center",
                 gap: "0.2rem",
                 borderRadius: "14px",
-                border: "3px solid #101517",
-                boxShadow: "4px 4px 0 #101517",
+                border: "3px solid var(--color-outline, #101517)",
+                boxShadow: "4px 4px 0 var(--color-outline, #101517)",
                 background: "var(--color-surface, #ffffff)",
-                color: "#101517",
+                color: "var(--color-text, #101517)",
                 cursor: "pointer",
               }}
               onClick={() => setShowTeamChatModal(true)}
@@ -998,7 +998,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                   Live
                 </span>
               </div>
-              <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#64748b", lineHeight: 1.2 }}>
+              <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--color-muted, #64748b)", lineHeight: 1.2 }}>
                 Post messages and daily evidence.
               </span>
             </button>

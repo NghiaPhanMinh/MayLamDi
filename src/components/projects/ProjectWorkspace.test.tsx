@@ -89,7 +89,10 @@ vi.mock("./TeamMessengerChat", () => ({ TeamMessengerChat: () => <div>Team chat<
 vi.mock("./AIPlanningAssistant", () => ({ AIPlanningAssistant: () => null }));
 
 describe("ProjectWorkspace information hierarchy", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    delete document.documentElement.dataset.theme;
+  });
 
   it("renders Progress as default tab with Brief Summary, BattleScene, and Action Deck (My Tasks and Peer Review)", () => {
     render(<ProjectWorkspace projectId={"project-1" as Id<"projects">} onClose={vi.fn()} initialTab="progress" />);
@@ -112,5 +115,36 @@ describe("ProjectWorkspace information hierarchy", () => {
     fireEvent.click(screen.getByRole("button", { name: "Team" }));
     expect(screen.getByRole("button", { name: "Team" })).toHaveClass("is-active");
     expect(screen.getByText("Members")).toBeInTheDocument();
+  });
+
+  it.each(["light", "dark"])("uses matching surface and text tokens for action cards in %s mode", (theme) => {
+    document.documentElement.dataset.theme = theme;
+    render(<ProjectWorkspace projectId={"project-1" as Id<"projects">} onClose={vi.fn()} initialTab="progress" />);
+
+    for (const name of [/Peer Review/i, /Team Chat/i]) {
+      const button = screen.getByRole("button", { name });
+      expect(button.style.background).toBe("var(--color-surface, #ffffff)");
+      expect(button.style.color).toBe("var(--color-text, #101517)");
+      expect(button.style.border).toContain("var(--color-outline, #101517)");
+      expect(button.style.boxShadow).toContain("var(--color-outline, #101517)");
+      expect(button.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
+    }
+    expect(screen.getByText("Post messages and daily evidence.").style.color).toBe("var(--color-muted, #64748b)");
+  });
+
+  it("keeps the pending-review highlight readable in dark mode", () => {
+    document.documentElement.dataset.theme = "dark";
+    const task = workspace.tasks[0];
+    const previous = { status: task.status, reviewerProfileId: task.reviewerProfileId };
+    Object.assign(task, { status: "review", reviewerProfileId: workspace.currentProfileId });
+    try {
+      render(<ProjectWorkspace projectId={"project-1" as Id<"projects">} onClose={vi.fn()} initialTab="progress" />);
+      const button = screen.getByRole("button", { name: /Peer Review/i });
+      expect(button.style.background).toBe("var(--color-yellow, #fff73f)");
+      expect(button.style.color).toBe("rgb(16, 21, 23)");
+      expect(button).toHaveTextContent("1");
+    } finally {
+      Object.assign(task, previous);
+    }
   });
 });
