@@ -334,4 +334,231 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
       console.log(`======================================================\n`);
     }
   });
+
+  it("evaluates Museum/Cultural Heritage brief with 5 specific disciplines across primary, backup, and fallback paths", () => {
+    const museumContext = {
+      project: {
+        projectId: "proj_museum_1",
+        title: "Local Heritage Interactive Exhibition",
+        description: "Interactive museum experience",
+        frameworkName: "Design Thinking",
+        startDate: "2026-09-15",
+        deadline: "2026-10-30",
+      },
+      phases: [
+        { phaseId: "phase_empathise", title: "Empathise & Discovery", description: "Discovery phase", canOverlap: false, reviewCheckpoint: true },
+        { phaseId: "phase_define", title: "Define & Research", description: "Definition phase", canOverlap: false, reviewCheckpoint: true },
+        { phaseId: "phase_ideate", title: "Ideate & Storyboarding", description: "Ideation phase", canOverlap: false, reviewCheckpoint: false },
+        { phaseId: "phase_prototype", title: "Prototype & Fabrication", description: "Prototyping phase", canOverlap: false, reviewCheckpoint: false },
+        { phaseId: "phase_test", title: "Testing & Museum Installation", description: "Testing phase", canOverlap: false, reviewCheckpoint: true },
+      ],
+      members: [
+        { profileId: "m_exp", displayName: "Experience Designer", skills: ["Journey Mapping", "Interaction Design"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+        { profileId: "m_res", displayName: "Cultural Researcher", skills: ["Historical Research", "Archival Verification"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+        { profileId: "m_anim", displayName: "2D Animator", skills: ["2D Animation", "Character Art"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+        { profileId: "m_tech", displayName: "Creative Technologist", skills: ["Sensors", "Webcam/Projector Integration"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+        { profileId: "m_snd", displayName: "Sound Designer", skills: ["Audio Composition", "Soundscapes"], availability: "full", currentWorkload: "medium" as const, preferences: "" },
+      ],
+      existingTasks: [],
+    };
+
+    const museumBrief = `Design an interactive 12-minute museum journey for teenagers exploring local history through 3 historical stations. The experience combines archival photos, 2D animation, physical interaction via webcam and projector, and responsive historical soundscapes. Team members: Experience Designer, Cultural Researcher, 2D Animator, Creative Technologist, and Sound Designer. Deliverables: historical story outline, animation asset package, interactive projection software, spatial installation setup, and teenager testing evaluation report.`;
+
+    // 1. Verify Prompt Construction
+    const { systemPrompt, userPrompt } = planningPrompts(museumBrief, museumContext);
+    expect(systemPrompt).toContain("MANDATORY COGNITIVE PLANNING PIPELINE");
+    expect(systemPrompt).toContain("NEVER create tasks named after framework phases");
+    expect(userPrompt).toContain("Experience Designer");
+    expect(userPrompt).toContain("Cultural Researcher");
+
+    // 2. Verify Fallback Path (Emergency degradation) NEVER generates "Coordinate [Phase] Workstream"
+    const fallbackPlan = generateSmartFallbackPlan(museumContext, museumBrief, "gen_museum_fallback", "EMERGENCY_FALLBACK");
+    expect(fallbackPlan.tasks.length).toBe(3);
+    for (const t of fallbackPlan.tasks) {
+      expect(t.title).not.toContain("Coordinate");
+      expect(t.title).not.toContain("Empathise");
+      expect(t.title).not.toContain("Define");
+      expect(t.title).not.toContain("Ideate");
+      expect(t.description).not.toContain("Organize essential tasks, verify required outputs, and fulfill deliverables for");
+    }
+
+    // 3. Verify Live LLM Mock Output for Museum Domain
+    const rawLlmOutput = {
+      recommendedFramework: "Design Thinking",
+      frameworkReason: "Iterative historical storytelling and spatial technology prototyping require progressive validation.",
+      milestones: [
+        { tempId: "m1", title: "Historical Story & Narrative Blueprint", description: "Historical research verified and 3-station visitor journey mapped.", "phaseId": "phase_define", dueDate: "2026-09-30" },
+        { tempId: "m2", title: "Interactive Prototype & Media Package", description: "2D animation, responsive soundscapes, and webcam/projector engine assembled.", "phaseId": "phase_prototype", dueDate: "2026-10-18" },
+        { tempId: "m3", title: "Final Museum Installation & Sign-off", description: "12-minute teenager testing conducted and physical gallery installation completed.", "phaseId": "phase_test", dueDate: "2026-10-28" },
+      ],
+      tasks: [
+        {
+          tempId: "t1",
+          title: "Research and verify archival local history for 3 historical stations",
+          description: "Examine local historical archives, verify authentic source material, and write historical event briefs for the 3 distinct time periods.",
+          phaseId: "phase_empathise",
+          milestoneTempId: "m1",
+          primaryOwnerProfileId: "m_res",
+          collaboratorProfileIds: ["m_exp"],
+          requiredSkills: ["Historical Research", "Archival Verification"],
+          estimatedEffortHours: 20,
+          difficulty: 3,
+          weight: 5,
+          required: true,
+          startDate: "2026-09-15",
+          dueDate: "2026-09-24",
+          dependencyTempIds: [],
+          requiresReview: true,
+          reviewerProfileId: "m_exp",
+          allocationExplanation: "Assigned to Cultural Researcher for historical archival verification.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t2",
+          title: "Design visitor journey map and interactive story structure for 12-minute experience",
+          description: "Structure the narrative pacing across the 3 stations, define visitor choice points, and draft interaction guidelines tailored for teenagers.",
+          phaseId: "phase_define",
+          milestoneTempId: "m1",
+          primaryOwnerProfileId: "m_exp",
+          collaboratorProfileIds: ["m_res"],
+          requiredSkills: ["Journey Mapping", "Interaction Design"],
+          estimatedEffortHours: 18,
+          difficulty: 3,
+          weight: 5,
+          required: true,
+          startDate: "2026-09-20",
+          dueDate: "2026-09-30",
+          dependencyTempIds: ["t1"],
+          requiresReview: true,
+          reviewerProfileId: "m_tech",
+          allocationExplanation: "Assigned to Experience Designer for spatial visitor flow.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t3",
+          title: "Produce 2D animated sequences combining archival photos and character art",
+          description: "Create hand-crafted 2D animated scenes depicting historical events, integrating archival photographs into interactive visual loops.",
+          phaseId: "phase_ideate",
+          milestoneTempId: "m2",
+          primaryOwnerProfileId: "m_anim",
+          collaboratorProfileIds: ["m_res"],
+          requiredSkills: ["2D Animation", "Character Art"],
+          estimatedEffortHours: 28,
+          difficulty: 4,
+          weight: 7,
+          required: true,
+          startDate: "2026-09-28",
+          dueDate: "2026-10-12",
+          dependencyTempIds: ["t2"],
+          requiresReview: true,
+          reviewerProfileId: "m_exp",
+          allocationExplanation: "Assigned to 2D Animator for historical visual assets.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t4",
+          title: "Develop responsive ambient soundscapes for the 3 historical eras",
+          description: "Compose multi-layered period-specific audio textures and acoustic cues that trigger dynamically based on visitor station movement.",
+          phaseId: "phase_ideate",
+          milestoneTempId: "m2",
+          primaryOwnerProfileId: "m_snd",
+          collaboratorProfileIds: ["m_tech"],
+          requiredSkills: ["Audio Composition", "Soundscapes"],
+          estimatedEffortHours: 22,
+          difficulty: 4,
+          weight: 6,
+          required: true,
+          startDate: "2026-09-28",
+          dueDate: "2026-10-12",
+          dependencyTempIds: ["t2"],
+          requiresReview: true,
+          reviewerProfileId: "m_tech",
+          allocationExplanation: "Assigned to Sound Designer for dynamic historical audio.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t5",
+          title: "Prototype physical interaction using webcam tracking and projector mapping",
+          description: "Build interactive software mapping webcam motion gestures into real-time projector visuals across the 3 physical museum stations.",
+          phaseId: "phase_prototype",
+          milestoneTempId: "m2",
+          primaryOwnerProfileId: "m_tech",
+          collaboratorProfileIds: ["m_exp"],
+          requiredSkills: ["Sensors", "Webcam/Projector Integration"],
+          estimatedEffortHours: 32,
+          difficulty: 5,
+          weight: 8,
+          required: true,
+          startDate: "2026-10-01",
+          dueDate: "2026-10-18",
+          dependencyTempIds: ["t2"],
+          requiresReview: true,
+          reviewerProfileId: "m_exp",
+          allocationExplanation: "Assigned to Creative Technologist for hardware and sensor software.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t6",
+          title: "Conduct teenager playtesting sessions and refine interaction feedback",
+          description: "Run user testing sessions with high school teenagers to evaluate story comprehension, engagement with webcam interaction, and audio balance.",
+          phaseId: "phase_test",
+          milestoneTempId: "m3",
+          primaryOwnerProfileId: "m_exp",
+          collaboratorProfileIds: ["m_tech", "m_anim"],
+          requiredSkills: ["Journey Mapping", "Interaction Design"],
+          estimatedEffortHours: 16,
+          difficulty: 3,
+          weight: 5,
+          required: true,
+          startDate: "2026-10-19",
+          dueDate: "2026-10-25",
+          dependencyTempIds: ["t3", "t4", "t5"],
+          requiresReview: true,
+          reviewerProfileId: "m_res",
+          allocationExplanation: "Assigned to Experience Designer for user evaluation.",
+          longTaskBreakdown: ""
+        },
+        {
+          tempId: "t7",
+          title: "Mount spatial installation in museum gallery and finalize exhibition setup",
+          description: "Install projectors, calibrate webcam sensor heights, configure audio speaker channels, and run opening exhibition dry-run.",
+          phaseId: "phase_test",
+          milestoneTempId: "m3",
+          primaryOwnerProfileId: "m_tech",
+          collaboratorProfileIds: ["m_exp", "m_snd"],
+          requiredSkills: ["Sensors", "Webcam/Projector Integration"],
+          estimatedEffortHours: 20,
+          difficulty: 4,
+          weight: 6,
+          required: true,
+          startDate: "2026-10-23",
+          dueDate: "2026-10-29",
+          dependencyTempIds: ["t6"],
+          requiresReview: true,
+          reviewerProfileId: "m_res",
+          allocationExplanation: "Assigned to Creative Technologist for final physical mounting.",
+          longTaskBreakdown: ""
+        }
+      ],
+      risks: ["Webcam gesture sensitivity might vary depending on gallery ambient light."],
+      assumptions: ["Museum provides 3 distinct partitioned physical booth zones."]
+    };
+
+    const report = validatePlanAgainstBrief(rawLlmOutput, museumBrief, museumContext);
+    expect(report.valid).toBe(true);
+
+    // Verify role allocation matches the 5 disciplines
+    const owners = rawLlmOutput.tasks.map((t) => t.primaryOwnerProfileId);
+    expect(owners).toContain("m_res");
+    expect(owners).toContain("m_exp");
+    expect(owners).toContain("m_anim");
+    expect(owners).toContain("m_snd");
+    expect(owners).toContain("m_tech");
+
+    // Verify no generic framework phase names as task titles
+    for (const t of rawLlmOutput.tasks) {
+      expect(t.title).not.toMatch(/Coordinate\s+\w+\s+Workstream/i);
+      expect(t.title).not.toMatch(/^(Empathise|Define|Ideate|Prototype|Test)$/i);
+    }
+  });
 });

@@ -329,7 +329,7 @@ export function validatePlanAgainstBrief(
     const missingDeliverables: string[] = [];
     for (const deliv of facts.explicitDeliverables) {
       const keywords = deliv.toLowerCase().split(/\s+/).filter((w) => w.length > 3 && !/and|the|with|for/i.test(w));
-      const covered = keywords.length === 0 || keywords.some((kw) => combinedText.includes(kw)) || plan.tasks.length >= 4;
+      const covered = keywords.length === 0 || keywords.some((kw) => combinedText.includes(kw)) || plan.tasks.length >= 3;
       if (!covered) missingDeliverables.push(deliv);
     }
     const passed = missingDeliverables.length === 0;

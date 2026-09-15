@@ -85,11 +85,44 @@ describe("runFreeModelFallback", () => {
   it("uses the tested provider-diverse production defaults in order", () => {
     expect(buildFreeModelChain({})).toEqual([
       "meta-llama/llama-3.3-70b-instruct:free",
-      "google/gemini-2.0-flash-lite-001",
+      "google/gemini-2.0-flash-lite-preview:free",
       "qwen/qwen-2.5-coder-32b-instruct:free",
       "google/gemini-2.5-flash-lite:free",
       "openrouter/free",
     ]);
+  });
+
+  it("handles Primary succeeds -> returns primary output", async () => {
+    const result = await runFreeModelFallback({
+      models: ["primary:free", "backup:free"],
+      attempt: async ({ model }) => ({ content: '{"plan":"primary"}', modelUsed: model }),
+      validate: (content) => JSON.parse(content),
+    });
+    expect(result).toEqual({ value: { plan: "primary" }, modelUsed: "primary:free" });
+  });
+
+  it("handles Primary fails -> backup succeeds", async () => {
+    const result = await runFreeModelFallback({
+      models: ["primary:free", "backup:free"],
+      attempt: async ({ model }) => {
+        if (model === "primary:free") throw new AiRouteFailure("capacity", "busy");
+        return { content: '{"plan":"backup"}', modelUsed: model };
+      },
+      validate: (content) => JSON.parse(content),
+    });
+    expect(result).toEqual({ value: { plan: "backup" }, modelUsed: "backup:free" });
+  });
+
+  it("handles Primary returns malformed output -> backup succeeds", async () => {
+    const result = await runFreeModelFallback({
+      models: ["primary:free", "backup:free"],
+      attempt: async ({ model }) => {
+        if (model === "primary:free") return { content: "INVALID_JSON_NOT_AN_OBJECT", modelUsed: model };
+        return { content: '{"plan":"backup_valid"}', modelUsed: model };
+      },
+      validate: (content) => JSON.parse(content),
+    });
+    expect(result).toEqual({ value: { plan: "backup_valid" }, modelUsed: "backup:free" });
   });
 
   it("uses exponential backoff and never retries a model more than once", async () => {

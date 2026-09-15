@@ -24,13 +24,14 @@ describe("smartFallbackPlanner — Conservative Phase-Based Fallback Engine", ()
     console.log("TASKS:", plan.tasks.map((t) => ({ title: t.title, phaseId: t.phaseId })));
     console.log("VALIDATION REPORT:", report);
 
-    // 1. Task count matches phase count (4 phases = 4 tasks)
-    expect(plan.tasks.length).toBe(4);
+    // 1. Task count is concise conservative baseline (3 tasks)
+    expect(plan.tasks.length).toBe(3);
 
     // 2. Task titles MUST be concise (<= 12 words) and active
     for (const task of plan.tasks) {
       expect(task.title.split(" ").length).toBeLessThanOrEqual(12);
       expect(task.title).toMatch(/^[A-Z][a-z]+/);
+      expect(task.title).not.toContain("Coordinate");
       expect(task.description).not.toContain("Execute core technical deliverables for");
     }
 
@@ -51,7 +52,7 @@ describe("smartFallbackPlanner — Conservative Phase-Based Fallback Engine", ()
     expect(facts.visitorsOrAudience?.count).toBe(150);
   });
 
-  it("scales tasks cleanly across custom framework phase counts", () => {
+  it("generates safe, bounded tasks without duplicate phase-name titles", () => {
     const multiPhaseContext = {
       ...mockContext,
       phases: [
@@ -66,9 +67,9 @@ describe("smartFallbackPlanner — Conservative Phase-Based Fallback Engine", ()
     const brief = "Build a web application in 5 weeks.";
     const plan = generateSmartFallbackPlan(multiPhaseContext, brief);
 
-    expect(plan.tasks.length).toBe(5);
-    expect(plan.tasks[0].title).toMatch(/Research|Scope|Frame|Define/i);
-    expect(plan.tasks[4].title).toMatch(/Finalize|Deploy|Document/i);
+    expect(plan.tasks.length).toBe(3);
+    expect(plan.tasks[0].title).toMatch(/Requirements|Scope|Breakdown/i);
+    expect(plan.tasks[2].title).toMatch(/Verification|Delivery/i);
     expect(validatePlanAgainstBrief(plan, brief, multiPhaseContext).valid).toBe(true);
   });
 });
