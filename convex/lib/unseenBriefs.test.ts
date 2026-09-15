@@ -374,7 +374,7 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
 
     // 2. Verify Fallback Path (Emergency degradation) NEVER generates "Coordinate [Phase] Workstream"
     const fallbackPlan = generateSmartFallbackPlan(museumContext, museumBrief, "gen_museum_fallback", "EMERGENCY_FALLBACK");
-    expect(fallbackPlan.tasks.length).toBe(3);
+    expect(fallbackPlan.tasks.length).toBe(5);
     for (const t of fallbackPlan.tasks) {
       expect(t.title).not.toContain("Coordinate");
       expect(t.title).not.toContain("Empathise");

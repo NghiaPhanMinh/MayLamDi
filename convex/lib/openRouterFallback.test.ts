@@ -84,9 +84,10 @@ describe("runFreeModelFallback", () => {
 
   it("uses the tested provider-diverse production defaults in order", () => {
     expect(buildFreeModelChain({})).toEqual([
-      "google/gemma-4-31b-it:free",
-      "google/gemma-4-26b-a4b-it:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
+      "cohere/north-mini-code:free",
+      "google/gemma-4-26b-a4b-it:free",
+      "poolside/laguna-s-2.1:free",
       "openrouter/free",
     ]);
   });

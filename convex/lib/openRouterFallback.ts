@@ -1,7 +1,8 @@
-export const DEFAULT_PRIMARY_FREE_MODEL = "google/gemma-4-31b-it:free";
-export const DEFAULT_FIRST_FREE_FALLBACK = "google/gemma-4-26b-a4b-it:free";
+export const DEFAULT_PRIMARY_FREE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+export const DEFAULT_FIRST_FREE_FALLBACK = "cohere/north-mini-code:free";
 export const DEFAULT_ADDITIONAL_FREE_FALLBACKS = [
-  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "poolside/laguna-s-2.1:free",
   "openrouter/free",
 ] as const;
 
