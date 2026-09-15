@@ -380,7 +380,11 @@ export const generateProjectPlan = action({
     });
 
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
-    const apiKey = tierKey ?? environmentValue("OPENROUTER_API_KEY") ?? environmentValue("GEMINI_API_KEY");
+    const apiKey = tierKey
+      ?? environmentValue("OPENROUTER_API_KEY")
+      ?? environmentValue("AIASSISTANT")
+      ?? environmentValue("AI_ASSISTANT")
+      ?? environmentValue("GEMINI_API_KEY");
     if (!apiKey) {
       console.info(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=NO_API_KEY | API Attempted=false`);
       const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, "NO_API_KEY");
