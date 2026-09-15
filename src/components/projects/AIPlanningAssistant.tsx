@@ -423,16 +423,42 @@ export function AIPlanningAssistant({
       {draft ? (
         <div className="ai-draft" aria-live="polite">
           <section className="ai-output-card ai-plan-output" aria-labelledby="ai-plan-output-title">
-            <div className="ai-draft-section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <div className="ai-draft-section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <h4 id="ai-plan-output-title" style={{ margin: 0 }}>Suggested project plan ({draft.tasks.length} Tasks)</h4>
-              <button
-                className="quiet-button"
-                type="button"
-                onClick={() => setDraft(null)}
-                style={{ padding: "0.25rem 0.65rem", fontSize: "0.82rem", fontWeight: 700 }}
-              >
-                Discard draft
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                {isLeader ? (
+                  <button
+                    className="primary-button"
+                    type="button"
+                    disabled={isGenerating}
+                    onClick={() => void runGeneration(brief)}
+                    style={{
+                      padding: "0.35rem 0.85rem",
+                      fontSize: "0.85rem",
+                      fontWeight: 800,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                      minHeight: "auto",
+                      background: "var(--color-yellow, #fff73f)",
+                      color: "#101517",
+                      border: "2px solid #101517",
+                      boxShadow: "2px 2px 0 #101517",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Zap size={14} /> Regenerate Plan
+                  </button>
+                ) : null}
+                <button
+                  className="quiet-button"
+                  type="button"
+                  onClick={() => setDraft(null)}
+                  style={{ padding: "0.35rem 0.65rem", fontSize: "0.82rem", fontWeight: 700 }}
+                >
+                  Discard draft
+                </button>
+              </div>
             </div>
             
             <div className="ai-task-list" style={{ display: "grid", gap: "0.85rem" }}>
@@ -644,9 +670,28 @@ export function AIPlanningAssistant({
                 </strong>
                 <p>Confirm to save these tasks and their owners, then open the project workspace.</p>
               </div>
-              <button className="primary-button hero-save-plan-button" type="button" disabled={isGenerating} onClick={() => void handleSavePlan()}>
-                {isGenerating ? <><Rocket size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Saving &amp; Launching Project…</> : <><CheckCircle2 size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Confirm &amp; Save Plan</>}
-              </button>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={() => void runGeneration(brief)}
+                  style={{
+                    padding: "0.85rem 1.35rem",
+                    fontWeight: 800,
+                    fontSize: "0.95rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Zap size={16} /> Regenerate Plan
+                </button>
+                <button className="primary-button hero-save-plan-button" type="button" disabled={isGenerating} onClick={() => void handleSavePlan()}>
+                  {isGenerating ? <><Rocket size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Saving &amp; Launching Project…</> : <><CheckCircle2 size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Confirm &amp; Save Plan</>}
+                </button>
+              </div>
             </div>
           ) : (
             <p className="ai-safety-note" style={{ marginTop: "1rem", textAlign: "center", fontWeight: 700 }}>
