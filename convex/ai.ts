@@ -192,15 +192,31 @@ export function planningPrompts(brief: string, context: AiPlanningContext) {
     "You are MayLamDi's Senior Project Architect.",
     "MISSION: Transform the authoritative project brief into an actionable, cohesive, and grounded project execution plan.",
     "",
-    "COGNITIVE PLANNING PIPELINE (Reason internally through these steps before generating output):",
-    "1. PROJECT UNDERSTANDING: Analyze the brief to identify the core domain, target audience, specific constraints, and required final outcomes. Ground all thinking strictly in THIS project.",
-    "2. REQUIRED WORK & MEANINGFUL WORK UNITS: Determine what meaningful labor is actually required to build the project. Do NOT mechanically convert 1 deliverable = 1 task, and do NOT mechanically create 1 task per framework phase. Group tightly coupled activities that share purpose, ownership, and workflow into cohesive tasks.",
-    "3. FRAMEWORK AS PROCESS GUIDANCE (HOW, NOT WHAT): Treat context.phases strictly as timeline containers to organize and sequence the derived work chronologically over time. A phase may contain zero, one, or multiple tasks based on project needs. NEVER name tasks after framework phases (e.g. do NOT create 'Coordinate [Phase] Workstream' or '[Phase] Phase'). NEVER copy generic software/UX tropes into non-software projects.",
-    "4. GROUNDED, PROJECT-SPECIFIC TITLES & DESCRIPTIONS: Every task title MUST start with an active verb and state what is being produced for THIS project (e.g., 'Build Low-Fidelity Interactive Prototype', 'Draft Narrative Storyboards', 'Conduct Usability Test with Peers'). Descriptions must explain the concrete labor, methods, or formats specified by or directly relevant to the brief. NEVER invent fictional tools, participant counts, or external facts not supported by the brief.",
-    "5. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
-    "6. LOGICAL SEQUENCING & DYNAMIC COUNT: Upstream foundational tasks must precede downstream integration, testing, and delivery. Determine task count dynamically based on project scope and complexity.",
+    "OUTPUT CONTRACT:",
+    "Return ONLY one valid JSON object.",
+    "The first character of your response MUST be '{'.",
+    "The last character of your response MUST be '}'.",
+    "Do NOT output:",
+    "- reasoning",
+    "- analysis",
+    "- explanations",
+    "- markdown",
+    "- code fences",
+    "- preambles",
+    "- text before the JSON",
+    "- text after the JSON",
+    "Start immediately with '{'.",
     "",
-    "Return VALID JSON matching the schema strictly using provided phase IDs and member profile IDs."
+    "PLANNING DIRECTIVES:",
+    "1. Use the project brief, team roles, and selected framework to construct the project plan.",
+    "2. Treat the framework as the process structure, not as a task list. Treat context.phases strictly as timeline containers to organize and sequence the derived work chronologically over time. NEVER name tasks after framework phases (e.g. do NOT create 'Coordinate [Phase] Workstream' or '[Phase] Phase').",
+    "3. Generate grounded, project-specific tasks based on the actual brief. Every task title MUST start with an active verb and state what is being produced for THIS project. Descriptions must explain concrete labor, methods, or formats specified by or directly relevant to the brief. Do not invent unsupported tools, requirements, deliverables, participant counts, or project facts.",
+    "4. Do not mechanically create one task per deliverable or one task per framework phase. Group tightly coupled activities that share purpose, ownership, and workflow into cohesive tasks.",
+    "5. Use an appropriate dynamic number of meaningful tasks (up to 15) and milestones (up to 6).",
+    "6. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
+    "7. LOGICAL SEQUENCING: Upstream foundational tasks must precede downstream integration, testing, and delivery.",
+    "",
+    "The final response must contain ONLY the JSON object matching the required schema using provided phase IDs and member profile IDs."
   ].join("\n");
 
   const userPrompt = JSON.stringify({
@@ -296,8 +312,8 @@ async function requestPlan(input: {
           ? { response_format: { type: "json_object" } }
           : {}),
         temperature: 0.1,
-        max_tokens: 3_500,
-        max_completion_tokens: 3_500,
+        max_tokens: 4_000,
+        max_completion_tokens: 4_000,
       }),
     });
     const body = (await response.json().catch(() => ({}))) as OpenRouterResponse;
