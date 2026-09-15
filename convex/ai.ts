@@ -8,6 +8,11 @@ import {
   type ValidatedAiPlan,
 } from "./lib/aiPlanValidation";
 import {
+  parseGeminiJsonResponse,
+  requestGeminiNative,
+  runGeminiNativeFallback,
+} from "./lib/geminiNative";
+import {
   AiRouteFailure,
   buildFreeModelChain,
   FreeAiRoutesExhausted,
@@ -395,13 +400,15 @@ export const generateProjectPlan = action({
       projectId: args.projectId,
     });
 
+    const geminiKey = environmentValue("GEMINI_API_KEY")
+      ?? (environmentValue("AIASSISTANT")?.startsWith("AQ.") || environmentValue("AIASSISTANT")?.startsWith("AIzaSy") ? environmentValue("AIASSISTANT") : undefined);
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
-    const apiKey = tierKey
-      ?? environmentValue("OPENROUTER_API_KEY")
-      ?? environmentValue("AIASSISTANT")
-      ?? environmentValue("AI_ASSISTANT")
-      ?? environmentValue("GEMINI_API_KEY");
-    if (!apiKey) {
+    const openRouterApiKey = tierKey
+      ?? (environmentValue("OPENROUTER_API_KEY")?.startsWith("sk-") ? environmentValue("OPENROUTER_API_KEY") : undefined)
+      ?? (environmentValue("AIASSISTANT")?.startsWith("sk-") ? environmentValue("AIASSISTANT") : undefined)
+      ?? environmentValue("AI_ASSISTANT");
+
+    if (!geminiKey && !openRouterApiKey) {
       console.info(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=NO_API_KEY | API Attempted=false`);
       const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, "NO_API_KEY");
       return {
@@ -418,18 +425,6 @@ export const generateProjectPlan = action({
     try {
       const { systemPrompt, userPrompt } = planningPrompts(brief, context);
       console.info(`${genTag}[AI OBSERVABILITY] Prompts constructed. User prompt length: ${userPrompt.length}`);
-      const configuredTierModel = access.tier === "free"
-        ? environmentValue("OPENROUTER_MODEL_FREE")
-        : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
-      const freeModels = buildFreeModelChain({
-        primary: configuredTierModel ?? environmentValue("OPENROUTER_MODEL"),
-        firstFallback: environmentValue("OPENROUTER_FALLBACK_MODEL"),
-        additionalFallbacks: environmentValue("OPENROUTER_FREE_FALLBACK_MODELS"),
-      });
-      const models = access.tier !== "free" && configuredTierModel
-        ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
-        : freeModels;
-
       const generationLimit = access.entitlement.platformPlanGenerationsPerProject;
       const usageId = await ctx.runMutation(internal.aiUsage.reservePlatformGeneration, {
         projectId: args.projectId,
@@ -437,49 +432,113 @@ export const generateProjectPlan = action({
         limit: generationLimit ?? undefined,
       });
 
-      try {
-        console.info(`${genTag}[AI OBSERVABILITY] Requesting plan from models:`, models);
-        const result = await runFreeModelFallback({
-          models,
-          attempt: ({ model, mode }) => requestPlan({
-            apiKey,
-            model,
-            mode,
+      // 1. Try Native Google Gemini first if key available
+      if (geminiKey) {
+        try {
+          console.info(`${genTag}[AI OBSERVABILITY] Requesting plan via Native Google Gemini API...`);
+          const result = await runGeminiNativeFallback({
+            apiKey: geminiKey,
             systemPrompt,
             userPrompt,
-          }),
-          validate: (content) => {
-            const plan = validateAiPlan(parseJsonResponse(content), context);
-            const report = validatePlanAgainstBrief(plan, brief, context);
-            if (!report.valid) {
-              console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
-            }
-            return plan;
-          },
-        });
-        console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
-        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-          usageId,
-          model: result.modelUsed,
-          success: true,
-        });
-        return {
-          ...result.value,
-          source: "llm",
-          generationId: args.generationId,
-          apiAttempted: true,
-          apiErrorCategory: null,
-          modelUsed: result.modelUsed,
-          generatedAt: Date.now(),
-        };
-      } catch (innerError) {
-        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
-          usageId,
-          model: "failed",
-          success: false,
-        });
-        throw innerError;
+            schema: planSchema.schema,
+            validate: (content) => {
+              const plan = validateAiPlan(parseGeminiJsonResponse(content), context);
+              const report = validatePlanAgainstBrief(plan, brief, context);
+              if (!report.valid) {
+                console.warn(`${genTag}[AI OBSERVABILITY] Gemini plan validation warnings:`, report.errors);
+              }
+              return plan;
+            },
+          });
+
+          console.info(`${genTag}[AI OBSERVABILITY] Native Gemini succeeded. ModelUsed=${result.modelUsed}`);
+          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+            usageId,
+            model: result.modelUsed,
+            success: true,
+          });
+          return {
+            ...result.value,
+            source: "llm",
+            generationId: args.generationId,
+            apiAttempted: true,
+            apiErrorCategory: null,
+            modelUsed: result.modelUsed,
+            generatedAt: Date.now(),
+          };
+        } catch (geminiError) {
+          console.warn(`${genTag}[AI OBSERVABILITY] Native Gemini attempt failed:`, geminiError);
+          if (!openRouterApiKey) {
+            await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+              usageId,
+              model: "failed",
+              success: false,
+            });
+            throw geminiError;
+          }
+        }
       }
+
+      // 2. OpenRouter fallback if configured
+      if (openRouterApiKey) {
+        const configuredTierModel = access.tier === "free"
+          ? environmentValue("OPENROUTER_MODEL_FREE")
+          : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
+        const freeModels = buildFreeModelChain({
+          primary: configuredTierModel ?? environmentValue("OPENROUTER_MODEL"),
+          firstFallback: environmentValue("OPENROUTER_FALLBACK_MODEL"),
+          additionalFallbacks: environmentValue("OPENROUTER_FREE_FALLBACK_MODELS"),
+        });
+        const models = access.tier !== "free" && configuredTierModel
+          ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
+          : freeModels;
+
+        try {
+          console.info(`${genTag}[AI OBSERVABILITY] Requesting plan from OpenRouter models:`, models);
+          const result = await runFreeModelFallback({
+            models,
+            attempt: ({ model, mode }) => requestPlan({
+              apiKey: openRouterApiKey,
+              model,
+              mode,
+              systemPrompt,
+              userPrompt,
+            }),
+            validate: (content) => {
+              const plan = validateAiPlan(parseJsonResponse(content), context);
+              const report = validatePlanAgainstBrief(plan, brief, context);
+              if (!report.valid) {
+                console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
+              }
+              return plan;
+            },
+          });
+          console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
+          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+            usageId,
+            model: result.modelUsed,
+            success: true,
+          });
+          return {
+            ...result.value,
+            source: "llm",
+            generationId: args.generationId,
+            apiAttempted: true,
+            apiErrorCategory: null,
+            modelUsed: result.modelUsed,
+            generatedAt: Date.now(),
+          };
+        } catch (innerError) {
+          await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+            usageId,
+            model: "failed",
+            success: false,
+          });
+          throw innerError;
+        }
+      }
+
+      throw new Error("AI_GENERATION_FAILED");
     } catch (error) {
       const errMessage = error instanceof Error ? error.message : String(error);
       console.warn(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=${errMessage} | API Attempted=true`);
@@ -510,37 +569,56 @@ export const generateProjectPlanWithKey = action({
     console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
     const apiKey = args.apiKey.trim();
     const model = args.model.trim();
-    if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session OpenRouter key does not look valid.");
-    if (model.length < 3 || model.length > 160 || /\s/.test(model)) throw new ConvexError("Enter a valid OpenRouter model ID.");
+    if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session API key does not look valid.");
     const brief = cleanBrief(args.brief);
     const access = await ctx.runQuery(internal.aiUsage.getProjectAccess, { projectId: args.projectId });
     const context: AiPlanningContext = await ctx.runQuery(internal.aiContext.getProjectPlanningContext, { projectId: args.projectId });
     const { systemPrompt, userPrompt } = planningPrompts(brief, context);
+
     try {
-      let response;
-      try {
-        response = await requestPlan({ apiKey, model, mode: "structured", systemPrompt, userPrompt });
-      } catch (error) {
-        if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
-        response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
+      let resultPlan: ValidatedAiPlan;
+      let modelUsed = model;
+
+      if (apiKey.startsWith("AQ.") || apiKey.startsWith("AIzaSy")) {
+        const nativeModel = model.includes("gemini") ? model : "gemini-3.5-flash-lite";
+        const response = await requestGeminiNative({
+          apiKey,
+          model: nativeModel,
+          systemPrompt,
+          userPrompt,
+          schema: planSchema.schema,
+        });
+        resultPlan = validateAiPlan(parseGeminiJsonResponse(response.content), context);
+        modelUsed = response.modelUsed;
+      } else {
+        if (model.length < 3 || model.length > 160 || /\s/.test(model)) throw new ConvexError("Enter a valid OpenRouter model ID.");
+        let response;
+        try {
+          response = await requestPlan({ apiKey, model, mode: "structured", systemPrompt, userPrompt });
+        } catch (error) {
+          if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
+          response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
+        }
+        resultPlan = validateAiPlan(parseJsonResponse(response.content), context);
+        modelUsed = response.modelUsed;
       }
-      const value = validateAiPlan(parseJsonResponse(response.content), context);
+
       await ctx.runMutation(internal.aiUsage.record, {
         projectId: args.projectId,
         profileId: access.profileId,
         source: "byok",
         operation: "project_plan",
-        model: response.modelUsed,
+        model: modelUsed,
         success: true,
       });
-      console.info(`${genTag}[AI OBSERVABILITY] Session BYOK AI request succeeded using model: ${response.modelUsed}`);
+      console.info(`${genTag}[AI OBSERVABILITY] Session BYOK AI request succeeded using model: ${modelUsed}`);
       return {
-        ...value,
+        ...resultPlan,
         source: "llm",
         generationId: args.generationId,
         apiAttempted: true,
         apiErrorCategory: null,
-        modelUsed: response.modelUsed,
+        modelUsed,
         generatedAt: Date.now(),
       };
     } catch (error) {
