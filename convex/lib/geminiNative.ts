@@ -74,6 +74,7 @@ export async function requestGeminiNative(input: {
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": input.apiKey,
       },
       body: JSON.stringify({
         system_instruction: {
