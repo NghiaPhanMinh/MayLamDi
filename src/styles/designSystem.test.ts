@@ -79,6 +79,12 @@ describe("MayLamDi design-system contract", () => {
     expect(css).toContain("color: #fff73f");
   });
 
+  it("centers the visible final MayLamDi wordmark including its trailing negative tracking", () => {
+    expect(css).toContain(".marketing-final-cta-title-frame");
+    expect(css).toContain("padding-right: clamp(11.2px, 2.38vw, 95.5px)");
+    expect(css).toContain("letter-spacing: -0.1em");
+  });
+
   it("uses the selected local display font without the removed hero preview", () => {
     expect(css).toContain('font-family: "Paytone One"');
     expect(css).toContain('/fonts/PaytoneOne-Regular.ttf');

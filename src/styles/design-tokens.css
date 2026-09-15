@@ -4101,6 +4101,7 @@ body:has(.marketing-about-transition-scene) {
   position: relative;
   left: 50%;
   width: max-content;
+  padding-right: clamp(11.2px, 2.38vw, 95.5px);
   transform: translateX(-50%);
 }
 
