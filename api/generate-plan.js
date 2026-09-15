@@ -1,5 +1,5 @@
-﻿// Vercel Serverless Function: POST /api/generate-plan
-// Securely proxies AI Plan generation requests to Google Gemini server-side
+// Vercel Serverless Function: POST /api/generate-plan
+// Securely proxies AI Plan generation requests to Google Gemini and OpenRouter server-side
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -7,8 +7,15 @@ const GEMINI_MODELS = [
   "gemini-3.6-flash",
 ];
 
+const OPENROUTER_MODELS = [
+  "openrouter/free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "cohere/north-mini-code:free",
+  "nex-agi/nex-n2.5-pro:free",
+];
+
 export default async function handler(req, res) {
-  // 1. Method check
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed. Use POST." });
@@ -22,7 +29,6 @@ export default async function handler(req, res) {
     const members = Array.isArray(body.members) ? body.members : [];
     const generationId = typeof body.generationId === "string" ? body.generationId : undefined;
 
-    // 2. Abuse protection & validation
     if (!rawBrief || rawBrief.length < 10) {
       return res.status(400).json({ error: "Project brief is required (minimum 10 characters)." });
     }
@@ -30,28 +36,32 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Project brief is too long (maximum 8000 characters)." });
     }
 
-    // 3. Retrieve Server-Side Secret Key
-    const apiKey = (
+    const geminiKey = (
       process.env.GEMINI_API_KEY ||
       process.env.GOOGLE_API_KEY ||
       process.env.GOOGLE_GEMINI_API_KEY ||
-      process.env.AIASSISTANT ||
+      (process.env.AIASSISTANT && (process.env.AIASSISTANT.startsWith("AQ.") || process.env.AIASSISTANT.startsWith("AIzaSy")) ? process.env.AIASSISTANT : undefined)
+    )?.trim();
+
+    const openRouterKey = (
+      process.env.OPENROUTER_API_KEY ||
+      process.env.OPENROUTER_KEY ||
+      (process.env.AIASSISTANT && process.env.AIASSISTANT.startsWith("sk-") ? process.env.AIASSISTANT : undefined) ||
       process.env.AI_ASSISTANT
     )?.trim();
 
-    if (!apiKey) {
+    if (!geminiKey && !openRouterKey) {
       return res.status(503).json({
-        error: "AI generation service is not configured on the server. Please contact administrator.",
+        error: "AI generation keys are not configured on Vercel. Please set GEMINI_API_KEY or OPENROUTER_API_KEY in Vercel Environment Variables.",
       });
     }
 
-    // 4. Build System & User Prompts
     const memberText = members
-      .map((m) => Profile ID: "" | Name: "" | Skills: [])
+      .map((m) => `Profile ID: "${m.profileId || m._id}" | Name: "${m.displayName || "Member"}" | Skills: [${(m.skills || []).join(", ")}]`)
       .join("\n");
 
-    const availablePhaseIds = phases.map((p) => p.phaseId || p._id || "phase-1");
-    const availableMemberIds = members.map((m) => m.profileId || m._id || "member-1");
+    const availablePhaseIds = phases.map((p) => String(p.phaseId || p._id || "phase-1"));
+    const availableMemberIds = members.map((m) => String(m.profileId || m._id || "member-1"));
 
     const systemPrompt = [
       "You are MayLamDi's Senior Project Architect.",
@@ -132,136 +142,179 @@ export default async function handler(req, res) {
       teamMembers: memberText,
     });
 
-    // 5. Model Fallback Chain
-    let lastError = null;
+    const sanitizeResult = (parsed, modelUsed) => {
+      const fallbackPhaseId = availablePhaseIds[0] || "phase-1";
+      const fallbackMemberId = availableMemberIds[0] || "member-1";
 
-    for (const model of GEMINI_MODELS) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 45000);
+      const validatedTasks = parsed.tasks.map((t, idx) => {
+        const owner = availableMemberIds.includes(t.primaryOwnerProfileId)
+          ? String(t.primaryOwnerProfileId)
+          : fallbackMemberId;
 
-      try {
-        const url = https://generativelanguage.googleapis.com/v1beta/models/:generateContent?key=;
-        const response = await fetch(url, {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: ${systemPrompt}\n\nSTRICT JSON SCHEMA:\n }],
-            },
-            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1,
-              maxOutputTokens: 8192,
-            },
-          }),
-        });
+        let reviewer =
+          typeof t.reviewerProfileId === "string" && availableMemberIds.includes(t.reviewerProfileId)
+            ? String(t.reviewerProfileId)
+            : null;
 
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          lastError = Model  returned status ;
-          continue;
+        if (availableMemberIds.length <= 1 || reviewer === owner) {
+          reviewer = null;
         }
 
-        const data = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) {
-          lastError = Model  returned empty content;
-          continue;
-        }
+        return {
+          tempId: String(t.tempId || `task-${idx + 1}`),
+          title: String(t.title || `Task ${idx + 1}`),
+          description: String(t.description || "Labor and deliverables described in brief."),
+          phaseId: availablePhaseIds.includes(t.phaseId) ? String(t.phaseId) : fallbackPhaseId,
+          milestoneTempId: typeof t.milestoneTempId === "string" ? String(t.milestoneTempId) : null,
+          primaryOwnerProfileId: owner,
+          collaboratorProfileIds: Array.isArray(t.collaboratorProfileIds)
+            ? t.collaboratorProfileIds.filter((id) => availableMemberIds.includes(id) && id !== owner)
+            : [],
+          requiredSkills: Array.isArray(t.requiredSkills) ? t.requiredSkills.map(String) : [],
+          estimatedEffortHours: typeof t.estimatedEffortHours === "number" && t.estimatedEffortHours > 0 ? t.estimatedEffortHours : 4,
+          difficulty: typeof t.difficulty === "number" && t.difficulty >= 1 && t.difficulty <= 5 ? Math.round(t.difficulty) : 3,
+          weight: typeof t.weight === "number" && t.weight > 0 ? t.weight : 1,
+          required: true,
+          startDate: typeof t.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.startDate) ? t.startDate : (project.startDate || new Date().toISOString().slice(0, 10)),
+          dueDate: typeof t.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate) ? t.dueDate : (project.deadline || new Date().toISOString().slice(0, 10)),
+          dependencyTempIds: Array.isArray(t.dependencyTempIds) ? t.dependencyTempIds.map(String) : [],
+          requiresReview: true,
+          reviewerProfileId: reviewer,
+          allocationExplanation: String(t.allocationExplanation || "Assigned based on project role and capacity."),
+          longTaskBreakdown: String(t.longTaskBreakdown || ""),
+        };
+      });
 
-        const sanitized = rawText.replace(/<(think|thought)>[\s\S]*?<\/\1>/gi, "").trim();
-        const jsonText =
-          sanitized.match(/^`(?:json)?\s*([\s\S]*?)\s*`$/i)?.[1] ||
-          (sanitized.indexOf("{") >= 0 ? sanitized.slice(sanitized.indexOf("{"), sanitized.lastIndexOf("}") + 1) : sanitized);
+      const validatedMilestones = Array.isArray(parsed.milestones)
+        ? parsed.milestones.map((m, idx) => ({
+            tempId: String(m.tempId || `milestone-${idx + 1}`),
+            title: String(m.title || `Milestone ${idx + 1}`),
+            description: String(m.description || ""),
+            phaseId: availablePhaseIds.includes(m.phaseId) ? String(m.phaseId) : fallbackPhaseId,
+            dueDate: typeof m.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m.dueDate) ? m.dueDate : (project.deadline || new Date().toISOString().slice(0, 10)),
+          }))
+        : [];
 
-        const parsed = JSON.parse(jsonText);
-        if (!parsed.tasks || !Array.isArray(parsed.tasks) || parsed.tasks.length === 0) {
-          lastError = Model  generated invalid task structure;
-          continue;
-        }
+      return {
+        recommendedFramework: String(parsed.recommendedFramework || project.frameworkName || "Custom Process"),
+        frameworkReason: String(parsed.frameworkReason || "Structure optimized for project scope."),
+        milestones: validatedMilestones,
+        tasks: validatedTasks,
+        risks: Array.isArray(parsed.risks) ? parsed.risks.map(String) : [],
+        assumptions: Array.isArray(parsed.assumptions) ? parsed.assumptions.map(String) : [],
+        source: "llm",
+        generationId,
+        apiAttempted: true,
+        apiErrorCategory: null,
+        modelUsed,
+        generatedAt: Date.now(),
+      };
+    };
 
-        const fallbackPhaseId = availablePhaseIds[0] || "phase-1";
-        const fallbackMemberId = availableMemberIds[0] || "member-1";
+    // STEP 1: Try Gemini Native
+    if (geminiKey) {
+      for (const model of GEMINI_MODELS) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 45000);
 
-        // Sanitize tasks
-        const validatedTasks = parsed.tasks.map((t, idx) => {
-          const owner = availableMemberIds.includes(t.primaryOwnerProfileId)
-            ? String(t.primaryOwnerProfileId)
-            : fallbackMemberId;
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+          const response = await fetch(url, {
+            method: "POST",
+            signal: controller.signal,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              system_instruction: {
+                parts: [{ text: `${systemPrompt}\n\nSTRICT JSON SCHEMA:\n${JSON.stringify(schemaDefinition)}` }],
+              },
+              contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.1,
+                maxOutputTokens: 8192,
+              },
+            }),
+          });
 
-          let reviewer =
-            typeof t.reviewerProfileId === "string" && availableMemberIds.includes(t.reviewerProfileId)
-              ? String(t.reviewerProfileId)
-              : null;
+          clearTimeout(timeout);
 
-          if (availableMemberIds.length <= 1 || reviewer === owner) {
-            reviewer = null;
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) continue;
+
+          const sanitized = rawText.replace(/<(think|thought)>[\s\S]*?<\/\1>/gi, "").trim();
+          const jsonText =
+            sanitized.match(/^\`\`\`(?:json)?\s*([\s\S]*?)\s*\`\`\`$/i)?.[1] ||
+            (sanitized.indexOf("{") >= 0 ? sanitized.slice(sanitized.indexOf("{"), sanitized.lastIndexOf("}") + 1) : sanitized);
+
+          const parsed = JSON.parse(jsonText);
+          if (parsed.tasks && Array.isArray(parsed.tasks) && parsed.tasks.length > 0) {
+            return res.status(200).json(sanitizeResult(parsed, model));
           }
-
-          return {
-            tempId: String(t.tempId || 	ask-),
-            title: String(t.title || Task ),
-            description: String(t.description || "Labor and deliverables described in brief."),
-            phaseId: availablePhaseIds.includes(t.phaseId) ? String(t.phaseId) : fallbackPhaseId,
-            milestoneTempId: typeof t.milestoneTempId === "string" ? String(t.milestoneTempId) : null,
-            primaryOwnerProfileId: owner,
-            collaboratorProfileIds: Array.isArray(t.collaboratorProfileIds)
-              ? t.collaboratorProfileIds.filter((id) => availableMemberIds.includes(id) && id !== owner)
-              : [],
-            requiredSkills: Array.isArray(t.requiredSkills) ? t.requiredSkills.map(String) : [],
-            estimatedEffortHours: typeof t.estimatedEffortHours === "number" && t.estimatedEffortHours > 0 ? t.estimatedEffortHours : 4,
-            difficulty: typeof t.difficulty === "number" && t.difficulty >= 1 && t.difficulty <= 5 ? Math.round(t.difficulty) : 3,
-            weight: typeof t.weight === "number" && t.weight > 0 ? t.weight : 1,
-            required: true,
-            startDate: typeof t.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.startDate) ? t.startDate : (project.startDate || new Date().toISOString().slice(0, 10)),
-            dueDate: typeof t.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate) ? t.dueDate : (project.deadline || new Date().toISOString().slice(0, 10)),
-            dependencyTempIds: Array.isArray(t.dependencyTempIds) ? t.dependencyTempIds.map(String) : [],
-            requiresReview: true,
-            reviewerProfileId: reviewer,
-            allocationExplanation: String(t.allocationExplanation || "Assigned based on project role and capacity."),
-            longTaskBreakdown: String(t.longTaskBreakdown || ""),
-          };
-        });
-
-        // Sanitize milestones
-        const validatedMilestones = Array.isArray(parsed.milestones)
-          ? parsed.milestones.map((m, idx) => ({
-              tempId: String(m.tempId || milestone-),
-              title: String(m.title || Milestone ),
-              description: String(m.description || ""),
-              phaseId: availablePhaseIds.includes(m.phaseId) ? String(m.phaseId) : fallbackPhaseId,
-              dueDate: typeof m.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m.dueDate) ? m.dueDate : (project.deadline || new Date().toISOString().slice(0, 10)),
-            }))
-          : [];
-
-        // Return validated plan
-        return res.status(200).json({
-          recommendedFramework: String(parsed.recommendedFramework || project.frameworkName || "Custom Process"),
-          frameworkReason: String(parsed.frameworkReason || "Structure optimized for project scope."),
-          milestones: validatedMilestones,
-          tasks: validatedTasks,
-          risks: Array.isArray(parsed.risks) ? parsed.risks.map(String) : [],
-          assumptions: Array.isArray(parsed.assumptions) ? parsed.assumptions.map(String) : [],
-          source: "llm",
-          generationId,
-          apiAttempted: true,
-          apiErrorCategory: null,
-          modelUsed: model,
-          generatedAt: Date.now(),
-        });
-      } catch (err) {
-        clearTimeout(timeout);
-        lastError = err instanceof Error ? err.message : String(err);
+        } catch (err) {
+          clearTimeout(timeout);
+        }
       }
     }
 
-    // All models exhausted
+    // STEP 2: Try OpenRouter Backup
+    if (openRouterKey) {
+      for (const model of OPENROUTER_MODELS) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 35000);
+
+        try {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              Authorization: `Bearer ${openRouterKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://maylamdi.vercel.app",
+              "X-Title": "MayLamDi AI Planning",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                {
+                  role: "system",
+                  content: `${systemPrompt}\n\nRespond ONLY with valid JSON matching:\n${JSON.stringify(schemaDefinition)}`,
+                },
+                { role: "user", content: userPrompt },
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.1,
+              max_tokens: 4000,
+            }),
+          });
+
+          clearTimeout(timeout);
+
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          const rawText = data.choices?.[0]?.message?.content;
+          if (!rawText) continue;
+
+          const sanitized = rawText.replace(/<(think|thought)>[\s\S]*?<\/\1>/gi, "").trim();
+          const jsonText =
+            sanitized.match(/^\`\`\`(?:json)?\s*([\s\S]*?)\s*\`\`\`$/i)?.[1] ||
+            (sanitized.indexOf("{") >= 0 ? sanitized.slice(sanitized.indexOf("{"), sanitized.lastIndexOf("}") + 1) : sanitized);
+
+          const parsed = JSON.parse(jsonText);
+          if (parsed.tasks && Array.isArray(parsed.tasks) && parsed.tasks.length > 0) {
+            return res.status(200).json(sanitizeResult(parsed, model));
+          }
+        } catch (err) {
+          clearTimeout(timeout);
+        }
+      }
+    }
+
     return res.status(502).json({
-      error: "AI generation models are temporarily busy. Please try again or use manual planning.",
-      detail: lastError,
+      error: "AI models (Gemini & OpenRouter) are currently busy. Please try again or use manual planning.",
     });
   } catch (globalErr) {
     return res.status(500).json({
