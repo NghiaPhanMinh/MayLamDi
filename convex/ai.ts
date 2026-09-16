@@ -402,28 +402,18 @@ export const generateProjectPlan = action({
       projectId: args.projectId,
     });
 
-    const rawGeminiKey = environmentValue("GEMINI_API_KEY")
-      ?? environmentValue("GEMINI_KEY")
-      ?? environmentValue("GOOGLE_GEMINI_API_KEY")
-      ?? environmentValue("GOOGLE_API_KEY")
-      ?? environmentValue("VITE_GEMINI_API_KEY")
-      ?? environmentValue("AIASSISTANT")
-      ?? environmentValue("AI_ASSISTANT");
-    const geminiKey = rawGeminiKey && (rawGeminiKey.startsWith("AQ.") || rawGeminiKey.startsWith("AIzaSy"))
-      ? rawGeminiKey.trim()
-      : undefined;
+    const envObj = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env || {};
+    const envEntries = Object.entries(envObj);
+    const geminiKey = envEntries.find(([k, v]) => 
+      /gemini|google.*api/i.test(k) || (typeof v === "string" && (v.startsWith("AQ.") || v.startsWith("AIzaSy")))
+    )?.[1]?.trim();
     const geminiModelOverride = environmentValue("GEMINI_MODEL");
 
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
-    const rawOpenRouterKey = tierKey
-      ?? environmentValue("OPENROUTER_API_KEY")
-      ?? environmentValue("OPENROUTER_KEY")
-      ?? environmentValue("VITE_OPENROUTER_API_KEY")
+    const openRouterApiKey = (tierKey
+      ?? envEntries.find(([k, v]) => /openrouter/i.test(k) || (typeof v === "string" && (v.startsWith("sk-or-") || v.startsWith("sk-"))))?.[1]
       ?? environmentValue("AIASSISTANT")
-      ?? environmentValue("AI_ASSISTANT");
-    const openRouterApiKey = rawOpenRouterKey && rawOpenRouterKey.trim().length > 15
-      ? rawOpenRouterKey.trim()
-      : undefined;
+      ?? environmentValue("AI_ASSISTANT"))?.trim();
     const openRouterModelOverride = environmentValue("OPENROUTER_MODEL");
 
     if (!geminiKey && !openRouterApiKey) {

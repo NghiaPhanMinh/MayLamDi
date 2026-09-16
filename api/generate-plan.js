@@ -36,19 +36,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Project brief is too long (maximum 8000 characters)." });
     }
 
-    const geminiKey = (
-      process.env.GEMINI_API_KEY ||
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_GEMINI_API_KEY ||
-      (process.env.AIASSISTANT && (process.env.AIASSISTANT.startsWith("AQ.") || process.env.AIASSISTANT.startsWith("AIzaSy")) ? process.env.AIASSISTANT : undefined)
-    )?.trim();
+    // Smart auto-discovery of Gemini and OpenRouter keys regardless of casing or suffix
+    const envEntries = Object.entries(process.env || {});
+    const geminiKey = envEntries.find(([k, v]) => 
+      /gemini|google.*api/i.test(k) || (typeof v === "string" && (v.startsWith("AQ.") || v.startsWith("AIzaSy")))
+    )?.[1]?.trim();
 
-    const openRouterKey = (
-      process.env.OPENROUTER_API_KEY ||
-      process.env.OPENROUTER_KEY ||
-      (process.env.AIASSISTANT && process.env.AIASSISTANT.startsWith("sk-") ? process.env.AIASSISTANT : undefined) ||
-      process.env.AI_ASSISTANT
-    )?.trim();
+    const openRouterKey = envEntries.find(([k, v]) => 
+      /openrouter/i.test(k) || (typeof v === "string" && (v.startsWith("sk-or-") || v.startsWith("sk-")))
+    )?.[1]?.trim();
 
     if (!geminiKey && !openRouterKey) {
       return res.status(503).json({
