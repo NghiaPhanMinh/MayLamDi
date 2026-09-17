@@ -235,8 +235,9 @@ export function LandscapeDragon({
   deathStopWings = true,
   deathGlow = false,
 }: LandscapeDragonProps) {
+  const isDead = Boolean(isDefeated || bossHpPercent <= 0);
   const damageClearedFraction = (100 - bossHpPercent) / 100;
-  const dragonX = isDefeated ? 640 : (580 + damageClearedFraction * 60);
+  const dragonX = isDead ? 640 : (580 + damageClearedFraction * 60);
 
   // Build list of shapes dynamically in layer order
   const sortedShapes = React.useMemo(() => {
@@ -349,7 +350,7 @@ export function LandscapeDragon({
         >
           {/* Dragon Ground Shadow (Grounded directly under dragon body/feet, never changes on defeat) */}
           <g transform="translate(85, 180)">
-            {!isDefeated && animationsEnabled && (
+            {!isDead && animationsEnabled && (
               <animateTransform
                 attributeName="transform"
                 type="scale"
@@ -365,19 +366,19 @@ export function LandscapeDragon({
           {/* Dragon Body: Rotates 60 degrees to the left on defeat, fixed ground pivot, 40% transparent on defeat (opacity 0.6), pure vector without glow */}
           <g
             transform={
-              isDefeated
+              isDead
                 ? `translate(${deathOffsetX}, ${deathOffsetY}) rotate(${deathRotation}, ${deathPivotX}, ${deathPivotY})`
                 : undefined
             }
             style={{
-              opacity: isDefeated ? 0.6 : 1,
+              opacity: isDead ? 0.6 : 1,
               filter: "none",
               transition: "transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s ease",
             }}
           >
             {/* Hovering animation (only when alive) */}
             <g>
-              {!isDefeated && animationsEnabled && (
+              {!isDead && animationsEnabled && (
                 <animateTransform
                   attributeName="transform"
                   type="translate"
@@ -424,8 +425,8 @@ export function LandscapeDragon({
                       return null;
                   }
 
-                  // Wrap element inside Wing Flapping animation transform if needed
-                  const playWings = animationsEnabled && !isDefeated && !deathStopWings;
+                  // Wrap element inside Wing Flapping animation transform if needed (flaps when alive, stops when dead/0 HP)
+                  const playWings = animationsEnabled && !isDead;
                   if (shape.group === "backWing") {
                     element = (
                       <g transform-origin="120 110">
