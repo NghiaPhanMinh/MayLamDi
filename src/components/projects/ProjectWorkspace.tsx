@@ -323,6 +323,20 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
     }
   });
 
+  useEffect(() => {
+    const handleRestartTour = () => {
+      if (workspace.tasks.length === 0) {
+        setShowLobbyTour(false);
+        setTimeout(() => setShowLobbyTour(true), 50);
+      } else {
+        setShowWorkspaceTour(false);
+        setTimeout(() => setShowWorkspaceTour(true), 50);
+      }
+    };
+    window.addEventListener("mld:restart-room-tour", handleRestartTour);
+    return () => window.removeEventListener("mld:restart-room-tour", handleRestartTour);
+  }, [workspace.tasks.length]);
+
   const overdueTasks = useMemo(() => {
     return workspace.tasks.filter((t) => {
       return t.dueDate &&

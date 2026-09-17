@@ -381,6 +381,36 @@ input::placeholder, textarea::placeholder { color: var(--mld-muted); opacity: 0.
   color: var(--mld-text);
 }
 
+.tutorial-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--mld-space-4, 16px);
+  border: 1px solid var(--mld-border-strong);
+  border-radius: var(--mld-radius-pill);
+  background: var(--mld-surface-01);
+  color: var(--mld-text);
+  font-family: inherit;
+  font-size: var(--mld-body-small-size);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+.tutorial-nav-button:hover {
+  background: color-mix(in srgb, var(--mld-primary, #fff73f) 20%, var(--mld-surface-01));
+  border-color: var(--mld-text);
+  transform: translateY(-1px);
+}
+
+.tutorial-nav-button:active {
+  transform: translateY(1px);
+}
+
 .subscription-nav-item {
   display: inline-flex;
   align-items: center;
@@ -2089,6 +2119,12 @@ input::placeholder, textarea::placeholder { color: var(--mld-muted); opacity: 0.
 
   .app-header .nav-actions {
     gap: var(--mld-space-1);
+  }
+
+  .tutorial-nav-button {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 0.8rem;
   }
 
   .subscription-nav-item {

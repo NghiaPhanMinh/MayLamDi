@@ -205,6 +205,15 @@ export function AuthenticatedHome() {
     setMobileMenuOpen(false);
   }
 
+  function handleStartTutorial() {
+    if (projectsView === "room") {
+      window.dispatchEvent(new CustomEvent("mld:restart-room-tour"));
+    } else {
+      setShowDashboardTour(false);
+      setTimeout(() => setShowDashboardTour(true), 50);
+    }
+  }
+
   return (
     <main className={`authenticated-shell app-shell ${sidebarOpen ? "sidebar-expanded" : "sidebar-collapsed"}`}>
       <header className="app-header">
@@ -221,6 +230,14 @@ export function AuthenticatedHome() {
         </Link>
         <div className="nav-actions">
           {activeRoomId ? <ActivityCenter teamId={activeRoomId} /> : null}
+          <button
+            type="button"
+            className="tutorial-nav-button"
+            onClick={handleStartTutorial}
+            aria-label="Start interactive tutorial"
+          >
+            Tutorial
+          </button>
           <SubscriptionNavItem plan={currentPlan} />
           <ThemeToggle />
           <button
