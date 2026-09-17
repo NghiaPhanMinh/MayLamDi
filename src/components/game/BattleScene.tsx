@@ -3071,6 +3071,7 @@ export function BattleScene({
         <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
         {/* Mode Toggle Button: Canvas Top-Left */}
         <button
+          data-tour="progress-mode-toggle"
           type="button"
           className="rpg-mode-toggle-btn"
           onClick={toggleDisplayMode}
@@ -3100,6 +3101,7 @@ export function BattleScene({
 
         {/* Layer 10: Task Progress Bar (TOP, centered text, fixed in place, responsive width) */}
         <div
+          data-tour="progress-team-status"
           className="pvz-deadline-progress-container project-task-progress-container"
           style={{
             position: "absolute",
@@ -3479,6 +3481,7 @@ export function BattleScene({
             <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
               {/* Game Mode Switcher on Top-Left */}
               <button
+                data-tour="progress-mode-toggle"
                 type="button"
                 className="secondary-button"
                 onClick={toggleDisplayMode}
@@ -3581,6 +3584,7 @@ export function BattleScene({
 
           {/* Plain Progress Bar Card */}
           <div
+            data-tour="progress-team-status"
             style={{
               background: isDarkMode ? "#171a1e" : "#fffded",
               border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
@@ -3662,7 +3666,7 @@ export function BattleScene({
                         placeItems: "center",
                         fontWeight: 900,
                         fontSize: "0.9rem",
-                        border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.3)" : "2px solid #101517",
+                        border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
                       }}
                     >
                       {p.displayName.charAt(0).toUpperCase()}
@@ -3689,6 +3693,7 @@ export function BattleScene({
 
             {/* Contribution Report */}
             <div
+              data-tour="progress-contribution-report"
               style={{
                 background: isDarkMode ? "#171a1e" : "#fffded",
                 border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",

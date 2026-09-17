@@ -44,15 +44,45 @@ const LOBBY_TUTORIAL_STEPS: TutorialStep[] = [
 
 const WORKSPACE_TUTORIAL_STEPS: TutorialStep[] = [
   {
-    target: "tab-progress",
-    title: "Project Progress",
-    description: "Monitor overall progress, battle in Game Mode, review peer work, and chat with your team.",
+    target: "progress-mode-toggle",
+    title: "1.1 Game Mode / Focus Mode",
+    description: "Switch seamlessly between the immersive 2D RPG Dragon Battle scene and the clean Focus Mode dashboard.",
     placement: "bottom",
+  },
+  {
+    target: "progress-team-status",
+    title: "1.2 Team Progress",
+    description: "Track overall sprint completion percentage, completed tasks, active days, and project deadline.",
+    placement: "bottom",
+  },
+  {
+    target: "progress-action-my-tasks",
+    title: "1.3 My Tasks",
+    description: "View and manage your assigned tasks, upload work evidence, and deal damage to the project boss.",
+    placement: "top",
+  },
+  {
+    target: "progress-action-peer-review",
+    title: "1.4 Peer Review",
+    description: "Review pending teammate submissions, verify proof deliverables, and approve or request revisions.",
+    placement: "top",
+  },
+  {
+    target: "progress-action-team-chat",
+    title: "1.5 Team Chat",
+    description: "Communicate in real-time with teammates and check daily standup evidence submissions.",
+    placement: "top",
+  },
+  {
+    target: "progress-contribution-report",
+    title: "1.6 Contribution Report",
+    description: "Export and download verifiable PDF reports with transparent individual contribution breakdowns for fair grading.",
+    placement: "top",
   },
   {
     target: "tab-plan",
     title: "Project Plan",
-    description: "View tasks organized by phase and adjust the plan with the AI Assistant.",
+    description: "View tasks organized by phase, manage dependencies, and adjust the plan with the AI Assistant.",
     placement: "bottom",
   },
   {
@@ -964,6 +994,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             }}
           >
             <button
+              data-tour="progress-action-my-tasks"
               type="button"
               className="primary-button project-deck-btn"
               style={{
@@ -1000,6 +1031,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             </button>
 
             <button
+              data-tour="progress-action-peer-review"
               type="button"
               className="primary-button project-deck-btn"
               style={{
@@ -1037,6 +1069,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
 
             {/* Third Action Button: Team Chat */}
             <button
+              data-tour="progress-action-team-chat"
               type="button"
               className="primary-button project-deck-btn"
               title="Communicate, upload daily evidence to check."
@@ -1267,12 +1300,12 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
           steps={WORKSPACE_TUTORIAL_STEPS}
           isOpen={showWorkspaceTour}
           storageKey="maylamdi_tour_workspace_done"
-          onStepChange={(stepIndex) => {
-            if (stepIndex === 0) {
+          onStepChange={(_stepIndex, step) => {
+            if (step.target.startsWith("progress-") || step.target === "tab-progress") {
               setActiveTab("progress");
-            } else if (stepIndex === 1) {
+            } else if (step.target === "tab-plan") {
               setActiveTab("plan");
-            } else if (stepIndex === 2) {
+            } else if (step.target === "tab-team") {
               setActiveTab("team");
             }
           }}

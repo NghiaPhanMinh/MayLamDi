@@ -101,6 +101,29 @@
   font-weight: 800 !important;
 }
 
+/* Action Deck & Progress Section Highlights */
+.project-deck-btn.mld-tour-active-target {
+  background: #ffffff !important;
+  color: #101517 !important;
+  box-shadow: 0 0 16px rgba(255, 247, 63, 0.95), 4px 4px 0 #101517 !important;
+  transform: translateY(-2px);
+}
+
+.project-deck-btn.mld-tour-active-target * {
+  color: #101517 !important;
+}
+
+[data-tour="progress-mode-toggle"].mld-tour-active-target {
+  background: #ffffff !important;
+  color: #101517 !important;
+  box-shadow: 0 0 16px rgba(255, 247, 63, 0.95), 3px 3px 0 #101517 !important;
+}
+
+[data-tour="progress-contribution-report"].mld-tour-active-target,
+[data-tour="progress-team-status"].mld-tour-active-target {
+  box-shadow: 0 0 16px rgba(255, 247, 63, 0.85), 4px 4px 0 #101517 !important;
+}
+
 /* Neo-Brutalist Tour Card */
 .mld-tutorial-card {
   position: fixed;
