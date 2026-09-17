@@ -145,11 +145,37 @@ export function OnboardingTutorial({
       if (onStepChange) {
         onStepChange(currentStepIndex, step);
       }
+
+      // Smoothly scroll target element into comfortable view
+      setTimeout(() => {
+        const candidates = Array.from(document.querySelectorAll(`[data-tour="${step.target}"]`));
+        const targetEl = candidates.find((el) => {
+          const style = window.getComputedStyle(el);
+          const htmlEl = el instanceof HTMLElement ? el : null;
+          return !(style.display === "none" || htmlEl?.style.display === "none" || style.visibility === "hidden");
+        }) || candidates[0];
+
+        if (targetEl && !targetEl.closest(".mobile-bottom-nav, .app-header")) {
+          try {
+            targetEl.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+              inline: "nearest",
+            });
+          } catch {}
+        }
+      }, 30);
     }
-    const timer = setTimeout(() => {
-      updatePosition();
-    }, 50);
-    return () => clearTimeout(timer);
+
+    const timer1 = setTimeout(() => updatePosition(), 60);
+    const timer2 = setTimeout(() => updatePosition(), 220);
+    const timer3 = setTimeout(() => updatePosition(), 450);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [isOpen, currentStepIndex, step, onStepChange, updatePosition]);
 
   useEffect(() => {

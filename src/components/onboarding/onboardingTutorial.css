@@ -7,13 +7,11 @@
   pointer-events: auto;
 }
 
-/* Translucent scrim overlay (~40% dimming) so app content remains visible, never pitch dark */
+/* Translucent scrim overlay (~45% dimming) so app content remains visible, never pitch dark */
 .mld-tutorial-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(16, 21, 23, 0.40);
-  backdrop-filter: blur(1.5px);
-  -webkit-backdrop-filter: blur(1.5px);
+  background: rgba(16, 21, 23, 0.45);
   animation: mldTutorialFadeIn 0.2s ease-out;
   cursor: pointer;
 }
