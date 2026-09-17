@@ -82,6 +82,25 @@
   font-weight: 800 !important;
 }
 
+/* Mobile Bottom Navigation Highlights */
+.mobile-bottom-nav:has(.mld-tour-active-target) {
+  z-index: 99993 !important;
+}
+
+.mobile-bottom-nav button.mld-tour-active-target {
+  background: #ffffff !important;
+  color: #101517 !important;
+  box-shadow: 0 0 16px rgba(255, 247, 63, 0.95), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 8px !important;
+  transform: scale(1.05);
+}
+
+.mobile-bottom-nav button.mld-tour-active-target * {
+  color: #101517 !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
 /* Neo-Brutalist Tour Card */
 .mld-tutorial-card {
   position: fixed;
@@ -224,5 +243,32 @@
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .mld-tutorial-card {
+    width: calc(100vw - 32px);
+    max-width: 360px;
+    padding: 1rem 1.15rem;
+  }
+
+  .mld-tutorial-title {
+    font-size: 1.05rem;
+  }
+
+  .mld-tutorial-description {
+    font-size: 0.88rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .mld-tutorial-actions {
+    gap: 0.35rem;
+  }
+
+  .mld-tutorial-btn-next,
+  .mld-tutorial-btn-prev {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.82rem;
   }
 }

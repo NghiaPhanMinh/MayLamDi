@@ -157,4 +157,22 @@ describe("OnboardingTutorial Component", () => {
     expect(onStepChange).toHaveBeenCalledWith(1, stepsWithEnter[1]);
     expect(onEnterStep2).toHaveBeenCalledTimes(1);
   });
+
+  it("selects visible candidate element when multiple elements share the same target", () => {
+    document.body.innerHTML = `
+      <div data-tour="test-step-1" style="display: none; width: 0px; height: 0px;">Desktop Hidden</div>
+      <div data-tour="test-step-1" class="visible-mobile-target" style="display: block; width: 80px; height: 40px;">Mobile Visible</div>
+    `;
+
+    render(
+      <OnboardingTutorial
+        steps={mockSteps}
+        isOpen={true}
+        storageKey="test_tour_multi"
+      />
+    );
+
+    const visibleEl = document.querySelector(".visible-mobile-target");
+    expect(visibleEl).toHaveClass("mld-tour-active-target");
+  });
 });

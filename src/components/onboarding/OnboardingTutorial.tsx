@@ -37,18 +37,40 @@ export function OnboardingTutorial({
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [cardPosition, setCardPosition] = useState<{ top: number; left: number }>({ top: 100, left: 100 });
   const retryRef = useRef<number | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   const step = steps[currentStepIndex];
 
   const updatePosition = useCallback(() => {
     if (!isOpen || !step) return;
 
-    const element = document.querySelector(`[data-tour="${step.target}"]`);
-    if (!element) {
+    // Find all matching elements and choose the one currently visible in the viewport
+    const candidates = Array.from(document.querySelectorAll(`[data-tour="${step.target}"]`));
+    if (candidates.length === 0) {
       // Element may be rendering or mounting asynchronously; retry after a frame
       retryRef.current = window.requestAnimationFrame(updatePosition);
       return;
     }
+
+    const element = candidates.find((el) => {
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const isHidden = style.display === "none" || el.style.display === "none" ||
+                       style.visibility === "hidden" || el.style.visibility === "hidden" ||
+                       parseFloat(style.opacity || "1") === 0;
+      if (isHidden) return false;
+
+      // In real browser where layout engine computes rects
+      if (rect.width > 0 && rect.height > 0) {
+        return (
+          rect.bottom > 0 &&
+          rect.top < window.innerHeight &&
+          rect.right > 0 &&
+          rect.left < window.innerWidth
+        );
+      }
+      return true;
+    }) || candidates[0];
 
     // Ensure active element is marked for elevated z-index and high contrast
     document.querySelectorAll(".mld-tour-active-target").forEach((el) => {
@@ -66,40 +88,40 @@ export function OnboardingTutorial({
       height: rect.height,
     });
 
+    const isMobile = window.innerWidth <= 768;
+    const isBottomNav = rect.bottom > window.innerHeight - 120;
     const cardWidth = Math.min(340, window.innerWidth - 32);
-    const cardHeight = 220; // Estimated height for clamping
-    const margin = 14;
+    const cardHeight = cardRef.current?.offsetHeight || 210;
+    const margin = 12;
 
     let top = 0;
     let left = 0;
-    const preferredPlacement = step.placement || "bottom";
+    let preferredPlacement = step.placement || "bottom";
 
-    if (preferredPlacement === "bottom") {
-      top = rect.bottom + margin;
-      left = Math.max(16, Math.min(rect.left, window.innerWidth - cardWidth - 16));
-      if (top + cardHeight > window.innerHeight - 16 && rect.top - cardHeight - margin > 16) {
-        top = rect.top - cardHeight - margin;
-      }
-    } else if (preferredPlacement === "top") {
+    // On mobile or when target is in bottom navigation bar, force placement to top
+    if (isBottomNav || (isMobile && (preferredPlacement === "right" || preferredPlacement === "left"))) {
+      preferredPlacement = "top";
+    }
+
+    if (preferredPlacement === "top") {
       top = rect.top - cardHeight - margin;
-      left = Math.max(16, Math.min(rect.left, window.innerWidth - cardWidth - 16));
-      if (top < 16) {
-        top = rect.bottom + margin;
-      }
+      left = rect.left + (rect.width - cardWidth) / 2;
+    } else if (preferredPlacement === "bottom") {
+      top = rect.bottom + margin;
+      left = rect.left + (rect.width - cardWidth) / 2;
     } else if (preferredPlacement === "right") {
       left = rect.right + margin;
-      top = Math.max(16, Math.min(rect.top, window.innerHeight - cardHeight - 16));
+      top = rect.top + (rect.height - cardHeight) / 2;
       if (left + cardWidth > window.innerWidth - 16) {
-        // Fallback to bottom or top if no space on right
-        top = rect.bottom + margin;
-        left = Math.max(16, Math.min(rect.left, window.innerWidth - cardWidth - 16));
+        top = isBottomNav ? rect.top - cardHeight - margin : rect.bottom + margin;
+        left = rect.left + (rect.width - cardWidth) / 2;
       }
     } else if (preferredPlacement === "left") {
       left = rect.left - cardWidth - margin;
-      top = Math.max(16, Math.min(rect.top, window.innerHeight - cardHeight - 16));
+      top = rect.top + (rect.height - cardHeight) / 2;
       if (left < 16) {
-        top = rect.bottom + margin;
-        left = Math.max(16, Math.min(rect.left, window.innerWidth - cardWidth - 16));
+        top = isBottomNav ? rect.top - cardHeight - margin : rect.bottom + margin;
+        left = rect.left + (rect.width - cardWidth) / 2;
       }
     }
 
@@ -227,6 +249,7 @@ export function OnboardingTutorial({
       )}
 
       <div
+        ref={cardRef}
         className="mld-tutorial-card"
         style={{
           top: `${cardPosition.top}px`,

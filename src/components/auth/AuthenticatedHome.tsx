@@ -27,12 +27,6 @@ const DASHBOARD_TUTORIAL_STEPS: TutorialStep[] = [
     placement: "right",
   },
   {
-    target: "nav-profile",
-    title: "Profile",
-    description: "Update your skills and weekly capacity so the AI can allocate tasks accurately.",
-    placement: "right",
-  },
-  {
     target: "nav-projects",
     title: "Projects",
     description: "View your team projects, or click Create Project to start a new one.",
@@ -45,9 +39,15 @@ const DASHBOARD_TUTORIAL_STEPS: TutorialStep[] = [
     placement: "right",
   },
   {
+    target: "nav-profile",
+    title: "Profile",
+    description: "Update your skills and weekly capacity so the AI can allocate tasks accurately.",
+    placement: "right",
+  },
+  {
     target: "nav-resources",
-    title: "Resources",
-    description: "Explore project framework templates and collaborative team guides.",
+    title: "Resources & More",
+    description: "Explore project framework templates, guides, subscription, and room settings.",
     placement: "right",
   },
 ];
@@ -339,11 +339,52 @@ export function AuthenticatedHome() {
         </div>
       </div>
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
-        <button className={activeSection === "home" ? "is-active" : ""} type="button" onClick={() => { navigate("/home"); setMobileMenuOpen(false); }}><Home aria-hidden="true" /><span>Home</span></button>
-        <button className={activeSection === "projects" && projectsView !== "personal-tasks" ? "is-active" : ""} type="button" onClick={() => openProjects("index")}><FolderKanban aria-hidden="true" /><span>Projects</span></button>
-        <button className={projectsView === "personal-tasks" ? "is-active" : ""} type="button" onClick={() => openProjects("personal-tasks")}><ListChecks aria-hidden="true" /><span>Tasks</span></button>
-        <button className={activeSection === "profile" ? "is-active" : ""} type="button" onClick={() => { navigate("/profile"); setMobileMenuOpen(false); }}><UserRound aria-hidden="true" /><span>Profile</span></button>
-        <button className={mobileMenuOpen ? "is-active" : ""} type="button" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((current) => !current)}><Menu aria-hidden="true" /><span>More</span></button>
+        <button
+          data-tour="nav-home"
+          className={activeSection === "home" ? "is-active" : ""}
+          type="button"
+          onClick={() => { navigate("/home"); setMobileMenuOpen(false); }}
+        >
+          <Home aria-hidden="true" />
+          <span>Home</span>
+        </button>
+        <button
+          data-tour="nav-projects"
+          className={activeSection === "projects" && projectsView !== "personal-tasks" ? "is-active" : ""}
+          type="button"
+          onClick={() => openProjects("index")}
+        >
+          <FolderKanban aria-hidden="true" />
+          <span>Projects</span>
+        </button>
+        <button
+          data-tour="nav-my-tasks"
+          className={projectsView === "personal-tasks" ? "is-active" : ""}
+          type="button"
+          onClick={() => openProjects("personal-tasks")}
+        >
+          <ListChecks aria-hidden="true" />
+          <span>Tasks</span>
+        </button>
+        <button
+          data-tour="nav-profile"
+          className={activeSection === "profile" ? "is-active" : ""}
+          type="button"
+          onClick={() => { navigate("/profile"); setMobileMenuOpen(false); }}
+        >
+          <UserRound aria-hidden="true" />
+          <span>Profile</span>
+        </button>
+        <button
+          data-tour="nav-resources"
+          className={mobileMenuOpen || activeSection === "resources" ? "is-active" : ""}
+          type="button"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((current) => !current)}
+        >
+          <Menu aria-hidden="true" />
+          <span>More</span>
+        </button>
       </nav>
 
       {showDashboardTour && (
