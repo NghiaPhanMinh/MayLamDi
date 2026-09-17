@@ -63,7 +63,7 @@ export function CharacterCustomizer({
     <article className="character-card" aria-labelledby="character-title">
       <div className="character-copy">
         <p className="card-eyebrow">Your team character</p>
-        <h2 className="display-heading" id="character-title">Choose your character colours.</h2>
+        <h2 className="character-card-title" id="character-title">Choose your character colours.</h2>
         <p>
           These colours belong to you in this team only. Teammates see changes
           as soon as you save.
