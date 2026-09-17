@@ -430,7 +430,13 @@ export const launch = mutation({
       .withIndex("by_project", (query) => query.eq("projectId", project._id))
       .collect();
     if (tasks.length === 0) throw new Error("Add at least one task before launch.");
-    if (tasks.some((task) => task.required && (!task.requiresReview || !task.reviewerProfileId))) {
+    const projectMembers = await ctx.db
+      .query("projectMembers")
+      .withIndex("by_project", (query) => query.eq("projectId", project._id))
+      .collect();
+    const isSoloProject = projectMembers.length <= 1 || project.targetMemberCount === 1;
+
+    if (!isSoloProject && tasks.some((task) => task.required && (!task.requiresReview || !task.reviewerProfileId))) {
       throw new Error("Every required task needs an assigned reviewer before launch.");
     }
 

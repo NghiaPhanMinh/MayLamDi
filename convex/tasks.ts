@@ -127,9 +127,6 @@ async function assertBalancedReviewer(
   reviewerProfileId: Id<"userProfiles">,
   editedTaskId?: Id<"tasks">,
 ) {
-  if (ownerProfileId === reviewerProfileId) {
-    throw new Error("A task owner cannot review their own task.");
-  }
   const [members, tasks] = await Promise.all([
     ctx.db.query("projectMembers").withIndex("by_project", (query) =>
       query.eq("projectId", projectId),
@@ -138,6 +135,10 @@ async function assertBalancedReviewer(
       query.eq("projectId", projectId),
     ).collect(),
   ]);
+  if (members.length <= 1) return;
+  if (ownerProfileId === reviewerProfileId) {
+    throw new Error("A task owner cannot review their own task.");
+  }
   const eligible = members.filter((member) => member.profileId !== ownerProfileId);
   if (!eligible.some((member) => member.profileId === reviewerProfileId)) {
     throw new Error("Choose a current project member who is not the task owner.");

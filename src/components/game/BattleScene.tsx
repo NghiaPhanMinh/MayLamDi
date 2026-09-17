@@ -1015,7 +1015,7 @@ export function BattleScene({
 
   // Workspace data query for tasks & user profiles
   const workspace = useQuery(api.tasks.getWorkspace, { projectId });
-  const isSoloProject = workspace?.project?.targetMemberCount === 1;
+  const isSoloProject = workspace?.project?.targetMemberCount === 1 || (workspace?.members?.length ?? 0) <= 1;
 
   // Goblin Flow state & mutations
   const postDailyEvidence = useMutation((api as any).daily.postDailyEvidence);

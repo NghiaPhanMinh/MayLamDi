@@ -372,7 +372,11 @@ export const submitForReview = mutation({
     if (context.task.acceptanceStatus === "pending") {
       throw new Error("Accept this task before submitting it for review.");
     }
-    const isSoloProject = context.project.targetMemberCount === 1;
+    const projectMembers = await ctx.db
+      .query("projectMembers")
+      .withIndex("by_project", (query) => query.eq("projectId", context.project._id))
+      .collect();
+    const isSoloProject = projectMembers.length <= 1 || context.project.targetMemberCount === 1;
 
     if (!isSoloProject) {
       if (!context.task.requiresReview) {

@@ -448,6 +448,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
     })();
   }, [createTask, workspace]);
 
+  const isSoloProject = (workspace.members?.length ?? 0) <= 1 || workspace.project?.targetMemberCount === 1;
 
   const completionRequests = workspace.tasks.filter((task) => task.status === "awaiting_creator");
   const requestTasks = workspace.tasks.filter((task) =>
@@ -511,7 +512,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
       ownerFill: ownerMember?.characterFill,
       ownerOutline: ownerMember?.characterOutline,
       ownerSpellType: ownerMember?.spellType,
-      reviewer: task.reviewerProfileId ? memberNameById.get(task.reviewerProfileId) ?? "Reviewer" : "Choose later",
+      reviewer: isSoloProject ? "Self Review" : task.reviewerProfileId ? memberNameById.get(task.reviewerProfileId) ?? "Reviewer" : "Choose later",
       dueDate: task.dueDate,
       status: task.status as TaskStatus,
       weight: task.weight,
@@ -524,31 +525,31 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
   });
 
   function resetTaskForm() {
+    setEditingTaskId(null);
     setTaskTitle("");
     setTaskDescription("");
-    setTaskPhaseId("");
+    setTaskPhaseId(workspace.phases[0]?._id ?? "");
     setTaskOwner("__open");
     setTaskReviewerId("");
     setTaskWeight("1");
     setTaskEffort("4");
-    setTaskDifficulty("2");
+    setTaskDifficulty("1");
     setTaskDueDate(workspace.project.deadline);
     setTaskSkills("");
-    setEditingTaskId(null);
   }
 
-  function editTask(task: Workspace["tasks"][number]) {
+  function editTask(task: (typeof workspace.tasks)[number]) {
+    setEditingTaskId(task._id);
     setTaskTitle(task.title);
     setTaskDescription(task.description);
     setTaskPhaseId(task.phaseId);
-    setTaskOwner(task.assignmentState === "unassigned" ? "__unassigned" : task.isOpenForClaiming ? "__open" : task.primaryOwnerProfileId);
+    setTaskOwner(task.primaryOwnerProfileId || "__open");
     setTaskReviewerId(task.reviewerProfileId ?? "");
     setTaskWeight(String(task.weight));
     setTaskEffort(String(task.estimatedEffortHours ?? 4));
     setTaskDifficulty(String(task.difficulty ?? 2));
     setTaskDueDate(task.dueDate);
     setTaskSkills((task.requiredSkills ?? []).join(", "));
-    setEditingTaskId(task._id);
     setShowTaskForm(true);
   }
 
@@ -574,7 +575,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
     const isOpen = taskOwner === "__open";
     const isUnassigned = taskOwner === "__unassigned";
     const ownerId = (isOpen || isUnassigned ? workspace.currentProfileId : taskOwner) as Id<"userProfiles">;
-    if (taskReviewerId === ownerId) { setError("A task owner cannot review their own work."); return; }
+    if (!isSoloProject && taskReviewerId && taskReviewerId === ownerId) { setError("A task owner cannot review their own work."); return; }
     setIsSaving(true);
     setError(null);
     try {
@@ -1245,7 +1246,9 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 <legend>3. Assignment &amp; Peer Verification</legend>
                 <div className="project-field-grid">
                   <label><span>Task Owner</span><select value={taskOwner} onChange={(event) => { setTaskOwner(event.target.value); if (taskReviewerId === event.target.value) setTaskReviewerId(""); }}><option value="__open">Open for claiming</option><option value="__unassigned">Unassigned until allocation</option>{workspace.members.map((member) => <option key={member.profileId} value={member.profileId}>{member.displayName}</option>)}</select></label>
-                  <label><span>Peer Reviewer <small>Member who checks evidence before task completion.</small></span><select value={taskReviewerId} onChange={(event) => setTaskReviewerId(event.target.value)}><option value="">Owner chooses reviewer later</option>{workspace.members.filter((member) => member.profileId !== taskOwner).map((member) => { const load = reviewerLoadById.get(member.profileId) ?? 0; return <option key={member.profileId} value={member.profileId}>{member.displayName} · {load}/{workspace.fairReviewCapacity} reviews</option>; })}</select></label>
+                  {!isSoloProject ? (
+                    <label><span>Peer Reviewer <small>Member who checks evidence before task completion.</small></span><select value={taskReviewerId} onChange={(event) => setTaskReviewerId(event.target.value)}><option value="">Owner chooses reviewer later</option>{workspace.members.filter((member) => member.profileId !== taskOwner).map((member) => { const load = reviewerLoadById.get(member.profileId) ?? 0; return <option key={member.profileId} value={member.profileId}>{member.displayName} · {load}/{workspace.fairReviewCapacity} reviews</option>; })}</select></label>
+                  ) : null}
                   <label className="project-field-wide"><span>Required Skills <small>Auto-suggested from team profile skills.</small></span><input value={taskSkills} onChange={(event) => setTaskSkills(event.target.value)} placeholder="e.g. 3D Modeling, Blender, Animation" /></label>
                 </div>
               </fieldset>
