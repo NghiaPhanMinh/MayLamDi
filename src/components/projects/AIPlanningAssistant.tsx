@@ -445,30 +445,6 @@ export function AIPlanningAssistant({
             <div className="ai-draft-section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <h4 id="ai-plan-output-title" style={{ margin: 0 }}>Suggested project plan ({draft.tasks.length} Tasks)</h4>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                {isLeader ? (
-                  <button
-                    className="primary-button"
-                    type="button"
-                    disabled={isGenerating}
-                    onClick={() => void runGeneration(brief)}
-                    style={{
-                      padding: "0.35rem 0.85rem",
-                      fontSize: "0.85rem",
-                      fontWeight: 800,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.35rem",
-                      minHeight: "auto",
-                      background: "var(--color-yellow, #fff73f)",
-                      color: "#101517",
-                      border: "2px solid #101517",
-                      boxShadow: "2px 2px 0 #101517",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <Zap size={14} /> Regenerate Plan
-                  </button>
-                ) : null}
                 <button
                   className="quiet-button"
                   type="button"
