@@ -326,6 +326,58 @@ describe("MayLamDi landing page", () => {
     expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/projects/create");
   });
 
+  it("keeps the mobile final CTA entered when iOS reports a reverse scroll delta", () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: query.includes("max-width: 760px"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })));
+    let scrollY = 100;
+    vi.spyOn(window, "scrollY", "get").mockImplementation(() => scrollY);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function getRect(this: HTMLElement) {
+      if (this.id === "final-cta") {
+        return { top: 0, bottom: 800, left: 0, right: 390, width: 390, height: 800, x: 0, y: 0, toJSON: vi.fn() };
+      }
+      if (this.classList.contains("marketing-final-reveal-stage")) {
+        return { top: -800, bottom: 0, left: 0, right: 390, width: 390, height: 800, x: 0, y: -800, toJSON: vi.fn() };
+      }
+      return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0, x: 0, y: 0, toJSON: vi.fn() };
+    });
+
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const finalCta = container.querySelector("#final-cta");
+    expect(finalCta).toHaveClass("is-entered");
+
+    scrollY = 96;
+    fireEvent.scroll(window);
+
+    expect(finalCta).toHaveClass("is-entered");
+    expect(finalCta).not.toHaveClass("is-reversing");
+  });
+
+  it("preserves the final CTA reverse animation on desktop", () => {
+    let scrollY = 100;
+    vi.spyOn(window, "scrollY", "get").mockImplementation(() => scrollY);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function getRect(this: HTMLElement) {
+      if (this.id === "final-cta") {
+        return { top: 0, bottom: 900, left: 0, right: 1440, width: 1440, height: 900, x: 0, y: 0, toJSON: vi.fn() };
+      }
+      if (this.classList.contains("marketing-final-reveal-stage")) {
+        return { top: -900, bottom: 0, left: 0, right: 1440, width: 1440, height: 900, x: 0, y: -900, toJSON: vi.fn() };
+      }
+      return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0, x: 0, y: 0, toJSON: vi.fn() };
+    });
+
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const finalCta = container.querySelector("#final-cta");
+    expect(finalCta).toHaveClass("is-entered");
+
+    scrollY = 96;
+    fireEvent.scroll(window);
+
+    expect(finalCta).toHaveClass("is-reversing");
+  });
+
   it("uses the existing authenticated actions in the final CTA", () => {
     const { container } = render(<MemoryRouter><LandingPage isAuthenticated /></MemoryRouter>);
     const finalCta = container.querySelector("#final-cta");

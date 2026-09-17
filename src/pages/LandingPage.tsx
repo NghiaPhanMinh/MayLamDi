@@ -1093,11 +1093,15 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     const reducedMotion = typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
+    const entranceOnlyViewport = typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 760px), (hover: none) and (pointer: coarse)")
+      : null;
 
     const updateScene = () => {
       const viewportHeight = Math.max(window.innerHeight, 1);
       const stageRect = stage.getBoundingClientRect();
       const sectionRect = section.getBoundingClientRect();
+      const entranceOnly = entranceOnlyViewport?.matches ?? window.innerWidth <= 760;
       const rawProgress = -stageRect.top / Math.max(stage.offsetHeight, 1);
       const progress = reducedMotion?.matches ? 1 : clampProgress(rawProgress);
       const currentScrollY = window.scrollY;
@@ -1118,13 +1122,16 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
       transition.style.setProperty("--final-reveal-radius", `${(progress * 150).toFixed(1)}%`);
       transition.dataset.active = isTransitioning ? "true" : "false";
       transition.dataset.reducedMotion = reducedMotion?.matches ? "true" : "false";
-      if (isBeforeFinal) {
+      if (entranceOnly) {
+        setFinalScrollDirection("forward");
+      } else if (isBeforeFinal) {
         setFinalScrollDirection("forward");
       } else if (scrollDirection) {
         setFinalScrollDirection(scrollDirection);
       }
       setFinalEntered((current) => {
         if (reducedMotion?.matches || sectionRect.top <= 1) return true;
+        if (entranceOnly && current) return true;
         if (isBeforeFinal) return false;
         return current;
       });
@@ -1133,12 +1140,14 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     window.addEventListener("scroll", updateScene, { passive: true });
     window.addEventListener("resize", updateScene);
     reducedMotion?.addEventListener("change", updateScene);
+    entranceOnlyViewport?.addEventListener("change", updateScene);
     updateScene();
 
     return () => {
       window.removeEventListener("scroll", updateScene);
       window.removeEventListener("resize", updateScene);
       reducedMotion?.removeEventListener("change", updateScene);
+      entranceOnlyViewport?.removeEventListener("change", updateScene);
     };
   }, []);
 
