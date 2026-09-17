@@ -22,13 +22,12 @@ import {
 } from "./lib/openRouterFallback";
 import { generateSmartFallbackPlan, type GeneratedAiPlan } from "./lib/smartFallbackPlanner";
 
+declare const process: { env: Record<string, string | undefined> };
+
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 function environmentValue(name: string) {
-  const runtime = globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  };
-  return runtime.process?.env?.[name];
+  return process.env[name];
 }
 
 const planSchema = {
@@ -395,26 +394,42 @@ export const generateProjectPlan = action({
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
     const genTag = args.generationId ? `[${args.generationId}] ` : "";
-    console.info(`${genTag}generateProjectPlan received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
+    console.info(`${genTag}generateProjectPlan received brief (${args.brief.length} chars)`);
     const access = await ctx.runQuery(internal.aiUsage.getProjectAccess, { projectId: args.projectId });
     const brief = cleanBrief(args.brief);
     const context: AiPlanningContext = await ctx.runQuery(internal.aiContext.getProjectPlanningContext, {
       projectId: args.projectId,
     });
 
-    const envObj = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env || {};
+    const envObj = process.env;
     const envEntries = Object.entries(envObj);
-    const geminiKey = envEntries.find(([k, v]) => 
-      /gemini|google.*api/i.test(k) || (typeof v === "string" && (v.startsWith("AQ.") || v.startsWith("AIzaSy")))
-    )?.[1]?.trim();
-    const geminiModelOverride = environmentValue("GEMINI_MODEL");
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const openRouterApiKeyValue = process.env.OPENROUTER_API_KEY;
+    const openRouterModel = process.env.OPENROUTER_MODEL;
+    const openRouterFallbackModel = process.env.OPENROUTER_FALLBACK_MODEL;
+    const openRouterFreeFallbackModels = process.env.OPENROUTER_FREE_FALLBACK_MODELS;
+    const geminiKey = (geminiApiKey
+      ?? envEntries.find(([k, v]) =>
+        /gemini|google.*api/i.test(k) || (typeof v === "string" && (v.startsWith("AQ.") || v.startsWith("AIzaSy")))
+      )?.[1])?.trim();
+    const geminiModelOverride = process.env.GEMINI_MODEL;
 
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
     const openRouterApiKey = (tierKey
+      ?? openRouterApiKeyValue
       ?? envEntries.find(([k, v]) => /openrouter/i.test(k) || (typeof v === "string" && (v.startsWith("sk-or-") || v.startsWith("sk-"))))?.[1]
       ?? environmentValue("AIASSISTANT")
       ?? environmentValue("AI_ASSISTANT"))?.trim();
-    const openRouterModelOverride = environmentValue("OPENROUTER_MODEL");
+    const openRouterModelOverride = openRouterModel;
+
+    console.info(
+      `${genTag}[AI INFRA] Environment availability | `
+      + `GEMINI_API_KEY=${Boolean(geminiApiKey?.trim())} | `
+      + `OPENROUTER_API_KEY=${Boolean(openRouterApiKeyValue?.trim())} | `
+      + `OPENROUTER_MODEL=${Boolean(openRouterModel?.trim())} | `
+      + `OPENROUTER_FALLBACK_MODEL=${Boolean(openRouterFallbackModel?.trim())} | `
+      + `OPENROUTER_FREE_FALLBACK_MODELS=${Boolean(openRouterFreeFallbackModels?.trim())}`,
+    );
 
     if (!geminiKey && !openRouterApiKey) {
       console.warn(`${genTag}[AI INFRA] No API keys configured (missing GEMINI_API_KEY and OPENROUTER_API_KEY). Using Smart Fallback Planner.`);
@@ -455,15 +470,24 @@ export const generateProjectPlan = action({
             let parsed: unknown;
             try {
               parsed = parseGeminiJsonResponse(content);
+              console.info(`${genTag}[AI INFRA] Gemini parse successful`);
             } catch (parseErr) {
               const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
               console.error(`${genTag}[AI INFRA] Gemini JSON parsing failed:`, msg);
               throw parseErr;
             }
-            const plan = validateAiPlan(parsed, context);
+            let plan: ValidatedAiPlan;
+            try {
+              plan = validateAiPlan(parsed, context);
+              console.info(`${genTag}[AI INFRA] Gemini structural validation successful`);
+            } catch (validationError) {
+              const msg = validationError instanceof Error ? validationError.message : String(validationError);
+              console.error(`${genTag}[AI INFRA] Gemini structural validation failed:`, msg);
+              throw validationError;
+            }
             const report = validatePlanAgainstBrief(plan, brief, context);
             if (!report.valid) {
-              console.warn(`${genTag}[AI INFRA] Gemini plan validation warnings:`, report.errors);
+              console.warn(`${genTag}[AI INFRA] Gemini brief-quality validation warnings | Count=${report.errors.length}`);
             }
             return plan;
           },
@@ -500,9 +524,9 @@ export const generateProjectPlan = action({
           ? (openRouterModelOverride ?? environmentValue("OPENROUTER_MODEL_FREE"))
           : (openRouterModelOverride ?? environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`));
         const freeModels = buildFreeModelChain({
-          primary: configuredTierModel ?? environmentValue("OPENROUTER_MODEL"),
-          firstFallback: environmentValue("OPENROUTER_FALLBACK_MODEL"),
-          additionalFallbacks: environmentValue("OPENROUTER_FREE_FALLBACK_MODELS"),
+          primary: configuredTierModel ?? openRouterModel,
+          firstFallback: openRouterFallbackModel,
+          additionalFallbacks: openRouterFreeFallbackModels,
         });
         const models = access.tier !== "free" && configuredTierModel
           ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
@@ -592,7 +616,7 @@ export const generateProjectPlanWithKey = action({
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
     const genTag = args.generationId ? `[${args.generationId}] ` : "";
-    console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
+    console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars)`);
     const apiKey = args.apiKey.trim();
     const model = args.model.trim();
     if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session API key does not look valid.");

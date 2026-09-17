@@ -116,6 +116,8 @@ export async function requestGeminiNative(input: {
       }),
     });
 
+    console.info(`[AI INFRA] Gemini HTTP response received | Model=${input.model} | Status=${response.status}`);
+
     const body = (await response.json().catch(() => ({}))) as {
       error?: { code?: number; message?: string; status?: string };
       candidates?: Array<{
