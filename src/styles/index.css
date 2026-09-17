@@ -42,8 +42,8 @@
   --color-card-surface: #ffffff;
   --color-outline: #101517;
   --shadow-card: 0 2px 8px rgba(16, 21, 23, 0.06);
-  --font-display: Inter, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
-  --font-body: Inter, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  --font-display: Inter, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: Inter, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: var(--font-body);
   --color-sky-top: #0284c7;
   --color-sky-bottom: #bae6fd;
