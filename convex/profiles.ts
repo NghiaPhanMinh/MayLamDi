@@ -139,3 +139,45 @@ export const saveCurrent = mutation({
     return profile._id;
   },
 });
+
+export const resetCurrentForTesting = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const authUser = await requireAuthUser(ctx);
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_auth_user_id", (indexQuery) =>
+        indexQuery.eq("authUserId", authUser._id),
+      )
+      .unique();
+
+    if (profile === null) {
+      return { success: true };
+    }
+
+    // 1. Remove all team memberships for this profile
+    const memberships = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_user", (q) => q.eq("profileId", profile._id))
+      .collect();
+
+    for (const member of memberships) {
+      await ctx.db.delete(member._id);
+    }
+
+    // 2. Reset user profile fields to uncompleted state
+    await ctx.db.patch(profile._id, {
+      skills: [],
+      softwareSkills: [],
+      weeklyCapacity: undefined,
+      profileCompletedAt: undefined,
+      characterFill: undefined,
+      characterOutline: undefined,
+      spellType: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+

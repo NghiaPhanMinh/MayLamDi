@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { X } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { RotateCcw, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
@@ -138,10 +139,13 @@ export function ProfileCenter({
 }) {
   const profile = useQuery(api.profiles.getOrNull);
   const saveProfile = useMutation(api.profiles.saveCurrent);
+  const resetAccount = useMutation(api.profiles.resetCurrentForTesting);
+  const { signOut } = useAuthActions();
   const [skills, setSkills] = useState<string[]>(profile?.skills ?? []);
   const [softwareSkills, setSoftwareSkills] = useState<string[]>(profile?.softwareSkills ?? []);
   const [weeklyCapacity, setWeeklyCapacity] = useState(profile?.weeklyCapacity ?? 8);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const profileHydrated = useRef(false);
@@ -149,6 +153,36 @@ export function ProfileCenter({
   const [useOwnKey, setUseOwnKey] = useState(initialByok !== null);
   const [apiKey, setApiKey] = useState(initialByok?.apiKey ?? "");
   const [model, setModel] = useState(initialByok?.model ?? "deepseek/deepseek-chat");
+
+  async function handleResetAccount() {
+    const confirmed = window.confirm(
+      "Reset Account for Testing?\n\nThis will clear your profile setup, team memberships, and all onboarding tutorial progress, then sign you out so you can experience the app from the beginning as a new user."
+    );
+    if (!confirmed) return;
+
+    setIsResetting(true);
+    setError(null);
+    try {
+      await resetAccount();
+      const tourKeys = [
+        "maylamdi_tour_lobby_done",
+        "maylamdi_tour_confirm_done",
+        "maylamdi_tour_dashboard_done",
+        "maylamdi_tour_workspace_done",
+      ];
+      for (const key of tourKeys) {
+        try {
+          localStorage.removeItem(key);
+        } catch {}
+      }
+      clearByokSession();
+      await signOut();
+      window.location.href = "/";
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError, "Could not reset account."));
+      setIsResetting(false);
+    }
+  }
 
   /* Realtime profile data arrives after the first render; hydrate once without
      overwriting edits made while the save request is in flight. */
@@ -297,6 +331,27 @@ export function ProfileCenter({
           </details>
         </div>
       ) : null}
+
+      <div className="profile-context-settings" style={{ marginTop: "1.5rem" }}>
+        <section className="profile-settings-card profile-danger-card">
+          <div className="profile-reset-header">
+            <p className="card-eyebrow" style={{ color: "var(--mld-danger, #ff4d4f)", fontWeight: 800 }}>Developer &amp; Testing</p>
+            <h2 style={{ margin: "0.25rem 0 0.5rem" }}>Reset Account for Testing</h2>
+            <p className="card-description" style={{ margin: 0 }}>
+              Clear your profile details, remove test project rooms, and reset all tutorial progress to experience the app onboarding journey from scratch as a brand new user.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="danger-button profile-reset-button"
+            onClick={handleResetAccount}
+            disabled={isResetting}
+          >
+            <RotateCcw size={16} aria-hidden="true" style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} />
+            {isResetting ? "Resetting Account…" : "Reset Account & Sign In Fresh"}
+          </button>
+        </section>
+      </div>
     </section>
   );
 }
