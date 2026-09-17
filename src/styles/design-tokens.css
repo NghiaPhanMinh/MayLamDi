@@ -75,7 +75,7 @@
   --mld-label-leading: 16px;
   --mld-caption-size: 11px;
   --mld-caption-leading: 15px;
-  --mld-font-ui: Inter, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  --mld-font-ui: Inter, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --bg-page-light: var(--mld-bg);
   --bg-page-dark: #101517;

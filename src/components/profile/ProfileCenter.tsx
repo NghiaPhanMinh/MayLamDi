@@ -8,6 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import { getErrorMessage } from "../../lib/errors";
 import { clearByokSession, getByokSession, setByokSession } from "../../lib/byokSession";
 import { CharacterCustomizer } from "../teams/CharacterCustomizer";
+import { CharacterAvatar } from "../common/CharacterAvatar";
 import type { SpellType } from "../../lib/character";
 
 const SKILL_CATEGORIES = {
@@ -229,10 +230,23 @@ export function ProfileCenter({
       <form className="profile-setup-form" onSubmit={submit}>
         <section className="profile-basic-card" aria-labelledby="basic-profile-title">
           <div className="profile-identity">
-            {profile?.imageUrl ? (
-              <img src={profile.imageUrl} alt="" />
+            {profile?.characterFill ? (
+              <CharacterAvatar
+                name={profile.displayName}
+                fill={profile.characterFill}
+                outline={profile.characterOutline}
+                spellType={profile.spellType as SpellType | undefined}
+                size="lg"
+                className="profile-character-avatar"
+              />
+            ) : profile?.imageUrl ? (
+              <img src={profile.imageUrl} alt={profile.displayName} />
             ) : (
-              <span className="member-avatar">{profile?.displayName.slice(0, 1).toUpperCase()}</span>
+              <CharacterAvatar
+                name={profile?.displayName ?? "User"}
+                size="lg"
+                className="profile-character-avatar"
+              />
             )}
             <div className="profile-identity-text">
               <p className="card-eyebrow">Google profile</p>
