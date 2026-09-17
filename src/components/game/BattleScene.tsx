@@ -3443,13 +3443,13 @@ export function BattleScene({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              background: "var(--color-surface, #ffffff)",
-              border: "1px solid var(--color-border, #e2e8f0)",
+              background: isDarkMode ? "#171a1e" : "#fffded",
+              border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
               borderRadius: "14px",
-              padding: "16px 20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+              padding: "18px 22px",
+              boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
               flexWrap: "wrap",
-              gap: "12px",
+              gap: "14px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
@@ -3461,11 +3461,15 @@ export function BattleScene({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  padding: "8px 14px",
+                  padding: "8px 16px",
                   fontSize: "0.85rem",
-                  fontWeight: 700,
-                  borderRadius: "8px",
+                  fontWeight: 800,
+                  borderRadius: "10px",
                   cursor: "pointer",
+                  background: isDarkMode ? "#242c35" : "#ffffff",
+                  color: isDarkMode ? "#fffdec" : "#101517",
+                  border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.4)" : "2.5px solid #101517",
+                  boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
                 }}
                 title="Switch to Game Mode"
                 aria-label="Switch to Game Mode"
@@ -3483,45 +3487,44 @@ export function BattleScene({
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
+                    padding: "8px 16px",
                     fontSize: "0.85rem",
-                    fontWeight: 700,
-                    borderRadius: "8px",
+                    fontWeight: 800,
+                    borderRadius: "10px",
                     background: "#22c55e",
                     color: "#ffffff",
-                    border: "none",
+                    border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.4)" : "2.5px solid #101517",
+                    boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
                     cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(34, 197, 94, 0.4)",
                   }}
                   title="View End Screen"
                 >
-                  <Trophy size={16} />
-                  <span>End Screen</span>
-                  <span aria-hidden="true">&rarr;</span>
+                  End Screen
                 </button>
               )}
 
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <h1 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                  <h1 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 900, color: isDarkMode ? "#fffdec" : "#101517" }}>
                     {workspace?.project?.title || state?.project?.title || "Project Workspace"}
                   </h1>
                   <span
                     style={{
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "6px",
-                      background: "#f1f5f9",
-                      color: "#475569",
-                      border: "1px solid #cbd5e1",
+                      fontSize: "0.74rem",
+                      fontWeight: 800,
+                      padding: "3px 10px",
+                      borderRadius: "9999px",
+                      background: isDarkMode ? "#242c35" : "#fff0f7",
+                      color: isDarkMode ? "#f472b6" : "#b80f9f",
+                      border: "1.5px solid #fd39e4",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
                     }}
                   >
                     Focus Mode
                   </span>
                 </div>
-                <p style={{ margin: "3px 0 0 0", fontSize: "0.82rem", color: "#64748b" }}>
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", fontWeight: 600, color: isDarkMode ? "#cbd5e1" : "#475569" }}>
                   Team progress and tasks
                 </p>
               </div>
@@ -3532,11 +3535,22 @@ export function BattleScene({
                 type="button"
                 className="quiet-button"
                 onClick={() => setShowSoundSettingsModal(true)}
-                style={{ padding: "8px 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "8px" }}
+                style={{
+                  padding: "8px 16px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  borderRadius: "10px",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  background: isDarkMode ? "#242c35" : "#ffffff",
+                  color: isDarkMode ? "#fffdec" : "#101517",
+                  border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.4)" : "2.5px solid #101517",
+                  boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
+                  cursor: "pointer",
+                }}
                 title="Sound Settings"
               >
-                <Volume2 size={16} />
-                <span>Audio</span>
+                <span>{isAudioMuted ? "Audio: Off" : (isLofiBgmPlaying ? "Music: On" : "Audio: On")}</span>
               </button>
             </div>
           </div>
@@ -3544,35 +3558,48 @@ export function BattleScene({
           {/* Plain Progress Bar Card */}
           <div
             style={{
-              background: "var(--color-surface, #ffffff)",
-              border: "1px solid var(--color-border, #e2e8f0)",
+              background: isDarkMode ? "#171a1e" : "#fffded",
+              border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
               borderRadius: "14px",
-              padding: "18px 22px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+              padding: "20px 24px",
+              boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
               display: "grid",
-              gap: "10px",
+              gap: "12px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "10px" }}>
               <div>
-                <span style={{ fontSize: "0.74rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>Overall Status</span>
-                <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
-                  Team progress: <span style={{ color: "#16a34a" }}>{progressPercentage}%</span>
+                <span style={{ fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+                  Overall Status
+                </span>
+                <div style={{ fontSize: "1.45rem", fontWeight: 900, color: isDarkMode ? "#fffdec" : "#101517", marginTop: "2px" }}>
+                  Team progress: <span style={{ color: isDarkMode ? "#4ade80" : "#16a34a" }}>{progressPercentage}%</span>
                 </div>
               </div>
-              <div style={{ textAlign: "right", fontSize: "0.82rem", color: "#475569" }}>
+              <div style={{ textAlign: "right", fontSize: "0.85rem", color: isDarkMode ? "#e2e8f0" : "#101517" }}>
                 <div><strong>{completedTasksCount}</strong> of <strong>{totalTasksCount}</strong> tasks completed</div>
-                <div>Deadline: <strong>{deadlineStr || "Not set"}</strong> (Day {daysPassed} of {totalDays || 14} · {daysRemaining > 0 ? `${daysRemaining} days left` : "Target passed"})</div>
+                <div style={{ marginTop: "3px", color: isDarkMode ? "#cbd5e1" : "#475569", fontWeight: 600 }}>
+                  Deadline: <strong style={{ color: isDarkMode ? "#fffdec" : "#101517" }}>{deadlineStr || "Not set"}</strong> (Day {daysPassed} of {totalDays || 14} · {daysRemaining > 0 ? `${daysRemaining} days left` : "Target passed"})
+                </div>
               </div>
             </div>
 
             {/* Plain Progress Bar Track */}
-            <div style={{ width: "100%", height: "12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "9999px", overflow: "hidden" }}>
+            <div
+              style={{
+                width: "100%",
+                height: "16px",
+                background: isDarkMode ? "#0d1317" : "#e2e8f0",
+                border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.25)" : "2.5px solid #101517",
+                borderRadius: "9999px",
+                overflow: "hidden",
+              }}
+            >
               <div
                 style={{
                   width: `${progressPercentage}%`,
                   height: "100%",
-                  background: "linear-gradient(90deg, #16a34a, #22c55e)",
+                  background: "linear-gradient(90deg, #22c55e, #16a34a)",
                   borderRadius: "9999px",
                   transition: "width 0.4s ease",
                 }}
@@ -3580,23 +3607,55 @@ export function BattleScene({
             </div>
           </div>
 
-          {/* Team Roster & Contribution Dossier */}
+          {/* Team Roster & Contribution Report */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
             {/* Team Members */}
-            <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px" }}>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+            <div
+              style={{
+                background: isDarkMode ? "#171a1e" : "#fffded",
+                border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
+                borderRadius: "14px",
+                padding: "20px 22px",
+                boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
+                display: "grid",
+                gap: "14px",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 900, color: isDarkMode ? "#fffdec" : "#101517" }}>
                 Team Members ({players.length})
               </h3>
-              <div style={{ display: "grid", gap: "10px" }}>
+              <div style={{ display: "grid", gap: "12px" }}>
                 {players.map((p) => (
-                  <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#0284c7", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.85rem" }}>
+                  <div key={p.profileId} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: "#0284c7",
+                        color: "#ffffff",
+                        display: "grid",
+                        placeItems: "center",
+                        fontWeight: 900,
+                        fontSize: "0.9rem",
+                        border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.3)" : "2px solid #101517",
+                      }}
+                    >
                       {p.displayName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "var(--color-text, #101517)" }}>{p.displayName}</div>
-                      <div style={{ fontSize: "0.72rem", color: p.isActiveToday ? "#15803d" : "#94a3b8", fontWeight: 600 }}>
-                        {p.isActiveToday ? "● Active today" : "○ Idle"}
+                      <div style={{ fontWeight: 800, fontSize: "0.9rem", color: isDarkMode ? "#fffdec" : "#101517" }}>
+                        {p.displayName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.76rem",
+                          color: p.isActiveToday ? (isDarkMode ? "#4ade80" : "#15803d") : (isDarkMode ? "#94a3b8" : "#64748b"),
+                          fontWeight: 700,
+                          marginTop: "2px",
+                        }}
+                      >
+                        {p.isActiveToday ? "Active today" : "Idle"}
                       </div>
                     </div>
                   </div>
@@ -3605,21 +3664,46 @@ export function BattleScene({
             </div>
 
             {/* Contribution Report */}
-            <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px", alignContent: "start" }}>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+            <div
+              style={{
+                background: isDarkMode ? "#171a1e" : "#fffded",
+                border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
+                borderRadius: "14px",
+                padding: "20px 22px",
+                boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
+                display: "grid",
+                gap: "14px",
+                alignContent: "start",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 900, color: isDarkMode ? "#fffdec" : "#101517" }}>
                 Contribution Report
               </h3>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 600, color: isDarkMode ? "#cbd5e1" : "#475569", lineHeight: 1.5 }}>
                 Verifiable PDF report with contribution breakdown and review history.
               </p>
               <button
                 type="button"
                 className="secondary-button"
                 onClick={generateContributionPdf}
-                style={{ padding: "10px 14px", minHeight: "unset", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
+                style={{
+                  padding: "10px 16px",
+                  minHeight: "unset",
+                  fontSize: "0.85rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  borderRadius: "10px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  background: "var(--mld-primary, #fff73f)",
+                  color: "#101517",
+                  border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.4)" : "2.5px solid #101517",
+                  boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
+                }}
               >
-                <FileDown size={16} />
-                Download PDF Record
+                Download Contribution Report
               </button>
             </div>
           </div>

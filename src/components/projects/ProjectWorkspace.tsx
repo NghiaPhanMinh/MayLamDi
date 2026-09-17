@@ -984,10 +984,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               }}
               onClick={() => setActiveBattleAction("my_tasks")}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <CheckSquare size={22} strokeWidth={2.5} />
-                <span>My Tasks</span>
-              </div>
+              <span style={{ fontSize: "1rem", fontWeight: 800 }}>My Tasks</span>
               <span
                 style={{
                   background: "#101517",
@@ -1023,10 +1020,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               }}
               onClick={() => setActiveBattleAction("peer_review")}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <FileCheck size={22} strokeWidth={2.5} />
-                <span>Peer Review</span>
-              </div>
+              <span style={{ fontSize: "1rem", fontWeight: 800 }}>Peer Review</span>
               <span
                 style={{
                   background: needsMyReviewCount > 0 ? "#ef4444" : "#101517",
@@ -1064,10 +1058,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
               onClick={() => setShowTeamChatModal(true)}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <MessageSquare size={20} strokeWidth={2.5} />
-                  <span style={{ fontSize: "1rem", fontWeight: 800 }}>Team Chat</span>
-                </div>
+                <span style={{ fontSize: "1rem", fontWeight: 800 }}>Team Chat</span>
                 <span
                   style={{
                     background: "#101517",
@@ -1081,7 +1072,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                   Live
                 </span>
               </div>
-              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#334155", lineHeight: 1.2 }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", lineHeight: 1.2 }}>
                 Communicate, upload daily evidence to check.
               </span>
             </button>
