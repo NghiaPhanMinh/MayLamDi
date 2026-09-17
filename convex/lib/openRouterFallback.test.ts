@@ -84,12 +84,12 @@ describe("runFreeModelFallback", () => {
 
   it("uses the tested provider-diverse production defaults in order", () => {
     expect(buildFreeModelChain({})).toEqual([
-      "nvidia/nemotron-3-super-120b-a12b:free",
-      "cohere/north-mini-code:free",
+      "openrouter/free",
       "nex-agi/nex-n2.5-pro:free",
       "google/gemma-4-26b-a4b-it:free",
-      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      "openrouter/free",
+      "nvidia/nemotron-3-super-120b-a12b:free",
+      "google/gemma-4-31b-it:free",
+      "nex-agi/nex-n2.5-mini:free",
     ]);
   });
 

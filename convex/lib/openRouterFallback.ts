@@ -1,10 +1,10 @@
-export const DEFAULT_PRIMARY_FREE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
-export const DEFAULT_FIRST_FREE_FALLBACK = "cohere/north-mini-code:free";
+export const DEFAULT_PRIMARY_FREE_MODEL = "openrouter/free";
+export const DEFAULT_FIRST_FREE_FALLBACK = "nex-agi/nex-n2.5-pro:free";
 export const DEFAULT_ADDITIONAL_FREE_FALLBACKS = [
-  "nex-agi/nex-n2.5-pro:free",
   "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-  "openrouter/free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-31b-it:free",
+  "nex-agi/nex-n2.5-mini:free",
 ] as const;
 
 export type AiResponseMode = "structured" | "json_only";
