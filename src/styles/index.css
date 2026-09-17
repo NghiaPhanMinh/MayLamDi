@@ -5325,8 +5325,17 @@ footer {
     left: 48% !important;
   }
   .pvz-deadline-progress-container {
-    transform: translateX(-50%) scale(0.78) !important;
-    bottom: 10px !important;
+    top: 12px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.85) !important;
+    transform-origin: center top !important;
+    max-width: 85% !important;
+  }
+  .rpg-defeated-banner {
+    top: 84px !important;
+    transform: translateX(-50%) scale(0.9) !important;
+    transform-origin: center top !important;
   }
   .rpg-top-bar-controls {
     top: 10px !important;
@@ -5419,13 +5428,34 @@ footer {
     z-index: 20 !important;
   }
   .pvz-deadline-progress-container {
-    bottom: 8px !important;
+    top: 8px !important;
+    bottom: auto !important;
     left: 50% !important;
-    transform: translateX(-50%) scale(0.65) !important;
-    transform-origin: center bottom !important;
-    max-width: 78% !important;
-    padding: 3px 8px !important;
+    transform: translateX(-50%) scale(0.7) !important;
+    transform-origin: center top !important;
+    max-width: 88% !important;
+    padding: 4px 10px !important;
     z-index: 25 !important;
+  }
+  .rpg-defeated-banner {
+    top: 66px !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.8) !important;
+    transform-origin: center top !important;
+    max-width: 90% !important;
+    padding: 6px 12px !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+  }
+  .rpg-mode-toggle-btn {
+    top: 8px !important;
+    left: 8px !important;
+    padding: 5px 8px !important;
+    font-size: 0.7rem !important;
+    border-radius: 8px !important;
+  }
+  .rpg-mode-toggle-btn span {
+    display: none !important;
   }
   .rpg-btn-attack-circle {
     width: 44px !important;

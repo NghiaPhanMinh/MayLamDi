@@ -1409,17 +1409,6 @@ export function BattleScene({
   const [viewBattleSceneOverride, setViewBattleSceneOverride] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
 
-  // Dragon Death Debug Controls (live pose tweaking on bottom-left screen)
-  const [deathDebugOpen, setDeathDebugOpen] = useState(true);
-  const [deathDebugForceDefeated, setDeathDebugForceDefeated] = useState(false);
-  const [deathRotation, setDeathRotation] = useState(-60);
-  const [deathPivotX, setDeathPivotX] = useState(85);
-  const [deathPivotY, setDeathPivotY] = useState(180);
-  const [deathOffsetX, setDeathOffsetX] = useState(0);
-  const [deathOffsetY, setDeathOffsetY] = useState(0);
-  const [deathStopWings, setDeathStopWings] = useState(true);
-  const [deathGlow, setDeathGlow] = useState(false);
-
   // Dragon Layout Vector Editor Admin States (All individual shapes, moveable panels, pausable animation)
   const savedConfig = useMemo(() => loadSavedConfig(), []);
 
@@ -2926,7 +2915,9 @@ export function BattleScene({
         : Math.min(taskProgressHpPercent, serverHpPercent);
   const rawRemainingHp = Math.round((hpPercent / 100) * computedMaxBossHp);
   const defeated = (computedMaxBossHp > 0 && (rawRemainingHp === 0 || hpPercent === 0));
-  const effectiveIsDefeated = deathDebugForceDefeated || defeated || allTasksCompleted || testBossDefeatedPreview;
+  const effectiveIsDefeated = defeated || allTasksCompleted || testBossDefeatedPreview;
+  // Boss Defeated end screen button appears ONLY when all tasks are completed
+  const showBossDefeatedBanner = allTasksCompleted || testBossDefeatedPreview;
 
   // Village Max HP scales with team size: 100 + (10 * number of players)
   const teamMemberCount = Math.max(1, (state.members?.length ?? 1) + testExtraPlayerCount);
@@ -2942,7 +2933,7 @@ export function BattleScene({
 
   // Collaborative End-Game Screen: Canvas stays on screen first when boss defeated.
   // End Screen board is only shown when user clicks "End Screen" or on overdue override.
-  const shouldShowEndScreen = (showEndScreen || testOverdueOverride === true) && (effectiveIsDefeated || testOverdueOverride === true) && !viewBattleSceneOverride;
+  const shouldShowEndScreen = (showEndScreen || testOverdueOverride === true) && (showBossDefeatedBanner || testOverdueOverride === true) && !viewBattleSceneOverride;
   if (shouldShowEndScreen) {
     const isVillageDefended = effectiveVillageHp >= 50;
     const resultVariant = isVillageDefended ? "success" : "failed";
@@ -3081,6 +3072,7 @@ export function BattleScene({
         {/* Mode Toggle Button: Canvas Top-Left */}
         <button
           type="button"
+          className="rpg-mode-toggle-btn"
           onClick={toggleDisplayMode}
           style={{
             position: "absolute",
@@ -3283,12 +3275,7 @@ export function BattleScene({
             />
           </div>
 
-          {/* Layer 7: Party Members (Scaled Up and Positioned in Open Meadow) */}
-          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 7, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
-            <LandscapePlayers members={players} />
-          </div>
-
-          {/* Layer 8: Dragon Boss (Scaled Up by 1.2) */}
+          {/* Layer 7: Dragon Boss (Behind Players, Scaled Up by 1.2, 40% transparent on defeat) */}
           <div
             style={{
               position: "absolute",
@@ -3296,7 +3283,9 @@ export function BattleScene({
               width: "100%",
               height: "100%",
               pointerEvents: adminAuthenticated && showDragonEditor ? "auto" : "none",
-              zIndex: 8,
+              zIndex: 7,
+              opacity: effectiveIsDefeated ? 0.6 : 1,
+              transition: "opacity 0.5s ease",
               transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${(layerTransforms.dragon?.scale || 1) * 1.2})`,
               display: layerTransforms.dragon?.visible !== false ? "block" : "none",
             }}
@@ -3304,13 +3293,6 @@ export function BattleScene({
             <LandscapeDragon
               bossHpPercent={hpPercent}
               isDefeated={effectiveIsDefeated}
-              deathRotation={deathRotation}
-              deathPivotX={deathPivotX}
-              deathPivotY={deathPivotY}
-              deathOffsetX={deathOffsetX}
-              deathOffsetY={deathOffsetY}
-              deathStopWings={deathStopWings}
-              deathGlow={deathGlow}
               offsets={dragonOffsets as any}
               onSelectPart={adminAuthenticated && showDragonEditor ? (setSelectedDragonPart as any) : undefined}
               selectedPart={adminAuthenticated && showDragonEditor ? (selectedDragonPart as any) : null}
@@ -3323,6 +3305,11 @@ export function BattleScene({
               onStartDragNode={adminAuthenticated && showDragonEditor ? handleStartDragNode : undefined}
               layerOrder={layerOrder}
             />
+          </div>
+
+          {/* Layer 8: Party Members (In front of Dragon, Scaled Up and Positioned in Open Meadow) */}
+          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 8, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
+            <LandscapePlayers members={players} />
           </div>
         </div>
 
@@ -3367,30 +3354,68 @@ export function BattleScene({
           {isAudioMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
 
-        {/* Boss Defeated UI Banner with "End Screen" button leading to project complete screen */}
-        {effectiveIsDefeated && (
+        {/* Dragon Layout Admin Button (Only if authenticated or open) */}
+        {(showDragonEditor || adminAuthenticated) && (
+          <button
+            type="button"
+            className="rpg-btn-leaderboard rpg-btn-layout-admin"
+            style={{
+              position: "absolute",
+              bottom: "16px",
+              right: "68px",
+              zIndex: 30,
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              background: isDarkMode ? "#171a1e" : "#fffded",
+              border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
+              boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: isDarkMode ? "#fffdec" : "#101517",
+            }}
+            onClick={() => {
+              if (!adminAuthenticated) {
+                setShowAdminPasswordModal(true);
+              } else {
+                setShowDragonEditor((prev) => !prev);
+                if (!selectedDragonPart) {
+                  setSelectedDragonPart("headNeck");
+                }
+              }
+            }}
+            title="Dragon Layout Admin"
+            aria-label="Dragon Layout Admin"
+          >
+            <Shield size={20} />
+          </button>
+        )}
+
+        {/* Boss Defeated UI Banner with "End Screen" button (only appears when all tasks are completed, pure vector, no glow) */}
+        {showBossDefeatedBanner && (
           <div
             className="rpg-defeated-banner"
             style={{
               position: "absolute",
-              top: "76px",
+              top: "105px",
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 36,
               display: "flex",
               alignItems: "center",
               gap: "14px",
-              padding: "10px 20px",
-              background: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 253, 237, 0.95)",
-              border: isDarkMode ? "2.5px solid #22c55e" : "2.5px solid #15803d",
-              borderRadius: "14px",
-              boxShadow: isDarkMode ? "0 4px 20px rgba(34, 197, 94, 0.3)" : "4px 4px 0 rgba(16, 21, 23, 0.8)",
-              backdropFilter: "blur(6px)",
+              padding: "8px 18px",
+              background: isDarkMode ? "#0b181c" : "#fffded",
+              border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.3)" : "2.5px solid #101517",
+              borderRadius: "12px",
+              boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Trophy size={20} color="#22c55e" />
-              <span style={{ fontWeight: 800, fontSize: "0.9rem", color: isDarkMode ? "#fffdec" : "#101517" }}>
+              <Trophy size={18} color={isDarkMode ? "#4ade80" : "#16a34a"} />
+              <span style={{ fontWeight: 800, fontSize: "0.88rem", color: isDarkMode ? "#fffdec" : "#101517" }}>
                 Boss Defeated!
               </span>
             </div>
@@ -3403,17 +3428,17 @@ export function BattleScene({
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
+                gap: "6px",
+                padding: "7px 15px",
                 borderRadius: "8px",
                 background: "#22c55e",
                 color: "#ffffff",
                 fontWeight: 800,
-                fontSize: "0.85rem",
-                border: "none",
+                fontSize: "0.82rem",
+                border: isDarkMode ? "1.5px solid #15803d" : "1.5px solid #101517",
+                boxShadow: isDarkMode ? "2px 2px 0 #000000" : "2px 2px 0 #101517",
                 cursor: "pointer",
-                boxShadow: "0 2px 6px rgba(34, 197, 94, 0.4)",
-                transition: "all 0.15s ease",
+                transition: "transform 0.1s ease",
               }}
             >
               <span>End Screen</span>
@@ -3421,7 +3446,6 @@ export function BattleScene({
             </button>
           </div>
         )}
-
       </div>
       ) : (
         <div
@@ -6448,13 +6472,6 @@ export function BattleScene({
         </section>
       ) : null}
 
-      {defeated ? (
-        <section className="victory-panel">
-          <p className="card-eyebrow">Project complete</p>
-          <h3>The dragon has been repelled!</h3>
-          <p>Every required task has been verified. The village is safe. Export the report or archive the project from project settings.</p>
-        </section>
-      ) : null}
 
       {/* =========================================================================
           LAYOUT ADMIN VECTOR & GAMEPLAY TESTING PANEL (RESIZABLE & TABBED)

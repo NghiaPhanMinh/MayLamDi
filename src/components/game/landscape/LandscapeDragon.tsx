@@ -362,19 +362,7 @@ export function LandscapeDragon({
             <ellipse cx="0" cy="0" rx="105" ry="22" fill="rgba(0,0,0,0.22)" stroke="none" />
           </g>
 
-          {/* Defeated Ghost Soul and Slayed Indicator */}
-          {isDefeated && (
-            <g transform="translate(100, -20)" style={{ animation: "dragon-ghost-soul 3s ease-in-out infinite", pointerEvents: "none" }}>
-              <text x="0" y="0" fill="#94a3b8" fontSize="18" fontWeight="900" fontFamily="var(--font-heading), sans-serif" textAnchor="middle" opacity="0.85">
-                Slayed Boss
-              </text>
-              <polygon points="0,-15 5,-5 15,0 5,5 0,15 -5,5 -15,0 -5,-5" fill="#38bdf8" opacity="0.7" />
-              <polygon points="-25,-25 -15,-20 -20,-10" fill="#facc15" opacity="0.6" />
-              <polygon points="25,-30 20,-15 35,-20" fill="#f43f5e" opacity="0.6" />
-            </g>
-          )}
-
-          {/* Dragon Body: Rotates 60 degrees to the left on defeat, fixed ground pivot, no glow */}
+          {/* Dragon Body: Rotates 60 degrees to the left on defeat, fixed ground pivot, 40% transparent on defeat (opacity 0.6), pure vector without glow */}
           <g
             transform={
               isDefeated
@@ -382,8 +370,9 @@ export function LandscapeDragon({
                 : undefined
             }
             style={{
-              filter: deathGlow ? "drop-shadow(0 0 10px #60a5fa)" : "none",
-              transition: "transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1)",
+              opacity: isDefeated ? 0.6 : 1,
+              filter: "none",
+              transition: "transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s ease",
             }}
           >
             {/* Hovering animation (only when alive) */}
