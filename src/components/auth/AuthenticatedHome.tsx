@@ -33,6 +33,12 @@ const DASHBOARD_TUTORIAL_STEPS: TutorialStep[] = [
     placement: "right",
   },
   {
+    target: "nav-projects",
+    title: "Projects",
+    description: "View your team projects, or click Create Project to start a new one.",
+    placement: "right",
+  },
+  {
     target: "nav-my-tasks",
     title: "My Tasks",
     description: "Manage your personal task queue, submit evidence, and earn XP rewards.",
@@ -42,12 +48,6 @@ const DASHBOARD_TUTORIAL_STEPS: TutorialStep[] = [
     target: "nav-resources",
     title: "Resources",
     description: "Explore project framework templates and collaborative team guides.",
-    placement: "right",
-  },
-  {
-    target: "nav-projects",
-    title: "Projects",
-    description: "View your team projects, or click Create Project to start a new one.",
     placement: "right",
   },
 ];
@@ -205,6 +205,21 @@ export function AuthenticatedHome() {
     setMobileMenuOpen(false);
   }
 
+  function handleDashboardTourStepChange(_stepIndex: number, step: TutorialStep) {
+    if (step.target === "nav-home") {
+      navigate("/home");
+    } else if (step.target === "nav-profile") {
+      navigate("/profile");
+    } else if (step.target === "nav-projects") {
+      openProjects("index");
+    } else if (step.target === "nav-my-tasks") {
+      openProjects("personal-tasks");
+    } else if (step.target === "nav-resources") {
+      navigate("/resources");
+      setMobileMenuOpen(false);
+    }
+  }
+
   function handleStartTutorial() {
     if (projectsView === "room") {
       window.dispatchEvent(new CustomEvent("mld:restart-room-tour"));
@@ -336,6 +351,7 @@ export function AuthenticatedHome() {
           steps={DASHBOARD_TUTORIAL_STEPS}
           isOpen={showDashboardTour}
           storageKey="maylamdi_tour_dashboard_done"
+          onStepChange={handleDashboardTourStepChange}
           onComplete={() => setShowDashboardTour(false)}
           onSkip={() => setShowDashboardTour(false)}
         />
