@@ -17,6 +17,7 @@ import { ProjectTeamMembers } from "./ProjectTeamMembers";
 import { TaskEvidencePanel } from "./TaskEvidencePanel";
 import { TaskTradePanel } from "./TaskTradePanel";
 import { REVIEW_WAITING_MESSAGE } from "./reviewCopy";
+import { useTheme } from "../../hooks/useTheme";
 
 type ProjectWorkspaceProps = {
   projectId: Id<"projects">;
@@ -257,6 +258,8 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
   const lockTasks = useMutation(api.projects.lockTasks);
   const releaseOverdueTask = useMutation(api.tasks.releaseOverdueTask);
   const battleState = useQuery(api.battle.getState, { projectId: workspace.project._id });
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
 
   const [activeTab, setActiveTab] = useState<ProjectTab>(() =>
     workspace.tasks.length === 0 ? "plan" : initialTab
@@ -896,6 +899,8 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 fontWeight: 800,
                 border: "3px solid #101517",
                 boxShadow: "4px 4px 0 #101517",
+                background: "var(--mld-primary, #fff73f)",
+                color: "#101517",
                 cursor: "pointer",
               }}
               onClick={() => setActiveBattleAction("my_tasks")}
@@ -920,7 +925,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
 
             <button
               type="button"
-              className="secondary-button project-deck-btn"
+              className="primary-button project-deck-btn"
               style={{
                 flex: "1 1 200px",
                 padding: "0.85rem 1.15rem",
@@ -933,7 +938,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 fontWeight: 800,
                 border: "3px solid #101517",
                 boxShadow: "4px 4px 0 #101517",
-                background: needsMyReviewCount > 0 ? "var(--color-yellow, #fff73f)" : "var(--color-surface, #ffffff)",
+                background: "var(--mld-primary, #fff73f)",
                 color: "#101517",
                 cursor: "pointer",
               }}
@@ -960,7 +965,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
             {/* Third Action Button: Team Chat */}
             <button
               type="button"
-              className="secondary-button project-deck-btn"
+              className="primary-button project-deck-btn"
               title="Communicate, upload daily evidence to check."
               style={{
                 flex: "1 1 230px",
@@ -973,7 +978,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 borderRadius: "14px",
                 border: "3px solid #101517",
                 boxShadow: "4px 4px 0 #101517",
-                background: "var(--color-surface, #ffffff)",
+                background: "var(--mld-primary, #fff73f)",
                 color: "#101517",
                 cursor: "pointer",
               }}
@@ -986,7 +991,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 </div>
                 <span
                   style={{
-                    background: "#2563eb",
+                    background: "#101517",
                     color: "#ffffff",
                     padding: "2px 8px",
                     borderRadius: "999px",
@@ -997,7 +1002,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                   Live
                 </span>
               </div>
-              <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#64748b", lineHeight: 1.2 }}>
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#334155", lineHeight: 1.2 }}>
                 Communicate, upload daily evidence to check.
               </span>
             </button>
@@ -1011,12 +1016,21 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
           <div
             className="rpg-modern-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "680px", width: "95vw", maxHeight: "85vh", display: "flex", flexDirection: "column" }}
+            style={{
+              maxWidth: "680px",
+              width: "95vw",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              background: isDarkMode ? "var(--mld-surface-01, #0b181c)" : "#fffdec",
+              borderColor: isDarkMode ? "var(--mld-border, rgba(255, 253, 236, 0.25))" : "#101517",
+              color: isDarkMode ? "#fffdec" : "#101517",
+            }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #101517", paddingBottom: "10px", marginBottom: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${isDarkMode ? "rgba(255, 253, 236, 0.15)" : "#101517"}`, paddingBottom: "10px", marginBottom: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <MessageSquare size={22} strokeWidth={2.5} />
-                <h3 className="rpg-modern-title" style={{ margin: 0, fontSize: "1.25rem" }}>
+                <MessageSquare size={22} strokeWidth={2.5} color={isDarkMode ? "var(--mld-primary, #fff73f)" : "#101517"} />
+                <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: isDarkMode ? "#fffdec" : "#101517" }}>
                   Team Chat
                 </h3>
               </div>
@@ -1026,7 +1040,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 style={{
                   background: "#ef4444",
                   color: "#fff",
-                  border: "2px solid #101517",
+                  border: `2px solid ${isDarkMode ? "rgba(255, 253, 236, 0.2)" : "#101517"}`,
                   borderRadius: "8px",
                   width: "30px",
                   height: "30px",
@@ -1039,9 +1053,6 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 ✕
               </button>
             </div>
-            <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "#475569", fontWeight: 700 }}>
-              Everything in this chat will be recorded and put into the PDF download. Post daily updates to see proof and have your contribution recorded.
-            </p>
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
               <TeamMessengerChat projectId={workspace.project._id} />
             </div>

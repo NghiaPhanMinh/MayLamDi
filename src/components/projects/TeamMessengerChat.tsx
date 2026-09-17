@@ -4,6 +4,7 @@ import { Image as ImageIcon, Send, X } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { useTheme } from "../../hooks/useTheme";
 
 type TeamMessengerChatProps = {
   projectId: Id<"projects">;
@@ -94,6 +95,8 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
   const sortedMessages = posts ? [...posts].reverse() : [];
   const currentProfileId = workspace?.currentProfileId;
   const currentMember = workspace?.members?.find((m) => m?.profileId === currentProfileId);
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
 
   return (
     <div
@@ -102,9 +105,9 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
         flexDirection: "column",
         height: "520px",
         maxHeight: "68vh",
-        background: "#ffffff",
-        border: "3px solid #101517",
-        boxShadow: "4px 4px 0 #101517",
+        background: isDarkMode ? "var(--mld-surface-01, #0b181c)" : "#ffffff",
+        border: isDarkMode ? "2px solid rgba(255, 253, 236, 0.2)" : "3px solid #101517",
+        boxShadow: isDarkMode ? "0 10px 25px -5px rgba(0, 0, 0, 0.5)" : "4px 4px 0 #101517",
         borderRadius: "14px",
         overflow: "hidden",
       }}
@@ -112,8 +115,8 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
       {/* Messenger Header: Active User Info */}
       <div
         style={{
-          background: "#fffded",
-          borderBottom: "2px solid #101517",
+          background: isDarkMode ? "var(--mld-surface-02, #171a1e)" : "#fffded",
+          borderBottom: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.15)" : "2px solid #101517",
           padding: "10px 14px",
           display: "flex",
           justifyContent: "space-between",
@@ -127,22 +130,22 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
               width: "32px",
               height: "32px",
               borderRadius: "50%",
-              background: "#2563eb",
-              color: "#ffffff",
+              background: "var(--mld-primary, #fff73f)",
+              color: "#101517",
               display: "grid",
               placeItems: "center",
               fontWeight: 900,
               fontSize: "0.85rem",
-              border: "1.5px solid #101517",
+              border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.2)" : "1.5px solid #101517",
             }}
           >
             {currentMember?.displayName?.charAt(0).toUpperCase() || "U"}
           </div>
           <div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 900, color: "#101517", lineHeight: 1.1 }}>
+            <div style={{ fontSize: "0.88rem", fontWeight: 900, color: isDarkMode ? "#fffdec" : "#101517", lineHeight: 1.1 }}>
               {currentMember?.displayName || "You"}
             </div>
-            <div style={{ fontSize: "0.7rem", color: "#16a34a", fontWeight: 700 }}>
+            <div style={{ fontSize: "0.7rem", color: "#22c55e", fontWeight: 700 }}>
               ● Online in Team Chat
             </div>
           </div>
@@ -152,9 +155,9 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
           style={{
             fontSize: "0.72rem",
             fontWeight: 800,
-            background: "#f1f5f9",
-            color: "#475569",
-            border: "1.5px solid #101517",
+            background: isDarkMode ? "#222a30" : "#f1f5f9",
+            color: isDarkMode ? "#cbd5e1" : "#475569",
+            border: isDarkMode ? "1px solid rgba(255, 253, 236, 0.2)" : "1.5px solid #101517",
             borderRadius: "6px",
             padding: "2px 8px",
           }}
@@ -166,11 +169,11 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
       {/* Permanent Contribution PDF Notice */}
       <div
         style={{
-          background: "#eff6ff",
-          borderBottom: "1px solid #bfdbfe",
+          background: isDarkMode ? "rgba(255, 247, 63, 0.08)" : "#fffbeb",
+          borderBottom: isDarkMode ? "1px solid rgba(255, 247, 63, 0.2)" : "1px solid #fde68a",
           padding: "6px 12px",
           fontSize: "0.72rem",
-          color: "#1e40af",
+          color: isDarkMode ? "#fde047" : "#854d0e",
           fontWeight: 700,
           display: "flex",
           alignItems: "center",
@@ -190,7 +193,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
           display: "flex",
           flexDirection: "column",
           gap: "10px",
-          background: "#f8fafc",
+          background: isDarkMode ? "var(--mld-bg, #071216)" : "#f8fafc",
         }}
       >
         {sortedMessages.length === 0 ? (
@@ -198,7 +201,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             style={{
               margin: "auto",
               textAlign: "center",
-              color: "#94a3b8",
+              color: isDarkMode ? "#64748b" : "#94a3b8",
               fontSize: "0.85rem",
               fontWeight: 700,
               padding: "20px",
@@ -225,7 +228,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
               >
                 {/* Author Name for Teammates */}
                 {!isMine && (
-                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#475569", marginLeft: "4px" }}>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: isDarkMode ? "#94a3b8" : "#475569", marginLeft: "4px" }}>
                     {msg.authorName || "Teammate"}
                   </span>
                 )}
@@ -233,10 +236,20 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
                 {/* Message Bubble */}
                 <div
                   style={{
-                    background: isMine ? "#2563eb" : "#ffffff",
-                    color: isMine ? "#ffffff" : "#101517",
-                    border: isMine ? "2px solid #1d4ed8" : "2px solid #101517",
-                    boxShadow: isMine ? "2px 2px 0 rgba(0,0,0,0.15)" : "2px 2px 0 #101517",
+                    background: isMine
+                      ? "var(--mld-primary, #fff73f)"
+                      : isDarkMode
+                      ? "var(--mld-surface-02, #171a1e)"
+                      : "#ffffff",
+                    color: isMine ? "#101517" : isDarkMode ? "#fffdec" : "#101517",
+                    border: isMine
+                      ? "2px solid #ca8a04"
+                      : isDarkMode
+                      ? "1.5px solid rgba(255, 253, 236, 0.2)"
+                      : "2px solid #101517",
+                    boxShadow: isMine
+                      ? (isDarkMode ? "0 2px 5px rgba(0,0,0,0.3)" : "2px 2px 0 rgba(0,0,0,0.15)")
+                      : (isDarkMode ? "0 2px 5px rgba(0,0,0,0.3)" : "2px 2px 0 #101517"),
                     borderRadius: isMine ? "16px 16px 3px 16px" : "16px 16px 16px 3px",
                     padding: "8px 12px",
                     fontSize: "0.85rem",
@@ -256,7 +269,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
                               maxWidth: "180px",
                               maxHeight: "140px",
                               borderRadius: "8px",
-                              border: "1.5px solid #101517",
+                              border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.2)" : "1.5px solid #101517",
                               objectFit: "cover",
                               display: "block",
                             }}
@@ -270,7 +283,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
                 </div>
 
                 {/* Timestamp */}
-                <span style={{ fontSize: "0.65rem", color: "#94a3b8", fontWeight: 600, padding: "0 4px" }}>
+                <span style={{ fontSize: "0.65rem", color: isDarkMode ? "#64748b" : "#94a3b8", fontWeight: 600, padding: "0 4px" }}>
                   {timeStr}
                 </span>
               </div>
@@ -288,16 +301,16 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             alignItems: "center",
             gap: "8px",
             padding: "6px 12px",
-            background: "#fffded",
-            borderTop: "1.5px solid #101517",
+            background: isDarkMode ? "var(--mld-surface-02, #171a1e)" : "#fffded",
+            borderTop: isDarkMode ? "1px solid rgba(255, 253, 236, 0.15)" : "1.5px solid #101517",
           }}
         >
           <img
             src={previewUrl}
             alt="Upload preview"
-            style={{ width: "36px", height: "36px", objectFit: "cover", borderRadius: "6px", border: "1.5px solid #101517" }}
+            style={{ width: "36px", height: "36px", objectFit: "cover", borderRadius: "6px", border: isDarkMode ? "1px solid rgba(255, 253, 236, 0.2)" : "1.5px solid #101517" }}
           />
-          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#101517", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isDarkMode ? "#fffdec" : "#101517", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {selectedFile?.name}
           </span>
           <button
@@ -306,7 +319,7 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             style={{
               background: "#ef4444",
               color: "#fff",
-              border: "1.5px solid #101517",
+              border: isDarkMode ? "1px solid rgba(255, 253, 236, 0.2)" : "1.5px solid #101517",
               borderRadius: "50%",
               width: "22px",
               height: "22px",
@@ -334,8 +347,8 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
           alignItems: "center",
           gap: "8px",
           padding: "10px 12px",
-          background: "#ffffff",
-          borderTop: "2px solid #101517",
+          background: isDarkMode ? "var(--mld-surface-02, #171a1e)" : "#ffffff",
+          borderTop: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.15)" : "2px solid #101517",
           flexShrink: 0,
         }}
       >
@@ -357,12 +370,12 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             height: "36px",
             display: "grid",
             placeItems: "center",
-            background: "#fffded",
-            border: "2px solid #101517",
+            background: isDarkMode ? "var(--mld-surface-01, #0b181c)" : "#fffded",
+            border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.2)" : "2px solid #101517",
             borderRadius: "8px",
-            boxShadow: "2px 2px 0 #101517",
+            boxShadow: isDarkMode ? "none" : "2px 2px 0 #101517",
             cursor: "pointer",
-            color: "#101517",
+            color: isDarkMode ? "var(--mld-primary, #fff73f)" : "#101517",
             flexShrink: 0,
           }}
           title="Attach an image"
@@ -382,10 +395,10 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             height: "36px",
             padding: "0 12px",
             fontSize: "0.85rem",
-            background: "#f8fafc",
-            border: "2px solid #101517",
+            background: isDarkMode ? "var(--mld-surface-01, #0b181c)" : "#f8fafc",
+            border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.2)" : "2px solid #101517",
             borderRadius: "8px",
-            color: "#101517",
+            color: isDarkMode ? "#fffdec" : "#101517",
             outline: "none",
           }}
         />
@@ -400,11 +413,11 @@ export function TeamMessengerChat({ projectId }: TeamMessengerChatProps) {
             display: "flex",
             alignItems: "center",
             gap: "5px",
-            background: "#2563eb",
-            color: "#ffffff",
-            border: "2px solid #101517",
+            background: "var(--mld-primary, #fff73f)",
+            color: "#101517",
+            border: isDarkMode ? "1.5px solid #ca8a04" : "2px solid #101517",
             borderRadius: "8px",
-            boxShadow: "2px 2px 0 #101517",
+            boxShadow: isDarkMode ? "none" : "2px 2px 0 #101517",
             cursor: isSending || (!text.trim() && !selectedFile) ? "not-allowed" : "pointer",
             opacity: isSending || (!text.trim() && !selectedFile) ? 0.6 : 1,
             fontWeight: 800,

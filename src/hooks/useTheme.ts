@@ -39,6 +39,18 @@ export function useTheme() {
     );
   }, [theme]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const observer = new MutationObserver(() => {
+      const current = document.documentElement.dataset.theme as Theme;
+      if (current && (current === "dark" || current === "light")) {
+        setTheme((prev) => (prev !== current ? current : prev));
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === "dark" ? "light" : "dark"));
   }, []);

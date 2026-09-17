@@ -4763,6 +4763,16 @@ footer {
   100% { transform: translate3d(-1000px, 0, 0); }
 }
 
+@keyframes night-star-twinkle {
+  0% { opacity: 0.35; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes night-moon-drift {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
 /* Village Smoke Animation */
 .village-smoke-wisp {
   animation: village-smoke-rise 3.2s ease-in-out infinite;
@@ -8108,21 +8118,35 @@ button.maylamdi-button:active {
 }
 
 :root[data-theme="dark"] .rpg-modern-modal-card {
-  background: #1e293b;
-  color: #f8fafc;
-  border-color: #38bdf8;
-  box-shadow: 6px 6px 0 #0f172a;
+  background: var(--color-surface, #0b181c);
+  color: var(--color-text, #fffdec);
+  border-color: var(--color-border, rgba(255, 253, 236, 0.25));
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.project-deck-btn {
+  background: var(--mld-primary, #fff73f) !important;
+  color: #101517 !important;
+  border: 3px solid #101517 !important;
+  box-shadow: 4px 4px 0 #101517 !important;
+}
+
+:root[data-theme="dark"] .project-deck-btn {
+  background: var(--mld-primary, #fff73f) !important;
+  color: #101517 !important;
+  border-color: #101517 !important;
 }
 
 .rpg-modern-title {
   margin: 0;
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--mld-font-ui, var(--font-heading), sans-serif);
   font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--color-text, #101517);
 }
 
 .rpg-modern-grid {

@@ -45,6 +45,7 @@ import {
   requestWebPushPermission,
   areNotificationsEnabled,
 } from "../../lib/gameAudio";
+import { useTheme } from "../../hooks/useTheme";
 
 const BOSS_FUNNY_NAMES = [
   "Lord Procrastinax the Ever-Delaying",
@@ -972,6 +973,8 @@ export function BattleScene({
   onClearActiveBattleAction,
 }: BattleSceneProps) {
   const state = useQuery(api.battle.getState, { projectId });
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
 
   // Modal display toggles
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
@@ -2916,8 +2919,8 @@ export function BattleScene({
             top: "16px",
             left: "16px",
             zIndex: 30,
-            background: "#fffded",
-            border: "2px solid #101517",
+            background: "var(--mld-primary, #fff73f)",
+            border: "2.5px solid #101517",
             borderRadius: "10px",
             padding: "8px 14px",
             fontWeight: 800,
@@ -2937,19 +2940,19 @@ export function BattleScene({
           <span>Tool Mode</span>
         </button>
 
-        {/* Layer 10: Task Progress Bar (TOP, centered text, draggable, responsive width) */}
+        {/* Layer 10: Task Progress Bar (TOP, centered text, fixed in place, responsive width) */}
         <div
           className="pvz-deadline-progress-container project-task-progress-container"
           style={{
             position: "absolute",
-            top: `calc(14px + ${pvzBarPos.y + pvzBarOffset.y}px)`,
-            left: `calc(50% + ${pvzBarPos.x + pvzBarOffset.x}px)`,
+            top: "14px",
+            left: "50%",
             transform: `translateX(-50%) scale(${pvzBarOffset.scale})`,
             zIndex: 25,
             width: `${pvzBarOffset.width}px`,
-            background: "#fffded",
-            border: "3px solid #101517",
-            boxShadow: "4px 4px 0 rgba(16, 21, 23, 0.72)",
+            background: isDarkMode ? "#0b181c" : "#fffded",
+            border: isDarkMode ? "2.5px solid rgba(255, 253, 236, 0.3)" : "3px solid #101517",
+            boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 rgba(16, 21, 23, 0.72)",
             borderRadius: "14px",
             padding: "8px 14px 10px 14px",
             display: pvzBarOffset.visible ? "flex" : "none",
@@ -2958,27 +2961,7 @@ export function BattleScene({
             gap: "6px",
             userSelect: "none",
             pointerEvents: "auto",
-            cursor: isDraggingPvzBar ? "grabbing" : "grab",
-          }}
-          onMouseDown={(e) => {
-            if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "BUTTON") return;
-            setIsDraggingPvzBar(true);
-            pvzBarDragStartRef.current = {
-              mouseX: e.clientX,
-              mouseY: e.clientY,
-              startX: pvzBarPos.x,
-              startY: pvzBarPos.y,
-            };
-          }}
-          onTouchStart={(e) => {
-            if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "BUTTON") return;
-            setIsDraggingPvzBar(true);
-            pvzBarDragStartRef.current = {
-              mouseX: e.touches[0].clientX,
-              mouseY: e.touches[0].clientY,
-              startX: pvzBarPos.x,
-              startY: pvzBarPos.y,
-            };
+            cursor: "default",
           }}
           role="progressbar"
           aria-valuenow={progressPercentage}
@@ -2998,7 +2981,7 @@ export function BattleScene({
               fontWeight: 900,
               fontFamily: "var(--font-heading), sans-serif",
               letterSpacing: "0.02em",
-              color: "#101517",
+              color: isDarkMode ? "#fffdec" : "#101517",
               gap: "8px",
             }}
           >
@@ -3018,8 +3001,8 @@ export function BattleScene({
               position: "relative",
               width: "100%",
               height: "20px",
-              background: "#e2e8f0",
-              border: "2px solid #101517",
+              background: isDarkMode ? "#17232a" : "#e2e8f0",
+              border: isDarkMode ? "1.5px solid rgba(255, 253, 236, 0.25)" : "2px solid #101517",
               borderRadius: "8px",
               overflow: "hidden",
               display: "flex",
@@ -3107,53 +3090,66 @@ export function BattleScene({
           </div>
         </div>
 
-        {/* Layer 0, 1, 2: Sky & Parallax Clouds */}
+        {/* Layer 0, 1, 2: Sky & Parallax Clouds (Night Sky with Moon & Stars in Dark Mode) */}
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0, transform: `translate(${layerTransforms.sky?.x || 0}px, ${layerTransforms.sky?.y || 0}px) scale(${layerTransforms.sky?.scale || 1})`, display: layerTransforms.sky?.visible !== false ? "block" : "none" }}>
-          <LandscapeSky cloudOffset={terrainOffsets.cloud} />
+          <LandscapeSky cloudOffset={terrainOffsets.cloud} isNight={isDarkMode} />
         </div>
 
-        {/* Layer 3, 4: Top-Down 3/4 Perspective Grassland (Road pavement removed) */}
-        <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 4, transform: `translate(${layerTransforms.terrain?.x || 0}px, ${layerTransforms.terrain?.y || 0}px) scale(${layerTransforms.terrain?.scale || 1})`, display: layerTransforms.terrain?.visible !== false ? "block" : "none" }}>
-          <LandscapeTerrain
-            mountainOffset={terrainOffsets.mountain}
-            islandOffset={terrainOffsets.island}
-            greenOffset={terrainOffsets.green}
-          />
-        </div>
-
-        {/* Layer 7: Party Members (Scaled Up and Positioned in Open Meadow) */}
-        <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 7, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
-          <LandscapePlayers members={players} />
-        </div>
-
-        {/* Layer 8: Dragon Boss (Scaled Up by 1.2) */}
+        {/* Subjects Group (Terrain, Players, Dragon): A tiny bit dimmer at night */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             width: "100%",
             height: "100%",
-            pointerEvents: adminAuthenticated && showDragonEditor ? "auto" : "none",
-            zIndex: 8,
-            transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${(layerTransforms.dragon?.scale || 1) * 1.2})`,
-            display: layerTransforms.dragon?.visible !== false ? "block" : "none",
+            pointerEvents: "none",
+            filter: isDarkMode ? "brightness(0.92) contrast(1.02)" : "none",
+            transition: "filter 0.5s ease",
           }}
         >
-          <LandscapeDragon
-            bossHpPercent={hpPercent}
-            isDefeated={defeated}
-            offsets={dragonOffsets as any}
-            onSelectPart={adminAuthenticated && showDragonEditor ? (setSelectedDragonPart as any) : undefined}
-            selectedPart={adminAuthenticated && showDragonEditor ? (selectedDragonPart as any) : null}
-            animationsEnabled={animationsEnabled}
-            customShapes={customShapes}
-            fills={dragonFills}
-            deletedShapes={deletedShapes}
-            onStartDragShape={adminAuthenticated && showDragonEditor ? handleStartDragShape : undefined}
-            geometries={dragonGeometries}
-            onStartDragNode={adminAuthenticated && showDragonEditor ? handleStartDragNode : undefined}
-            layerOrder={layerOrder}
-          />
+          {/* Layer 3, 4: Top-Down 3/4 Perspective Grassland (Road pavement removed) */}
+          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 4, transform: `translate(${layerTransforms.terrain?.x || 0}px, ${layerTransforms.terrain?.y || 0}px) scale(${layerTransforms.terrain?.scale || 1})`, display: layerTransforms.terrain?.visible !== false ? "block" : "none" }}>
+            <LandscapeTerrain
+              mountainOffset={terrainOffsets.mountain}
+              islandOffset={terrainOffsets.island}
+              greenOffset={terrainOffsets.green}
+            />
+          </div>
+
+          {/* Layer 7: Party Members (Scaled Up and Positioned in Open Meadow) */}
+          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 7, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
+            <LandscapePlayers members={players} />
+          </div>
+
+          {/* Layer 8: Dragon Boss (Scaled Up by 1.2) */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              pointerEvents: adminAuthenticated && showDragonEditor ? "auto" : "none",
+              zIndex: 8,
+              transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${(layerTransforms.dragon?.scale || 1) * 1.2})`,
+              display: layerTransforms.dragon?.visible !== false ? "block" : "none",
+            }}
+          >
+            <LandscapeDragon
+              bossHpPercent={hpPercent}
+              isDefeated={defeated}
+              offsets={dragonOffsets as any}
+              onSelectPart={adminAuthenticated && showDragonEditor ? (setSelectedDragonPart as any) : undefined}
+              selectedPart={adminAuthenticated && showDragonEditor ? (selectedDragonPart as any) : null}
+              animationsEnabled={animationsEnabled}
+              customShapes={customShapes}
+              fills={dragonFills}
+              deletedShapes={deletedShapes}
+              onStartDragShape={adminAuthenticated && showDragonEditor ? handleStartDragShape : undefined}
+              geometries={dragonGeometries}
+              onStartDragNode={adminAuthenticated && showDragonEditor ? handleStartDragNode : undefined}
+              layerOrder={layerOrder}
+            />
+          </div>
         </div>
 
         {/* Layer 9: Combat Exchange & Elemental VFX */}
@@ -3181,14 +3177,14 @@ export function BattleScene({
             width: "42px",
             height: "42px",
             borderRadius: "12px",
-            background: "#fffded",
-            border: "2.5px solid #101517",
-            boxShadow: "3px 3px 0 #101517",
+            background: isDarkMode ? "#171a1e" : "#fffded",
+            border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
+            boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            color: "#101517",
+            color: isDarkMode ? "#fffdec" : "#101517",
           }}
           onClick={() => setShowSoundSettingsModal(true)}
           title={isAudioMuted ? "Sound: Muted" : (isLofiBgmPlaying ? "Music: On" : "Sound & Music")}
@@ -3210,14 +3206,14 @@ export function BattleScene({
               width: "42px",
               height: "42px",
               borderRadius: "12px",
-              background: "#fffded",
-              border: "2.5px solid #101517",
-              boxShadow: "3px 3px 0 #101517",
+              background: isDarkMode ? "#171a1e" : "#fffded",
+              border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
+              boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              color: "#101517",
+              color: isDarkMode ? "#fffdec" : "#101517",
             }}
             onClick={() => {
               if (!adminAuthenticated) {
@@ -4432,7 +4428,7 @@ export function BattleScene({
       )}
 
       {/* =========================================================================
-          PEER REVIEW MODAL (Clean format, pending review tasks on user + dummy test task)
+          PEER REVIEW MODAL (Clean format, pending review tasks on user)
          ========================================================================= */}
       {showPeerReviewModal && (
         <div className="rpg-modal-backdrop" onClick={() => setShowPeerReviewModal(false)}>
@@ -4446,31 +4442,32 @@ export function BattleScene({
               display: "flex",
               flexDirection: "column",
               boxSizing: "border-box",
-              background: "#fffded",
-              border: "3px solid #101517",
-              boxShadow: "6px 6px 0 #101517",
+              background: "var(--color-surface, #ffffff)",
+              border: "1px solid var(--color-border, #e2e8f0)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               borderRadius: "16px",
-              padding: "20px",
+              padding: "22px 24px",
+              color: "var(--color-text, #101517)",
             }}
           >
-            {/* Header: Title "Peer Review" + badge, and Red Close Button. NO "+ New Task" button! */}
+            {/* Header: Title "Peer Review" + badge, and clean close button */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h3 className="rpg-modern-title" style={{ fontSize: "1.35rem", margin: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
                   Peer Review
                 </h3>
                 <span
                   style={{
-                    background: "#fff73f",
-                    color: "#101517",
-                    border: "2px solid #101517",
-                    borderRadius: "12px",
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "999px",
                     padding: "2px 10px",
-                    fontSize: "0.78rem",
-                    fontWeight: 900,
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
                   }}
                 >
-                  {pendingReviews.length + (dummyReviewTaskDone ? 0 : 1)} Pending
+                  {pendingReviews.length} {pendingReviews.length === 1 ? "Pending" : "Pending"}
                 </span>
               </div>
 
@@ -4481,18 +4478,18 @@ export function BattleScene({
                   setSelectedReviewTask(null);
                 }}
                 style={{
-                  background: "#ef4444",
-                  color: "#fff",
-                  border: "2px solid #101517",
+                  background: "transparent",
+                  color: "#64748b",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                   width: "32px",
                   height: "32px",
                   display: "grid",
                   placeItems: "center",
                   cursor: "pointer",
-                  fontWeight: 900,
-                  fontSize: "1rem",
-                  boxShadow: "2px 2px 0 #101517",
+                  fontWeight: 700,
+                  fontSize: "0.95rem",
+                  transition: "all 0.15s ease",
                 }}
                 title="Close"
               >
@@ -4502,222 +4499,149 @@ export function BattleScene({
 
             {/* Scrollable list of pending review tasks */}
             <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "4px 2px", display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* 1. Dummy Verification Task for immediate bug testing */}
-              <div
-                style={{
-                  background: dummyReviewTaskDone ? "#f0fdf4" : "#ffffff",
-                  border: "2px solid #101517",
-                  borderRadius: "12px",
-                  padding: "14px",
-                  boxShadow: "3px 3px 0 #101517",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  transition: "transform 0.15s ease",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 900, background: "#e0e7ff", color: "#3730a3", border: "1.2px solid #101517", padding: "1px 6px", borderRadius: "4px" }}>
-                        TESTING TASK
-                      </span>
-                      <h4 style={{ margin: 0, fontSize: "0.98rem", fontWeight: 900, color: "#101517" }}>
-                        Implement API Authentication & Session Middleware
-                      </h4>
-                    </div>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569", marginTop: "3px" }}>
-                      Submitted by: Alex Rivera (Teammate) · Due: Day 3
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: 900,
-                      padding: "2px 8px",
-                      borderRadius: "6px",
-                      border: "1.5px solid #101517",
-                      background: dummyReviewTaskDone ? "#86efac" : "#fde047",
-                      color: "#101517",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {dummyReviewTaskDone ? "✓ Verified" : "Needs Review"}
-                  </span>
+              {pendingReviews.length === 0 ? (
+                <div
+                  style={{
+                    background: "var(--mld-surface-02, #f8fafc)",
+                    border: "1px dashed var(--color-border, #cbd5e1)",
+                    borderRadius: "12px",
+                    padding: "36px 16px",
+                    textAlign: "center",
+                    color: "var(--color-muted, #64748b)",
+                    margin: "12px 0",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "var(--color-text, #101517)" }}>
+                    No pending reviews
+                  </p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.82rem" }}>
+                    All submitted tasks assigned to you have been reviewed.
+                  </p>
                 </div>
-
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.4 }}>
-                  Added token verification, secure cookie validation, and session cleanup. Staging tested and verified.
-                </p>
-
-                {/* Proof preview snippet */}
-                <div style={{ background: "#f8fafc", border: "1.5px dashed #94a3b8", borderRadius: "8px", padding: "8px 10px", fontSize: "0.78rem", color: "#0f172a" }}>
-                  <div style={{ fontWeight: 800, marginBottom: "2px", color: "#0284c7" }}>Attached Evidence:</div>
-                  <div>📝 Note: &quot;Merged PR #18 with 100% test pass rate. Staging cookies validated.&quot;</div>
-                  <div style={{ marginTop: "3px" }}>🔗 Link: <a href="https://github.com/MayLamDi/pull/18" target="_blank" rel="noreferrer" style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 700 }}>https://github.com/MayLamDi/pull/18</a></div>
-                </div>
-
-                {!dummyReviewTaskDone ? (
-                  <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
-                    <button
-                      type="button"
-                      className="rpg-modern-btn is-boss"
-                      style={{ padding: "6px 14px", fontSize: "0.8rem", background: "#22c55e", color: "#ffffff" }}
-                      onClick={() => {
-                        setDummyReviewTaskDone(true);
-                        setIsDummyTaskSubmitted(true);
+              ) : (
+                pendingReviews.map((task) => {
+                  const isBeingReviewed = reviewingTaskId === task._id;
+                  return (
+                    <div
+                      key={task._id}
+                      style={{
+                        background: "var(--mld-surface-02, #ffffff)",
+                        border: "1px solid var(--color-border, #e2e8f0)",
+                        borderRadius: "12px",
+                        padding: "14px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
                       }}
                     >
-                      ⚔️ Approve Proof & Deal Boss Damage
-                    </button>
-                    <button
-                      type="button"
-                      className="rpg-modern-btn is-secondary"
-                      style={{ padding: "6px 12px", fontSize: "0.8rem", background: "#fee2e2", color: "#991b1b" }}
-                      onClick={() => {
-                        setDummyReviewTaskDone(false);
-                        setIsDummyTaskSubmitted(false);
-                        alert("Changes requested for dummy task: task rejected, attack and damage undone.");
-                      }}
-                    >
-                      Request Changes
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 800, color: "#16a34a" }}>
-                    <CheckCircle2 size={16} />
-                    <span>Approved & verified! Boss damage applied.</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDummyReviewTaskDone(false);
-                        setIsDummyTaskSubmitted(false);
-                      }}
-                      style={{ marginLeft: "auto", background: "none", border: "none", color: "#64748b", textDecoration: "underline", cursor: "pointer", fontSize: "0.72rem" }}
-                    >
-                      Reset test task
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 2. Real Pending Reviews from Convex Tasks */}
-              {pendingReviews.map((task) => {
-                const isBeingReviewed = reviewingTaskId === task._id;
-                return (
-                  <div
-                    key={task._id}
-                    style={{
-                      background: "#ffffff",
-                      border: "2px solid #101517",
-                      borderRadius: "12px",
-                      padding: "14px",
-                      boxShadow: "3px 3px 0 #101517",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                      <div>
-                        <h4 style={{ margin: 0, fontSize: "0.98rem", fontWeight: 900, color: "#101517" }}>
-                          {task.title}
-                        </h4>
-                        <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569", marginTop: "3px" }}>
-                          Submitted by: {task.assigneeName} · Due: {task.dueDate || "No deadline"}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: "0.98rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                            {task.title}
+                          </h4>
+                          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-muted, #64748b)", marginTop: "3px" }}>
+                            Submitted by: {task.assigneeName} · Due: {task.dueDate || "No deadline"}
+                          </div>
                         </div>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: "0.7rem",
-                          fontWeight: 900,
-                          padding: "2px 8px",
-                          borderRadius: "6px",
-                          border: "1.5px solid #101517",
-                          background: task.isCreatorApproval ? "#fed7aa" : "#bae6fd",
-                          color: task.isCreatorApproval ? "#c2410c" : "#0369a1",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {task.isCreatorApproval ? "Creator Final Approval" : "Peer Review Required"}
-                      </span>
-                    </div>
-
-                    {task.description && (
-                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.4 }}>
-                        {task.description}
-                      </p>
-                    )}
-
-                    {!isBeingReviewed ? (
-                      <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
-                        <button
-                          className="rpg-modern-btn is-primary"
-                          type="button"
-                          style={{ padding: "6px 14px", fontSize: "0.8rem" }}
-                          onClick={() => {
-                            setReviewingTaskId(task._id);
-                            setReviewComment("");
-                            setReviewError(null);
+                        <span
+                          style={{
+                            fontSize: "0.7rem",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: "6px",
+                            border: "1px solid #cbd5e1",
+                            background: task.isCreatorApproval ? "#fed7aa" : "#bae6fd",
+                            color: task.isCreatorApproval ? "#c2410c" : "#0369a1",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          Review Proof & Decide
-                        </button>
+                          {task.isCreatorApproval ? "Creator Final Approval" : "Peer Review Required"}
+                        </span>
                       </div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px", paddingTop: "8px", borderTop: "1.5px solid #101517" }}>
-                        {reviewError && (
-                          <div style={{ padding: "6px 10px", background: "#fee2e2", border: "1.5px solid #ef4444", borderRadius: "6px", color: "#b91c1c", fontSize: "0.78rem", fontWeight: 800 }}>
-                            {reviewError}
-                          </div>
-                        )}
-                        <label style={{ fontSize: "0.76rem", fontWeight: 800 }}>
-                          Reviewer Feedback & Notes:
-                        </label>
-                        <textarea
-                          className="rpg-modern-textarea"
-                          rows={2}
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          placeholder="Add notes for your peer (required if requesting changes)..."
-                        />
-                        <div style={{ display: "flex", gap: "8px" }}>
+
+                      {task.description && (
+                        <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--color-muted, #475569)", lineHeight: 1.4 }}>
+                          {task.description}
+                        </p>
+                      )}
+
+                      {!isBeingReviewed ? (
+                        <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
                           <button
-                            className="rpg-modern-btn is-boss"
+                            className="primary-button"
                             type="button"
-                            disabled={isSubmittingReview}
-                            style={{ padding: "6px 12px", fontSize: "0.78rem", background: "#22c55e", color: "#fff" }}
-                            onClick={() => handleReviewDecision(task._id, "approved", Boolean(task.isCreatorApproval))}
-                          >
-                            {isSubmittingReview ? "Submitting..." : "Approve & Deal Boss Damage"}
-                          </button>
-                          <button
-                            className="rpg-modern-btn is-secondary"
-                            type="button"
-                            disabled={isSubmittingReview}
-                            style={{ padding: "6px 12px", fontSize: "0.78rem", background: "#fee2e2", color: "#991b1b" }}
-                            onClick={() => handleReviewDecision(task._id, "changes_requested", Boolean(task.isCreatorApproval))}
-                          >
-                            Request Changes
-                          </button>
-                          <button
-                            className="rpg-modern-btn is-secondary"
-                            type="button"
-                            disabled={isSubmittingReview}
-                            style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+                            style={{ padding: "6px 14px", minHeight: "unset", fontSize: "0.8rem", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
                             onClick={() => {
-                              setReviewingTaskId(null);
+                              setReviewingTaskId(task._id);
+                              setReviewComment("");
                               setReviewError(null);
                             }}
                           >
-                            Cancel
+                            Review Proof & Decide
                           </button>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px", paddingTop: "8px", borderTop: "1px solid var(--color-border, #e2e8f0)" }}>
+                          {reviewError && (
+                            <div style={{ padding: "6px 10px", background: "#fee2e2", border: "1px solid #ef4444", borderRadius: "6px", color: "#b91c1c", fontSize: "0.78rem", fontWeight: 700 }}>
+                              {reviewError}
+                            </div>
+                          )}
+                          <label style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--color-text, #101517)" }}>
+                            Reviewer Feedback & Notes:
+                          </label>
+                          <textarea
+                            className="rpg-modern-textarea"
+                            rows={2}
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="Add notes for your peer (required if requesting changes)..."
+                            style={{
+                              background: "var(--color-surface, #ffffff)",
+                              border: "1px solid var(--color-border, #cbd5e1)",
+                              color: "var(--color-text, #101517)",
+                              borderRadius: "8px",
+                              padding: "8px 10px",
+                            }}
+                          />
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            <button
+                              className="primary-button"
+                              type="button"
+                              disabled={isSubmittingReview}
+                              style={{ padding: "6px 14px", minHeight: "unset", fontSize: "0.8rem", background: "#22c55e", color: "#ffffff", border: "1px solid #16a34a", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
+                              onClick={() => handleReviewDecision(task._id, "approved", Boolean(task.isCreatorApproval))}
+                            >
+                              {isSubmittingReview ? "Submitting..." : "Approve & Deal Boss Damage"}
+                            </button>
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              disabled={isSubmittingReview}
+                              style={{ padding: "6px 12px", minHeight: "unset", fontSize: "0.8rem", background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}
+                              onClick={() => handleReviewDecision(task._id, "changes_requested", Boolean(task.isCreatorApproval))}
+                            >
+                              Request Changes
+                            </button>
+                            <button
+                              className="quiet-button"
+                              type="button"
+                              disabled={isSubmittingReview}
+                              style={{ padding: "6px 12px", minHeight: "unset", fontSize: "0.8rem", borderRadius: "8px", cursor: "pointer" }}
+                              onClick={() => {
+                                setReviewingTaskId(null);
+                                setReviewError(null);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
