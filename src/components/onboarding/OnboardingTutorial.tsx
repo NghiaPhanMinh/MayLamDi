@@ -221,7 +221,15 @@ export function OnboardingTutorial({
         <p className="mld-tutorial-description">{step.description}</p>
 
         <div className="mld-tutorial-actions">
-          <div className="mld-tutorial-actions-left">
+          <button
+            type="button"
+            className="mld-tutorial-btn-skip"
+            onClick={handleSkip}
+          >
+            Skip
+          </button>
+
+          <div className="mld-tutorial-actions-right">
             {currentStepIndex > 0 ? (
               <button
                 type="button"
@@ -239,14 +247,6 @@ export function OnboardingTutorial({
               {isLastStep ? "Finish" : "Next"}
             </button>
           </div>
-
-          <button
-            type="button"
-            className="mld-tutorial-btn-skip"
-            onClick={handleSkip}
-          >
-            Skip
-          </button>
         </div>
       </div>
     </div>

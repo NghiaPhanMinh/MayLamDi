@@ -142,7 +142,8 @@
   flex-wrap: wrap;
 }
 
-.mld-tutorial-actions-left {
+.mld-tutorial-actions-left,
+.mld-tutorial-actions-right {
   display: flex;
   gap: 0.4rem;
 }
