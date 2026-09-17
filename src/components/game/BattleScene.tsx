@@ -1407,6 +1407,18 @@ export function BattleScene({
   const [isDeletingRoom, setIsDeletingRoom] = useState(false);
   const [deleteRoomError, setDeleteRoomError] = useState<string | null>(null);
   const [viewBattleSceneOverride, setViewBattleSceneOverride] = useState(false);
+  const [showEndScreen, setShowEndScreen] = useState(false);
+
+  // Dragon Death Debug Controls (live pose tweaking on bottom-left screen)
+  const [deathDebugOpen, setDeathDebugOpen] = useState(true);
+  const [deathDebugForceDefeated, setDeathDebugForceDefeated] = useState(false);
+  const [deathRotation, setDeathRotation] = useState(-60);
+  const [deathPivotX, setDeathPivotX] = useState(85);
+  const [deathPivotY, setDeathPivotY] = useState(180);
+  const [deathOffsetX, setDeathOffsetX] = useState(0);
+  const [deathOffsetY, setDeathOffsetY] = useState(0);
+  const [deathStopWings, setDeathStopWings] = useState(true);
+  const [deathGlow, setDeathGlow] = useState(false);
 
   // Dragon Layout Vector Editor Admin States (All individual shapes, moveable panels, pausable animation)
   const savedConfig = useMemo(() => loadSavedConfig(), []);
@@ -2898,13 +2910,23 @@ export function BattleScene({
   const progressPercentage = Math.round((completedTasksCount / totalTasksCount) * 100);
 
   const baseRemainingHp = state.remainingHp + (testExtraTasksCount * TASK_HP_UNIT) - testSimulatedOnTimeDamage;
+  const taskProgressHpPercent = Math.max(0, 100 - progressPercentage);
+  const serverHpPercent = computedMaxBossHp === 0
+    ? 100
+    : Math.round((Math.max(0, Math.min(computedMaxBossHp, baseRemainingHp)) / computedMaxBossHp) * 100);
+
+  // Collaborative End-Game Screen: Game only ends after all tasks are completed and Dragon is defeated
+  const allTasksCompleted = totalTasksCount > 0 && completedTasksCount >= totalTasksCount;
   const hpPercent = testDragonHpOverride !== null
     ? testDragonHpOverride
-    : (isDummyTaskSubmitted || dummyReviewTaskDone)
-      ? Math.max(0, 100 - progressPercentage)
-      : (computedMaxBossHp === 0 ? 100 : Math.round((Math.max(0, Math.min(computedMaxBossHp, baseRemainingHp)) / computedMaxBossHp) * 100));
+    : allTasksCompleted
+      ? 0
+      : (isDummyTaskSubmitted || dummyReviewTaskDone)
+        ? taskProgressHpPercent
+        : Math.min(taskProgressHpPercent, serverHpPercent);
   const rawRemainingHp = Math.round((hpPercent / 100) * computedMaxBossHp);
   const defeated = (computedMaxBossHp > 0 && (rawRemainingHp === 0 || hpPercent === 0));
+  const effectiveIsDefeated = deathDebugForceDefeated || defeated || allTasksCompleted || testBossDefeatedPreview;
 
   // Village Max HP scales with team size: 100 + (10 * number of players)
   const teamMemberCount = Math.max(1, (state.members?.length ?? 1) + testExtraPlayerCount);
@@ -2918,9 +2940,10 @@ export function BattleScene({
   const damageClearedFraction = (100 - hpPercent) / 100;
   const dragonX = 580 + damageClearedFraction * 60;
 
-  // Collaborative End-Game Screen: Game only ends after all tasks are completed and Dragon is defeated
-  const allTasksCompleted = totalTasksCount > 0 && completedTasksCount >= totalTasksCount;
-  if ((defeated || allTasksCompleted || testOverdueOverride === true || testBossDefeatedPreview) && !viewBattleSceneOverride) {
+  // Collaborative End-Game Screen: Canvas stays on screen first when boss defeated.
+  // End Screen board is only shown when user clicks "End Screen" or on overdue override.
+  const shouldShowEndScreen = (showEndScreen || testOverdueOverride === true) && (effectiveIsDefeated || testOverdueOverride === true) && !viewBattleSceneOverride;
+  if (shouldShowEndScreen) {
     const isVillageDefended = effectiveVillageHp >= 50;
     const resultVariant = isVillageDefended ? "success" : "failed";
     const resultTitle = isVillageDefended
@@ -2945,6 +2968,7 @@ export function BattleScene({
           canRemoveRoom={Boolean(workspace)}
           onDownloadContribution={generateContributionPdf}
           onViewBattle={() => {
+            setShowEndScreen(false);
             setViewBattleSceneOverride(true);
             setTestBossDefeatedPreview(false);
           }}
@@ -3048,7 +3072,7 @@ export function BattleScene({
   }
 
   return (
-    <section className={`battle-page ${activeEvent ? "has-new-attack" : ""} ${defeated ? "is-defeated" : ""}`} aria-label="Project Battle Scene">
+    <section className={`battle-page ${activeEvent ? "has-new-attack" : ""} ${effectiveIsDefeated ? "is-defeated" : ""}`} aria-label="Project Battle Scene">
       <SVGDefs />
 
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
@@ -3281,7 +3305,14 @@ export function BattleScene({
           >
             <LandscapeDragon
               bossHpPercent={hpPercent}
-              isDefeated={defeated}
+              isDefeated={effectiveIsDefeated}
+              deathRotation={deathRotation}
+              deathPivotX={deathPivotX}
+              deathPivotY={deathPivotY}
+              deathOffsetX={deathOffsetX}
+              deathOffsetY={deathOffsetY}
+              deathStopWings={deathStopWings}
+              deathGlow={deathGlow}
               offsets={dragonOffsets as any}
               onSelectPart={adminAuthenticated && showDragonEditor ? (setSelectedDragonPart as any) : undefined}
               selectedPart={adminAuthenticated && showDragonEditor ? (selectedDragonPart as any) : null}
@@ -3301,7 +3332,7 @@ export function BattleScene({
         <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 25, transform: `translate(${layerTransforms.fx?.x || 0}px, ${layerTransforms.fx?.y || 0}px) scale(${layerTransforms.fx?.scale || 1})`, display: layerTransforms.fx?.visible !== false ? "block" : "none" }}>
           <LandscapeFX
             activeEvent={combinedActiveEvent}
-            isVictory={defeated}
+            isVictory={effectiveIsDefeated}
             activeAttackers={activeAttackers}
             dragonTarget={{
               x: Math.round(500 + (dragonX + 45 - 500) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
@@ -3376,6 +3407,292 @@ export function BattleScene({
             <Shield size={20} />
           </button>
         )}
+
+        {/* Boss Defeated UI Banner with "End Screen" button leading to project complete screen */}
+        {effectiveIsDefeated && (
+          <div
+            className="rpg-defeated-banner"
+            style={{
+              position: "absolute",
+              top: "76px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 36,
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              padding: "10px 20px",
+              background: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 253, 237, 0.95)",
+              border: isDarkMode ? "2.5px solid #22c55e" : "2.5px solid #15803d",
+              borderRadius: "14px",
+              boxShadow: isDarkMode ? "0 4px 20px rgba(34, 197, 94, 0.3)" : "4px 4px 0 rgba(16, 21, 23, 0.8)",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Trophy size={20} color="#22c55e" />
+              <span style={{ fontWeight: 800, fontSize: "0.9rem", color: isDarkMode ? "#fffdec" : "#101517" }}>
+                Boss Defeated!
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEndScreen(true);
+                setViewBattleSceneOverride(false);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                background: "#22c55e",
+                color: "#ffffff",
+                fontWeight: 800,
+                fontSize: "0.85rem",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(34, 197, 94, 0.4)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <span>End Screen</span>
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </div>
+        )}
+
+        {/* Dragon Death Pose Live Debug Control Board (Bottom-Left Screen) */}
+        <div
+          className="rpg-death-debug-board"
+          style={{
+            position: "absolute",
+            bottom: "16px",
+            left: "16px",
+            zIndex: 40,
+            pointerEvents: "auto",
+          }}
+        >
+          {!deathDebugOpen ? (
+            <button
+              type="button"
+              onClick={() => setDeathDebugOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 14px",
+                borderRadius: "12px",
+                background: isDarkMode ? "#171a1e" : "#fffded",
+                border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
+                boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
+                color: isDarkMode ? "#fffdec" : "#101517",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: "0.8rem",
+              }}
+              title="Open Dragon Death Debug Controls"
+            >
+              <Sliders size={16} />
+              <span>Death Debug</span>
+            </button>
+          ) : (
+            <div
+              style={{
+                width: "270px",
+                maxHeight: "440px",
+                overflowY: "auto",
+                background: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 253, 237, 0.97)",
+                border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
+                borderRadius: "14px",
+                boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
+                padding: "12px 14px",
+                color: isDarkMode ? "#fffdec" : "#101517",
+                fontSize: "0.75rem",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", borderBottom: isDarkMode ? "1px solid rgba(255,253,236,0.15)" : "1px solid #e2e8f0", paddingBottom: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 800 }}>
+                  <Sliders size={14} />
+                  <span>Dragon Death Controls</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeathDebugOpen(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: isDarkMode ? "#94a3b8" : "#64748b",
+                    fontWeight: 800,
+                    fontSize: "0.85rem",
+                    padding: "2px 6px",
+                  }}
+                  title="Minimize"
+                >
+                  &ndash;
+                </button>
+              </div>
+
+              {/* Force Defeated Button */}
+              <div style={{ marginBottom: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setDeathDebugForceDefeated((prev) => !prev)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    border: isDarkMode ? "1.5px solid rgba(255,253,236,0.3)" : "1.5px solid #101517",
+                    background: deathDebugForceDefeated ? (isDarkMode ? "#065f46" : "#bbf7d0") : (isDarkMode ? "#1e293b" : "#f1f5f9"),
+                    color: deathDebugForceDefeated ? (isDarkMode ? "#34d399" : "#166534") : (isDarkMode ? "#e2e8f0" : "#334155"),
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    fontSize: "0.74rem",
+                  }}
+                >
+                  {deathDebugForceDefeated ? "Defeated Mode: ACTIVE (Click to toggle)" : "Test Defeat Mode: OFF (Click to test)"}
+                </button>
+              </div>
+
+              {/* Rotation Slider */}
+              <div style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
+                  <span>Rotation:</span>
+                  <span style={{ fontFamily: "monospace" }}>{deathRotation}&deg;</span>
+                </div>
+                <input
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={deathRotation}
+                  onChange={(e) => setDeathRotation(Number(e.target.value))}
+                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
+                />
+              </div>
+
+              {/* Pivot X Slider */}
+              <div style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
+                  <span>Pivot X:</span>
+                  <span style={{ fontFamily: "monospace" }}>{deathPivotX}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={200}
+                  step={1}
+                  value={deathPivotX}
+                  onChange={(e) => setDeathPivotX(Number(e.target.value))}
+                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
+                />
+              </div>
+
+              {/* Pivot Y Slider */}
+              <div style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
+                  <span>Pivot Y:</span>
+                  <span style={{ fontFamily: "monospace" }}>{deathPivotY}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={250}
+                  step={1}
+                  value={deathPivotY}
+                  onChange={(e) => setDeathPivotY(Number(e.target.value))}
+                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
+                />
+              </div>
+
+              {/* Offset X Slider */}
+              <div style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
+                  <span>Offset X:</span>
+                  <span style={{ fontFamily: "monospace" }}>{deathOffsetX}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={deathOffsetX}
+                  onChange={(e) => setDeathOffsetX(Number(e.target.value))}
+                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
+                />
+              </div>
+
+              {/* Offset Y Slider */}
+              <div style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
+                  <span>Offset Y:</span>
+                  <span style={{ fontFamily: "monospace" }}>{deathOffsetY}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={deathOffsetY}
+                  onChange={(e) => setDeathOffsetY(Number(e.target.value))}
+                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
+                />
+              </div>
+
+              {/* Stop Wings Flapping Toggle */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <label style={{ cursor: "pointer", fontWeight: 700 }}>Stop Wings:</label>
+                <input
+                  type="checkbox"
+                  checked={deathStopWings}
+                  onChange={(e) => setDeathStopWings(e.target.checked)}
+                  style={{ cursor: "pointer" }}
+                />
+              </div>
+
+              {/* Death Glow Toggle */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <label style={{ cursor: "pointer", fontWeight: 700 }}>Dragon Glow:</label>
+                <input
+                  type="checkbox"
+                  checked={deathGlow}
+                  onChange={(e) => setDeathGlow(e.target.checked)}
+                  style={{ cursor: "pointer" }}
+                />
+              </div>
+
+              {/* Reset Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setDeathRotation(-60);
+                  setDeathPivotX(85);
+                  setDeathPivotY(180);
+                  setDeathOffsetX(0);
+                  setDeathOffsetY(0);
+                  setDeathStopWings(true);
+                  setDeathGlow(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "5px",
+                  borderRadius: "6px",
+                  border: isDarkMode ? "1px solid rgba(255,253,236,0.3)" : "1px solid #cbd5e1",
+                  background: isDarkMode ? "#1e293b" : "#f8fafc",
+                  color: isDarkMode ? "#94a3b8" : "#475569",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Reset to Defaults
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       ) : (
         <div
@@ -3428,6 +3745,35 @@ export function BattleScene({
                 <Gamepad2 size={16} />
                 Game Mode
               </button>
+
+              {effectiveIsDefeated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEndScreen(true);
+                    setViewBattleSceneOverride(false);
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 14px",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    borderRadius: "8px",
+                    background: "#22c55e",
+                    color: "#ffffff",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(34, 197, 94, 0.4)",
+                  }}
+                  title="View End Screen"
+                >
+                  <Trophy size={16} />
+                  <span>End Screen</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </button>
+              )}
 
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

@@ -20,12 +20,14 @@ export const getState = query({
     const requiredTasks = tasks.filter((task) => task.required);
     const activeTasks = requiredTasks.length > 0 ? requiredTasks : tasks;
     const userCount = Math.max(1, memberships.length);
-    const TASK_BASE_HP = 50;
+    function getTaskDamage(t: { damage?: number; difficulty?: number }) {
+      return t.damage ?? ((t.difficulty ?? 1) <= 1 ? 10 : t.difficulty === 2 ? 20 : 30);
+    }
 
     // 1. Boss HP = Tasks: Every task created adds a fixed amount to the Dragon's total HP (More tasks = bigger dragon)
     const taskList = activeTasks.length > 0 ? activeTasks : tasks;
     const totalTaskDamage = taskList.length > 0
-      ? taskList.reduce((sum, task) => sum + (task.damage ?? TASK_BASE_HP), 0)
+      ? taskList.reduce((sum, task) => sum + getTaskDamage(task), 0)
       : 100;
     const maximumHp = Math.max(50, totalTaskDamage);
     const hpSharePerPlayer = Math.max(1, Math.round(maximumHp / userCount));
@@ -33,7 +35,7 @@ export const getState = query({
     // Map each task's damage contribution
     const taskDamageMap = new Map<string, number>();
     for (const task of taskList) {
-      taskDamageMap.set(task._id, task.damage ?? TASK_BASE_HP);
+      taskDamageMap.set(task._id, getTaskDamage(task));
     }
 
     const appliedTaskIds = new Set<string>();
@@ -50,7 +52,7 @@ export const getState = query({
 
     for (const event of uniqueEvents) {
       const attackerId = event.attackerProfileId;
-      const damageForTask = event.damage ?? taskDamageMap.get(event.taskId) ?? TASK_BASE_HP;
+      const damageForTask = event.damage ?? taskDamageMap.get(event.taskId) ?? 20;
       const current = memberDamageMap.get(attackerId) ?? 0;
       memberDamageMap.set(attackerId, current + damageForTask);
     }
@@ -59,7 +61,7 @@ export const getState = query({
     for (const task of taskList) {
       if ((task.status === "completed" || task.status === "verified") && !eventTaskIds.has(task._id)) {
         const ownerId = task.primaryOwnerProfileId;
-        const damageForTask = taskDamageMap.get(task._id) ?? TASK_BASE_HP;
+        const damageForTask = taskDamageMap.get(task._id) ?? getTaskDamage(task);
         const current = memberDamageMap.get(ownerId) ?? 0;
         memberDamageMap.set(ownerId, current + damageForTask);
       }

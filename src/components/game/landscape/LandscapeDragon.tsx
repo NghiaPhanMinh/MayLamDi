@@ -204,6 +204,13 @@ type LandscapeDragonProps = {
   geometries?: Record<string, string>;
   onStartDragNode?: (shapeId: string, xIdx: number, yIdx: number, startX: number, startY: number, mouseX: number, mouseY: number) => void;
   layerOrder?: string[];
+  deathRotation?: number;
+  deathPivotX?: number;
+  deathPivotY?: number;
+  deathOffsetX?: number;
+  deathOffsetY?: number;
+  deathStopWings?: boolean;
+  deathGlow?: boolean;
 };
 
 export function LandscapeDragon({
@@ -220,9 +227,16 @@ export function LandscapeDragon({
   geometries = {},
   onStartDragNode,
   layerOrder = [],
+  deathRotation = -60,
+  deathPivotX = 85,
+  deathPivotY = 180,
+  deathOffsetX = 0,
+  deathOffsetY = 0,
+  deathStopWings = true,
+  deathGlow = false,
 }: LandscapeDragonProps) {
   const damageClearedFraction = (100 - bossHpPercent) / 100;
-  const dragonX = 580 + damageClearedFraction * 60;
+  const dragonX = isDefeated ? 640 : (580 + damageClearedFraction * 60);
 
   // Build list of shapes dynamically in layer order
   const sortedShapes = React.useMemo(() => {
@@ -316,9 +330,10 @@ export function LandscapeDragon({
           50% { transform: translateY(-25px) scale(1.05); opacity: 0.85; }
           100% { transform: translateY(-55px) scale(1.2); opacity: 0; }
         }
-        .dragon-defeated-anim {
-          animation: dragon-slain-fall 2s ease-in-out forwards;
-          filter: drop-shadow(0 0 10px #60a5fa);
+        @keyframes dragon-ghost-soul {
+          0% { transform: translateY(0) scale(0.85); opacity: 0; }
+          50% { transform: translateY(-25px) scale(1.05); opacity: 0.85; }
+          100% { transform: translateY(-55px) scale(1.2); opacity: 0; }
         }
       `}</style>
       <svg
@@ -332,20 +347,7 @@ export function LandscapeDragon({
           transform={`translate(${dragonX}, 130)`}
           className="dragon-group"
         >
-          <g className={isDefeated ? "dragon-defeated-anim" : ""}>
-            {/* Defeated Ghost Soul and Slayed Indicator */}
-            {isDefeated && (
-              <g transform="translate(100, -20)" style={{ animation: "dragon-ghost-soul 3s ease-in-out infinite", pointerEvents: "none" }}>
-                <text x="0" y="0" fill="#94a3b8" fontSize="18" fontWeight="900" fontFamily="var(--font-heading), sans-serif" textAnchor="middle" opacity="0.85">
-                  Slayed Boss
-                </text>
-                <polygon points="0,-15 5,-5 15,0 5,5 0,15 -5,5 -15,0 -5,-5" fill="#38bdf8" opacity="0.7" />
-                <polygon points="-25,-25 -15,-20 -20,-10" fill="#facc15" opacity="0.6" />
-                <polygon points="25,-30 20,-15 35,-20" fill="#f43f5e" opacity="0.6" />
-              </g>
-            )}
-
-          {/* Dragon Ground Shadow (Grounded directly under dragon body/feet, never cropped) */}
+          {/* Dragon Ground Shadow (Grounded directly under dragon body/feet, never changes on defeat) */}
           <g transform="translate(85, 180)">
             {!isDefeated && animationsEnabled && (
               <animateTransform
@@ -360,85 +362,110 @@ export function LandscapeDragon({
             <ellipse cx="0" cy="0" rx="105" ry="22" fill="rgba(0,0,0,0.22)" stroke="none" />
           </g>
 
-          {/* Hovering animation tag */}
-          <g>
-            {!isDefeated && animationsEnabled && (
-              <animateTransform
-                attributeName="transform"
-                type="translate"
-                values="0,0; 0,-14; 0,0"
-                dur="3.2s"
-                repeatCount="indefinite"
-              />
-            )}
+          {/* Defeated Ghost Soul and Slayed Indicator */}
+          {isDefeated && (
+            <g transform="translate(100, -20)" style={{ animation: "dragon-ghost-soul 3s ease-in-out infinite", pointerEvents: "none" }}>
+              <text x="0" y="0" fill="#94a3b8" fontSize="18" fontWeight="900" fontFamily="var(--font-heading), sans-serif" textAnchor="middle" opacity="0.85">
+                Slayed Boss
+              </text>
+              <polygon points="0,-15 5,-5 15,0 5,5 0,15 -5,5 -15,0 -5,-5" fill="#38bdf8" opacity="0.7" />
+              <polygon points="-25,-25 -15,-20 -20,-10" fill="#facc15" opacity="0.6" />
+              <polygon points="25,-30 20,-15 35,-20" fill="#f43f5e" opacity="0.6" />
+            </g>
+          )}
 
-            {/* --- MASTER-LEVEL ANATOMICAL DRAGON --- */}
-            <g transform="scale(0.68)">
-              {sortedShapes.map((shape) => {
-                if (deletedShapes[shape.id]) return null;
+          {/* Dragon Body: Rotates 60 degrees to the left on defeat, fixed ground pivot, no glow */}
+          <g
+            transform={
+              isDefeated
+                ? `translate(${deathOffsetX}, ${deathOffsetY}) rotate(${deathRotation}, ${deathPivotX}, ${deathPivotY})`
+                : undefined
+            }
+            style={{
+              filter: deathGlow ? "drop-shadow(0 0 10px #60a5fa)" : "none",
+              transition: "transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1)",
+            }}
+          >
+            {/* Hovering animation (only when alive) */}
+            <g>
+              {!isDefeated && animationsEnabled && (
+                <animateTransform
+                  attributeName="transform"
+                  type="translate"
+                  values="0,0; 0,-14; 0,0"
+                  dur="3.2s"
+                  repeatCount="indefinite"
+                />
+              )}
 
-                // Resolve current geometry path or polygon string
-                const geom = geometries[shape.id] || shape.d || shape.points || "";
+              {/* --- MASTER-LEVEL ANATOMICAL DRAGON --- */}
+              <g transform="scale(0.68)">
+                {sortedShapes.map((shape) => {
+                  if (deletedShapes[shape.id]) return null;
 
-                // Node information handles for selected element
-                const isSelected = selectedPart === shape.id;
-                const nodeInfo = isSelected && (shape.type === "path" || shape.type === "polygon")
-                  ? parseCoordinates(geom)
-                  : null;
+                  // Resolve current geometry path or polygon string
+                  const geom = geometries[shape.id] || shape.d || shape.points || "";
 
-                let element: React.ReactElement | null = null;
-                const fillVal = fills[shape.id] ?? shape.defaultFill;
+                  // Node information handles for selected element
+                  const isSelected = selectedPart === shape.id;
+                  const nodeInfo = isSelected && (shape.type === "path" || shape.type === "polygon")
+                    ? parseCoordinates(geom)
+                    : null;
 
-                switch (shape.type) {
-                  case "path":
-                    element = <path d={geom} {...getShapeProps(shape.id, shape.defaultFill)} />;
-                    break;
-                  case "polygon":
-                    element = <polygon points={geom} {...getShapeProps(shape.id, shape.defaultFill)} />;
-                    break;
-                  case "circle":
-                    element = <circle cx={shape.cx} cy={shape.cy} r={shape.r} {...getShapeProps(shape.id, shape.defaultFill)} />;
-                    break;
-                  case "ellipse":
-                    element = <ellipse cx={shape.cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} {...getShapeProps(shape.id, shape.defaultFill)} />;
-                    break;
-                  case "rect":
-                    element = <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} ry={shape.ry} {...getShapeProps(shape.id, shape.defaultFill)} />;
-                    break;
-                  default:
-                    return null;
-                }
+                  let element: React.ReactElement | null = null;
+                  const fillVal = fills[shape.id] ?? shape.defaultFill;
 
-                // Wrap element inside Wing Flapping animation transform if needed
-                if (shape.group === "backWing") {
-                  element = (
-                    <g transform-origin="120 110">
-                      {animationsEnabled && (
-                        <animateTransform
-                          attributeName="transform"
-                          type="rotate"
-                          values="0; -45; 15; 0"
-                          dur="1.8s"
-                          repeatCount="indefinite"
-                          additive="sum"
-                        />
-                      )}
-                      {element}
-                    </g>
-                  );
-                } else if (shape.group === "frontWing") {
-                  element = (
-                    <g transform-origin="110 115">
-                      {animationsEnabled && (
-                        <animateTransform
-                          attributeName="transform"
-                          type="rotate"
-                          values="0; 45; -15; 0"
-                          dur="1.8s"
-                          repeatCount="indefinite"
-                          additive="sum"
-                        />
-                      )}
+                  switch (shape.type) {
+                    case "path":
+                      element = <path d={geom} {...getShapeProps(shape.id, shape.defaultFill)} />;
+                      break;
+                    case "polygon":
+                      element = <polygon points={geom} {...getShapeProps(shape.id, shape.defaultFill)} />;
+                      break;
+                    case "circle":
+                      element = <circle cx={shape.cx} cy={shape.cy} r={shape.r} {...getShapeProps(shape.id, shape.defaultFill)} />;
+                      break;
+                    case "ellipse":
+                      element = <ellipse cx={shape.cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} {...getShapeProps(shape.id, shape.defaultFill)} />;
+                      break;
+                    case "rect":
+                      element = <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} ry={shape.ry} {...getShapeProps(shape.id, shape.defaultFill)} />;
+                      break;
+                    default:
+                      return null;
+                  }
+
+                  // Wrap element inside Wing Flapping animation transform if needed
+                  const playWings = animationsEnabled && !isDefeated && !deathStopWings;
+                  if (shape.group === "backWing") {
+                    element = (
+                      <g transform-origin="120 110">
+                        {playWings && (
+                          <animateTransform
+                            attributeName="transform"
+                            type="rotate"
+                            values="0; -45; 15; 0"
+                            dur="1.8s"
+                            repeatCount="indefinite"
+                            additive="sum"
+                          />
+                        )}
+                        {element}
+                      </g>
+                    );
+                  } else if (shape.group === "frontWing") {
+                    element = (
+                      <g transform-origin="110 115">
+                        {playWings && (
+                          <animateTransform
+                            attributeName="transform"
+                            type="rotate"
+                            values="0; 45; -15; 0"
+                            dur="1.8s"
+                            repeatCount="indefinite"
+                            additive="sum"
+                          />
+                        )}
                       {element}
                     </g>
                   );
@@ -503,7 +530,7 @@ export function LandscapeDragon({
                           if (shape.group === "backWing") {
                             return (
                               <g transform-origin="120 110">
-                                {animationsEnabled && (
+                                {playWings && (
                                   <animateTransform
                                     attributeName="transform"
                                     type="rotate"
@@ -519,7 +546,7 @@ export function LandscapeDragon({
                           } else if (shape.group === "frontWing") {
                             return (
                               <g transform-origin="110 115">
-                                {animationsEnabled && (
+                                {playWings && (
                                   <animateTransform
                                     attributeName="transform"
                                     type="rotate"
