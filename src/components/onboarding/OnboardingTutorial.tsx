@@ -55,8 +55,9 @@ export function OnboardingTutorial({
     const element = candidates.find((el) => {
       const rect = el.getBoundingClientRect();
       const style = window.getComputedStyle(el);
-      const isHidden = style.display === "none" || el.style.display === "none" ||
-                       style.visibility === "hidden" || el.style.visibility === "hidden" ||
+      const htmlEl = el instanceof HTMLElement ? el : null;
+      const isHidden = style.display === "none" || htmlEl?.style.display === "none" ||
+                       style.visibility === "hidden" || htmlEl?.style.visibility === "hidden" ||
                        parseFloat(style.opacity || "1") === 0;
       if (isHidden) return false;
 
