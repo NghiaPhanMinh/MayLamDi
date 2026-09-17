@@ -17,6 +17,40 @@ import { getGroupColor } from "../../lib/groupColors";
 import { normalizeSubscriptionPlan } from "../../lib/subscription";
 
 import { ActivityCenter } from "../teams/ActivityCenter";
+import { OnboardingTutorial, type TutorialStep } from "../onboarding/OnboardingTutorial";
+
+const DASHBOARD_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    target: "nav-home",
+    title: "Home",
+    description: "Track your next immediate actions, upcoming deadlines, and active project rooms.",
+    placement: "right",
+  },
+  {
+    target: "nav-profile",
+    title: "Profile",
+    description: "Update your skills and weekly capacity so the AI can allocate tasks accurately.",
+    placement: "right",
+  },
+  {
+    target: "nav-my-tasks",
+    title: "My Tasks",
+    description: "Manage your personal task queue, submit evidence, and earn XP rewards.",
+    placement: "right",
+  },
+  {
+    target: "nav-resources",
+    title: "Resources",
+    description: "Explore project framework templates and collaborative team guides.",
+    placement: "right",
+  },
+  {
+    target: "nav-projects",
+    title: "Projects",
+    description: "View your team projects, or click Create Project to start a new one.",
+    placement: "right",
+  },
+];
 
 export function AuthenticatedHome() {
   const { signOut } = useAuthActions();
@@ -40,6 +74,13 @@ export function AuthenticatedHome() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showDashboardTour, setShowDashboardTour] = useState(() => {
+    try {
+      return localStorage.getItem("maylamdi_tour_dashboard_done") !== "true";
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (profile !== null || hasRequestedProfile.current) {
@@ -194,7 +235,13 @@ export function AuthenticatedHome() {
       <aside className={`app-sidebar ${mobileMenuOpen ? "is-mobile-open" : ""}`} aria-label="Main navigation">
         <nav>
           {MAIN_NAV_ITEMS.map((item) => (
-            <button key={item.id} className={activeSection === item.id ? "is-active" : ""} type="button" onClick={() => handleNavClick(item)}>
+            <button
+              key={item.id}
+              data-tour={`nav-${item.id}`}
+              className={activeSection === item.id ? "is-active" : ""}
+              type="button"
+              onClick={() => handleNavClick(item)}
+            >
               <span aria-hidden="true"><UiIcon name={item.icon} /></span><strong>{item.label}</strong>
             </button>
           ))}
@@ -214,6 +261,7 @@ export function AuthenticatedHome() {
             </div>
           </div>
           <button
+            data-tour="nav-my-tasks"
             className={projectsView === "personal-tasks" ? "is-active sidebar-bottom-tasks-button" : "sidebar-bottom-tasks-button"}
             type="button"
             onClick={() => openProjects("personal-tasks")}
@@ -223,6 +271,7 @@ export function AuthenticatedHome() {
             <strong>My Tasks</strong>
           </button>
           <button
+            data-tour="nav-resources"
             className={activeSection === "resources" || projectsView === "resources" ? "is-active sidebar-bottom-resources-button" : "sidebar-bottom-resources-button"}
             type="button"
             onClick={() => {
@@ -264,6 +313,16 @@ export function AuthenticatedHome() {
         <button className={activeSection === "profile" ? "is-active" : ""} type="button" onClick={() => { navigate("/profile"); setMobileMenuOpen(false); }}><UserRound aria-hidden="true" /><span>Profile</span></button>
         <button className={mobileMenuOpen ? "is-active" : ""} type="button" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((current) => !current)}><Menu aria-hidden="true" /><span>More</span></button>
       </nav>
+
+      {showDashboardTour && (
+        <OnboardingTutorial
+          steps={DASHBOARD_TUTORIAL_STEPS}
+          isOpen={showDashboardTour}
+          storageKey="maylamdi_tour_dashboard_done"
+          onComplete={() => setShowDashboardTour(false)}
+          onSkip={() => setShowDashboardTour(false)}
+        />
+      )}
     </main>
   );
 }

@@ -12,6 +12,16 @@ import { AI_RETRY_DELAYS_MS, isRetryablePlatformAiError } from "../../lib/aiRetr
 import { trackEvent } from "../../lib/analytics";
 import { createTelemetryTracker } from "../../lib/telemetry";
 import { generateClientGeminiPlan } from "../../lib/clientGeminiPlanner";
+import { OnboardingTutorial, type TutorialStep } from "../onboarding/OnboardingTutorial";
+
+const CONFIRM_PLAN_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    target: "action-confirm-plan",
+    title: "Confirm Your Plan",
+    description: "Review the generated tasks and milestones, then confirm to launch your project.",
+    placement: "top",
+  },
+];
 
 type Workspace = FunctionReturnType<typeof api.tasks.getWorkspace>;
 type AiPlan = FunctionReturnType<typeof api.ai.generateProjectPlan>;
@@ -48,6 +58,13 @@ export function AIPlanningAssistant({
   const byokActive = getByokSession() !== null;
   const isLeader = workspace.canManageProject || workspace.isTeamOwner;
   const [editingTempId, setEditingTempId] = useState<string | null>(null);
+  const [showConfirmTour, setShowConfirmTour] = useState(() => {
+    try {
+      return localStorage.getItem("maylamdi_tour_confirm_done") !== "true";
+    } catch {
+      return false;
+    }
+  });
 
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingSeconds, setLoadingSeconds] = useState(0);
@@ -683,7 +700,7 @@ export function AIPlanningAssistant({
                 >
                   <Zap size={16} /> Regenerate Plan
                 </button>
-                <button className="primary-button hero-save-plan-button" type="button" disabled={isGenerating} onClick={() => void handleSavePlan()}>
+                <button className="primary-button hero-save-plan-button" data-tour="action-confirm-plan" type="button" disabled={isGenerating} onClick={() => void handleSavePlan()}>
                   {isGenerating ? <><Rocket size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Saving &amp; Launching Project…</> : <><CheckCircle2 size={18} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} /> Confirm &amp; Save Plan</>}
                 </button>
               </div>
@@ -692,6 +709,16 @@ export function AIPlanningAssistant({
             <p className="ai-safety-note" style={{ marginTop: "1rem", textAlign: "center", fontWeight: 700 }}>
               Viewing AI plan preview draft. Only the room leader can confirm and save this plan.
             </p>
+          )}
+
+          {draft && !isGenerating && showConfirmTour && isLeader && (
+            <OnboardingTutorial
+              steps={CONFIRM_PLAN_TUTORIAL_STEPS}
+              isOpen={showConfirmTour}
+              storageKey="maylamdi_tour_confirm_done"
+              onComplete={() => setShowConfirmTour(false)}
+              onSkip={() => setShowConfirmTour(false)}
+            />
           )}
         </div>
       ) : null}
