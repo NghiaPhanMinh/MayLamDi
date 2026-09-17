@@ -2183,7 +2183,7 @@ export function BattleScene({
 
     doc.setFontSize(9.5);
     doc.setFont("helvetica", "normal");
-    doc.text(`Official Dossier | Generated on ${new Date().toLocaleDateString()}`, 14, 26);
+    doc.text(`Official Report | Generated on ${new Date().toLocaleDateString()}`, 14, 26);
     doc.text(`Project: ${state.project.title}`, 14, 33);
 
     // Outcome Badge
@@ -2359,7 +2359,7 @@ export function BattleScene({
     doc.text(`Digital Verification Hash: ${state.project._id}-${state.currentProfileId}-${Date.now().toString(36)}`, 14, yPos);
     doc.text("MayLamDi project contribution report", 14, yPos + 3.5);
 
-    doc.save(`${state.project.title.replace(/\s+/g, "_")}_Contribution_Dossier.pdf`);
+    doc.save(`${state.project.title.replace(/\s+/g, "_")}_Contribution_Report.pdf`);
   }
 
   async function handleRemoveRoom() {
@@ -3877,10 +3877,10 @@ export function BattleScene({
               </div>
             </div>
 
-            {/* Contribution Dossier */}
+            {/* Contribution Report */}
             <div style={{ background: "var(--color-surface, #ffffff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", display: "grid", gap: "12px", alignContent: "start" }}>
               <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
-                Contribution Dossier
+                Contribution Report
               </h3>
               <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
                 Verifiable PDF report with contribution breakdown and review history.
