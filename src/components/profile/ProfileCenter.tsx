@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { X } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { Trash2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
@@ -138,10 +139,13 @@ export function ProfileCenter({
 }) {
   const profile = useQuery(api.profiles.getOrNull);
   const saveProfile = useMutation(api.profiles.saveCurrent);
+  const deleteAccount = useMutation(api.profiles.deleteCurrentAccount);
+  const { signOut } = useAuthActions();
   const [skills, setSkills] = useState<string[]>(profile?.skills ?? []);
   const [softwareSkills, setSoftwareSkills] = useState<string[]>(profile?.softwareSkills ?? []);
   const [weeklyCapacity, setWeeklyCapacity] = useState(profile?.weeklyCapacity ?? 8);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const profileHydrated = useRef(false);
@@ -149,6 +153,36 @@ export function ProfileCenter({
   const [useOwnKey, setUseOwnKey] = useState(initialByok !== null);
   const [apiKey, setApiKey] = useState(initialByok?.apiKey ?? "");
   const [model, setModel] = useState(initialByok?.model ?? "deepseek/deepseek-chat");
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Permanently Delete Account?\n\nAre you sure you want to permanently delete your account and all associated data?\nThis action cannot be undone. You will be signed out immediately."
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await deleteAccount();
+      const tourKeys = [
+        "maylamdi_tour_lobby_done",
+        "maylamdi_tour_confirm_done",
+        "maylamdi_tour_dashboard_done",
+        "maylamdi_tour_workspace_done",
+      ];
+      for (const key of tourKeys) {
+        try {
+          localStorage.removeItem(key);
+        } catch {}
+      }
+      clearByokSession();
+      await signOut();
+      window.location.href = "/";
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError, "Could not delete account."));
+      setIsDeleting(false);
+    }
+  }
 
   /* Realtime profile data arrives after the first render; hydrate once without
      overwriting edits made while the save request is in flight. */
@@ -297,6 +331,26 @@ export function ProfileCenter({
           </details>
         </div>
       ) : null}
+
+      <div className="profile-context-settings" style={{ marginTop: "1.5rem" }}>
+        <section className="profile-settings-card profile-danger-card">
+          <div className="profile-reset-header">
+            <h2 style={{ margin: "0 0 0.5rem" }}>Delete Account</h2>
+            <p className="card-description" style={{ margin: 0 }}>
+              Permanently delete your profile, team memberships, and account record from MayLamDi.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="danger-button profile-reset-button"
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+          >
+            <Trash2 size={16} aria-hidden="true" style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} />
+            {isDeleting ? "Deleting Account…" : "Delete Account"}
+          </button>
+        </section>
+      </div>
     </section>
   );
 }
