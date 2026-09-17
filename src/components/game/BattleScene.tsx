@@ -3097,15 +3097,13 @@ export function BattleScene({
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
-            gap: "6px",
             color: "#101517",
             userSelect: "none",
           }}
-          title="Switch to Tool Mode (Plain progress bar & clean dashboard)"
-          aria-label="Switch to Tool Mode"
+          title="Switch to Focus Mode"
+          aria-label="Switch to Focus Mode"
         >
-          <BarChart2 size={16} />
-          <span>Tool Mode</span>
+          <span>Focus Mode</span>
         </button>
 
         {/* Layer 10: Task Progress Bar (TOP, centered text, fixed in place, responsive width) */}
@@ -3369,45 +3367,6 @@ export function BattleScene({
           {isAudioMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
 
-        {/* Dragon Layout Admin Button (Only if authenticated or open) */}
-        {(showDragonEditor || adminAuthenticated) && (
-          <button
-            type="button"
-            className="rpg-btn-leaderboard rpg-btn-layout-admin"
-            style={{
-              position: "absolute",
-              bottom: "16px",
-              right: "68px",
-              zIndex: 30,
-              width: "42px",
-              height: "42px",
-              borderRadius: "12px",
-              background: isDarkMode ? "#171a1e" : "#fffded",
-              border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
-              boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: isDarkMode ? "#fffdec" : "#101517",
-            }}
-            onClick={() => {
-              if (!adminAuthenticated) {
-                setShowAdminPasswordModal(true);
-              } else {
-                setShowDragonEditor((prev) => !prev);
-                if (!selectedDragonPart) {
-                  setSelectedDragonPart("headNeck");
-                }
-              }
-            }}
-            title="Dragon Layout Admin"
-            aria-label="Dragon Layout Admin"
-          >
-            <Shield size={20} />
-          </button>
-        )}
-
         {/* Boss Defeated UI Banner with "End Screen" button leading to project complete screen */}
         {effectiveIsDefeated && (
           <div
@@ -3463,240 +3422,10 @@ export function BattleScene({
           </div>
         )}
 
-        {/* Dragon Death Pose Live Debug Control Board (Bottom-Left Screen) */}
-        <div
-          className="rpg-death-debug-board"
-          style={{
-            position: "absolute",
-            bottom: "16px",
-            left: "16px",
-            zIndex: 40,
-            pointerEvents: "auto",
-          }}
-        >
-          {!deathDebugOpen ? (
-            <button
-              type="button"
-              onClick={() => setDeathDebugOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 14px",
-                borderRadius: "12px",
-                background: isDarkMode ? "#171a1e" : "#fffded",
-                border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
-                boxShadow: isDarkMode ? "3px 3px 0 #000000" : "3px 3px 0 #101517",
-                color: isDarkMode ? "#fffdec" : "#101517",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "0.8rem",
-              }}
-              title="Open Dragon Death Debug Controls"
-            >
-              <Sliders size={16} />
-              <span>Death Debug</span>
-            </button>
-          ) : (
-            <div
-              style={{
-                width: "270px",
-                maxHeight: "440px",
-                overflowY: "auto",
-                background: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 253, 237, 0.97)",
-                border: isDarkMode ? "2px solid rgba(255,253,236,0.3)" : "2.5px solid #101517",
-                borderRadius: "14px",
-                boxShadow: isDarkMode ? "4px 4px 0 #000000" : "4px 4px 0 #101517",
-                padding: "12px 14px",
-                color: isDarkMode ? "#fffdec" : "#101517",
-                fontSize: "0.75rem",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", borderBottom: isDarkMode ? "1px solid rgba(255,253,236,0.15)" : "1px solid #e2e8f0", paddingBottom: "6px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 800 }}>
-                  <Sliders size={14} />
-                  <span>Dragon Death Controls</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDeathDebugOpen(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: isDarkMode ? "#94a3b8" : "#64748b",
-                    fontWeight: 800,
-                    fontSize: "0.85rem",
-                    padding: "2px 6px",
-                  }}
-                  title="Minimize"
-                >
-                  &ndash;
-                </button>
-              </div>
-
-              {/* Force Defeated Button */}
-              <div style={{ marginBottom: "10px" }}>
-                <button
-                  type="button"
-                  onClick={() => setDeathDebugForceDefeated((prev) => !prev)}
-                  style={{
-                    width: "100%",
-                    padding: "6px 10px",
-                    borderRadius: "6px",
-                    border: isDarkMode ? "1.5px solid rgba(255,253,236,0.3)" : "1.5px solid #101517",
-                    background: deathDebugForceDefeated ? (isDarkMode ? "#065f46" : "#bbf7d0") : (isDarkMode ? "#1e293b" : "#f1f5f9"),
-                    color: deathDebugForceDefeated ? (isDarkMode ? "#34d399" : "#166534") : (isDarkMode ? "#e2e8f0" : "#334155"),
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    fontSize: "0.74rem",
-                  }}
-                >
-                  {deathDebugForceDefeated ? "Defeated Mode: ACTIVE (Click to toggle)" : "Test Defeat Mode: OFF (Click to test)"}
-                </button>
-              </div>
-
-              {/* Rotation Slider */}
-              <div style={{ marginBottom: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
-                  <span>Rotation:</span>
-                  <span style={{ fontFamily: "monospace" }}>{deathRotation}&deg;</span>
-                </div>
-                <input
-                  type="range"
-                  min={-180}
-                  max={180}
-                  step={1}
-                  value={deathRotation}
-                  onChange={(e) => setDeathRotation(Number(e.target.value))}
-                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
-                />
-              </div>
-
-              {/* Pivot X Slider */}
-              <div style={{ marginBottom: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
-                  <span>Pivot X:</span>
-                  <span style={{ fontFamily: "monospace" }}>{deathPivotX}px</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={200}
-                  step={1}
-                  value={deathPivotX}
-                  onChange={(e) => setDeathPivotX(Number(e.target.value))}
-                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
-                />
-              </div>
-
-              {/* Pivot Y Slider */}
-              <div style={{ marginBottom: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
-                  <span>Pivot Y:</span>
-                  <span style={{ fontFamily: "monospace" }}>{deathPivotY}px</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={250}
-                  step={1}
-                  value={deathPivotY}
-                  onChange={(e) => setDeathPivotY(Number(e.target.value))}
-                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
-                />
-              </div>
-
-              {/* Offset X Slider */}
-              <div style={{ marginBottom: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
-                  <span>Offset X:</span>
-                  <span style={{ fontFamily: "monospace" }}>{deathOffsetX}px</span>
-                </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  step={1}
-                  value={deathOffsetX}
-                  onChange={(e) => setDeathOffsetX(Number(e.target.value))}
-                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
-                />
-              </div>
-
-              {/* Offset Y Slider */}
-              <div style={{ marginBottom: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: "2px" }}>
-                  <span>Offset Y:</span>
-                  <span style={{ fontFamily: "monospace" }}>{deathOffsetY}px</span>
-                </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  step={1}
-                  value={deathOffsetY}
-                  onChange={(e) => setDeathOffsetY(Number(e.target.value))}
-                  style={{ width: "100%", cursor: "pointer", height: "4px" }}
-                />
-              </div>
-
-              {/* Stop Wings Flapping Toggle */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                <label style={{ cursor: "pointer", fontWeight: 700 }}>Stop Wings:</label>
-                <input
-                  type="checkbox"
-                  checked={deathStopWings}
-                  onChange={(e) => setDeathStopWings(e.target.checked)}
-                  style={{ cursor: "pointer" }}
-                />
-              </div>
-
-              {/* Death Glow Toggle */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                <label style={{ cursor: "pointer", fontWeight: 700 }}>Dragon Glow:</label>
-                <input
-                  type="checkbox"
-                  checked={deathGlow}
-                  onChange={(e) => setDeathGlow(e.target.checked)}
-                  style={{ cursor: "pointer" }}
-                />
-              </div>
-
-              {/* Reset Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setDeathRotation(-60);
-                  setDeathPivotX(85);
-                  setDeathPivotY(180);
-                  setDeathOffsetX(0);
-                  setDeathOffsetY(0);
-                  setDeathStopWings(true);
-                  setDeathGlow(false);
-                }}
-                style={{
-                  width: "100%",
-                  padding: "5px",
-                  borderRadius: "6px",
-                  border: isDarkMode ? "1px solid rgba(255,253,236,0.3)" : "1px solid #cbd5e1",
-                  background: isDarkMode ? "#1e293b" : "#f8fafc",
-                  color: isDarkMode ? "#94a3b8" : "#475569",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Reset to Defaults
-              </button>
-            </div>
-          )}
-        </div>
       </div>
       ) : (
         <div
-          className="tool-mode-dashboard-container"
+          className="tool-mode-dashboard-container focus-mode-dashboard-container"
           style={{
             position: "relative",
             width: "100%",
@@ -3732,7 +3461,6 @@ export function BattleScene({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "6px",
                   padding: "8px 14px",
                   fontSize: "0.85rem",
                   fontWeight: 700,
@@ -3742,7 +3470,6 @@ export function BattleScene({
                 title="Switch to Game Mode"
                 aria-label="Switch to Game Mode"
               >
-                <Gamepad2 size={16} />
                 Game Mode
               </button>
 
@@ -3791,7 +3518,7 @@ export function BattleScene({
                       border: "1px solid #cbd5e1",
                     }}
                   >
-                    Tool Mode
+                    Focus Mode
                   </span>
                 </div>
                 <p style={{ margin: "3px 0 0 0", fontSize: "0.82rem", color: "#64748b" }}>
@@ -5162,7 +4889,7 @@ export function BattleScene({
       )}
 
       {/* =========================================================================
-          BOSS ATTACK QUEST PINNED BOARD MODAL (Key Visual & Modern Hierarchy)
+          BOSS ATTACK QUEST PINNED BOARD MODAL (Clean Typographic Hierarchy)
          ========================================================================= */}
       {showBossModal && (
         <div className="rpg-modal-backdrop" onClick={() => setShowBossModal(false)}>
@@ -5184,11 +4911,11 @@ export function BattleScene({
               color: "var(--color-text, #101517)",
             }}
           >
-            {/* Header: Title with Flame badge & Clean Close Button */}
+            {/* Header: Title with text badge & Clean Close Button */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", paddingBottom: "14px", borderBottom: "1px solid var(--color-border, #e2e8f0)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <h3 style={{ margin: 0, fontSize: "1.22rem", fontWeight: 800, color: "var(--color-text, #101517)", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <UiIcon name="Flame" /> Attack The Dragon
+                <h3 style={{ margin: 0, fontSize: "1.22rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                  Attack The Dragon
                 </h3>
                 <span
                   style={{
@@ -5248,7 +4975,7 @@ export function BattleScene({
                     setShowCreateQuestModal(true);
                   }}
                 >
-                  + Create New Quest
+                  Create New Quest
                 </button>
               </div>
             ) : !selectedTaskId ? (
@@ -5305,15 +5032,15 @@ export function BattleScene({
                           )}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.74rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
-                          <span><UiIcon name="CalendarDays" /> {task.dueDate || "No deadline"}</span>
-                          <span style={{ color: "#b91c1c", fontWeight: 700 }}><UiIcon name="Flame" /> -{task.damage || 50} HP</span>
+                          <span>Due: {task.dueDate || "No deadline"}</span>
+                          <span style={{ color: "#b91c1c", fontWeight: 700 }}>-{task.damage || 50} HP</span>
                         </div>
                         <button
                           className="primary-button"
                           type="button"
                           style={{ padding: "6px 12px", fontSize: "0.78rem", width: "100%", fontWeight: 700, borderRadius: "8px" }}
                         >
-                          Select Quest ➜
+                          Select Quest
                         </button>
                       </div>
                     );
@@ -5351,7 +5078,7 @@ export function BattleScene({
                             setShowMyTasksModal(true);
                           }}
                         >
-                          Change Quest ↺
+                          Change Quest
                         </button>
                       </div>
 
@@ -5366,14 +5093,14 @@ export function BattleScene({
                       )}
 
                       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", fontSize: "0.76rem" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
-                          <UiIcon name="CalendarDays" /> Due: <strong style={{ color: "#0f172a" }}>{task.dueDate || "No deadline"}</strong>
+                        <span style={{ display: "inline-flex", alignItems: "center", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
+                          Due: <strong style={{ color: "#0f172a", marginLeft: "4px" }}>{task.dueDate || "No deadline"}</strong>
                         </span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
-                          <UiIcon name="User" /> Assigned by: <strong style={{ color: "#0f172a" }}>{creatorName}</strong>
+                        <span style={{ display: "inline-flex", alignItems: "center", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
+                          Assigned by: <strong style={{ color: "#0f172a", marginLeft: "4px" }}>{creatorName}</strong>
                         </span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#fee2e2", padding: "3px 9px", borderRadius: "6px", fontWeight: 800, color: "#b91c1c" }}>
-                          <UiIcon name="Flame" /> Boss Impact: -{task.damage || 50} HP
+                        <span style={{ display: "inline-flex", alignItems: "center", background: "#fee2e2", padding: "3px 9px", borderRadius: "6px", fontWeight: 800, color: "#b91c1c" }}>
+                          Boss Impact: -{task.damage || 50} HP
                         </span>
                       </div>
                     </div>
@@ -5401,16 +5128,15 @@ export function BattleScene({
                             setEvidenceFile(null);
                           }}
                           style={{
-                            padding: "10px 8px",
-                            fontSize: "0.8rem",
+                            padding: "12px 8px",
+                            fontSize: "0.84rem",
                             fontWeight: isActive ? 900 : 700,
                             borderRadius: "10px",
                             cursor: "pointer",
                             display: "flex",
-                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: "5px",
+                            textAlign: "center",
                             transition: "all 0.15s ease",
                             background: isActive ? "var(--mld-accent, #fcee0a)" : "var(--mld-surface-02, #f8fafc)",
                             color: isActive ? "#101517" : "#475569",
@@ -5419,12 +5145,7 @@ export function BattleScene({
                             transform: isActive ? "translateY(-1px)" : "none",
                           }}
                         >
-                          <span style={{ fontSize: "1.1rem" }}>
-                            {tab === "note" ? "📝" : tab === "link" ? "🔗" : tab === "image" ? "🖼️" : "📄"}
-                          </span>
-                          <span>
-                            {tab === "note" ? "Short Note" : tab === "link" ? "External Link" : tab === "image" ? "Image File" : "PDF Document"}
-                          </span>
+                          {tab === "note" ? "Short Note" : tab === "link" ? "External Link" : tab === "image" ? "Image File" : "PDF Document"}
                         </button>
                       );
                     })}
@@ -5520,15 +5241,12 @@ export function BattleScene({
                         style={{
                           border: "2px dashed var(--color-border, #cbd5e1)",
                           borderRadius: "12px",
-                          padding: "18px",
+                          padding: "20px 18px",
                           background: "var(--mld-surface-02, #f8fafc)",
                           textAlign: "center",
                         }}
                       >
-                        <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "4px" }}>
-                          {evidenceType === "image" ? "🖼️" : "📄"}
-                        </span>
-                        <span style={{ display: "block", fontSize: "0.84rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                        <span style={{ display: "block", fontSize: "0.86rem", fontWeight: 800, color: "var(--color-text, #101517)", marginBottom: "4px" }}>
                           Upload {evidenceType === "image" ? "Image File (JPEG, PNG, WebP, GIF — Max 5MB)" : "PDF Document (Max 10MB)"} *
                         </span>
                         <input
@@ -5630,7 +5348,7 @@ export function BattleScene({
                       setShowMyTasksModal(true);
                     }}
                   >
-                    ← Back to My Tasks
+                    Back to My Tasks
                   </button>
 
                   <button
@@ -5652,8 +5370,8 @@ export function BattleScene({
                     {isSubmittingTask
                       ? "Submitting Proof..."
                       : isSoloProject
-                        ? <><UiIcon name="Zap" /> Self-Approve & Complete Task!</>
-                        : <><UiIcon name="Swords" /> Submit Proof for Peer Review!</>}
+                        ? "Self-Approve & Complete Task"
+                        : "Submit Proof for Peer Review"}
                   </button>
                 </div>
               </form>
