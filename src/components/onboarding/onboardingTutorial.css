@@ -7,27 +7,82 @@
   pointer-events: auto;
 }
 
+/* Translucent scrim overlay (~40% dimming) so app content remains visible, never pitch dark */
 .mld-tutorial-scrim {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background: rgba(16, 21, 23, 0.78);
-  backdrop-filter: blur(2px);
+  background: rgba(16, 21, 23, 0.40);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
   animation: mldTutorialFadeIn 0.2s ease-out;
+  cursor: pointer;
 }
 
+/* Glowing Neon Spotlight Frame */
 .mld-tutorial-spotlight {
   position: fixed;
   border-radius: 12px;
-  outline: 3px solid var(--mld-primary, #fff73f);
-  box-shadow: 0 0 0 9999px rgba(16, 21, 23, 0.78), 0 0 20px rgba(255, 247, 63, 0.4);
+  border: 3px solid var(--mld-primary, #fff73f);
+  box-shadow: 0 0 16px rgba(255, 247, 63, 0.75), inset 0 0 8px rgba(255, 247, 63, 0.25);
   pointer-events: none;
   z-index: 99992;
-  transition: top 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              height 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: top 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              left 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              height 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Active Highlighted Target Element */
+.mld-tour-active-target {
+  position: relative !important;
+  z-index: 99993 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure sidebar elevates above scrim when containing an active target */
+.app-sidebar:has(.mld-tour-active-target) {
+  z-index: 99993 !important;
+}
+
+/* High-contrast solid bright background for active sidebar navigation buttons */
+.app-sidebar button.mld-tour-active-target,
+.app-sidebar nav > button.mld-tour-active-target,
+.app-sidebar .sidebar-bottom-tasks-button.mld-tour-active-target,
+.app-sidebar .sidebar-bottom-resources-button.mld-tour-active-target {
+  background: #ffffff !important;
+  color: #101517 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  border-radius: 10px !important;
+}
+
+.app-sidebar button.mld-tour-active-target *,
+.app-sidebar nav > button.mld-tour-active-target *,
+.app-sidebar .sidebar-bottom-tasks-button.mld-tour-active-target *,
+.app-sidebar .sidebar-bottom-resources-button.mld-tour-active-target * {
+  color: #101517 !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+/* Tab and Header Highlights */
+.project-tabs button.mld-tour-active-target,
+.project-subnav button.mld-tour-active-target,
+.project-room-tabs button.mld-tour-active-target {
+  background: #ffffff !important;
+  color: #101517 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+.project-tabs button.mld-tour-active-target *,
+.project-subnav button.mld-tour-active-target *,
+.project-room-tabs button.mld-tour-active-target * {
+  color: #101517 !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+/* Neo-Brutalist Tour Card */
 .mld-tutorial-card {
   position: fixed;
   z-index: 99995;
@@ -41,8 +96,8 @@
   font-family: inherit;
   box-sizing: border-box;
   animation: mldTutorialPopIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transition: top 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: top 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              left 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mld-tutorial-header {

@@ -47,6 +47,14 @@ export function OnboardingTutorial({
       return;
     }
 
+    // Ensure active element is marked for elevated z-index and high contrast
+    document.querySelectorAll(".mld-tour-active-target").forEach((el) => {
+      if (el !== element) {
+        el.classList.remove("mld-tour-active-target");
+      }
+    });
+    element.classList.add("mld-tour-active-target");
+
     const rect = element.getBoundingClientRect();
     setTargetRect({
       top: rect.top,
@@ -129,7 +137,18 @@ export function OnboardingTutorial({
     }
   };
 
+  useEffect(() => {
+    return () => {
+      document.querySelectorAll(".mld-tour-active-target").forEach((el) => {
+        el.classList.remove("mld-tour-active-target");
+      });
+    };
+  }, []);
+
   const handleFinish = () => {
+    document.querySelectorAll(".mld-tour-active-target").forEach((el) => {
+      el.classList.remove("mld-tour-active-target");
+    });
     if (storageKey) {
       try {
         localStorage.setItem(storageKey, "true");
@@ -139,6 +158,9 @@ export function OnboardingTutorial({
   };
 
   const handleSkip = () => {
+    document.querySelectorAll(".mld-tour-active-target").forEach((el) => {
+      el.classList.remove("mld-tour-active-target");
+    });
     if (storageKey) {
       try {
         localStorage.setItem(storageKey, "true");
