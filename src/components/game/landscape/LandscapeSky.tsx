@@ -61,11 +61,6 @@ export function LandscapeSky({
                   <stop offset="45%" stopColor="#0a1628" />
                   <stop offset="100%" stopColor="#12253f" />
                 </linearGradient>
-                <radialGradient id="moonGlowGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#fef08a" stopOpacity="0.4" />
-                  <stop offset="50%" stopColor="#fef08a" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#fef08a" stopOpacity="0" />
-                </radialGradient>
                 <radialGradient id="moonBodyGrad" cx="35%" cy="30%" r="70%">
                   <stop offset="0%" stopColor="#ffffff" />
                   <stop offset="65%" stopColor="#fef9c3" />
@@ -80,35 +75,28 @@ export function LandscapeSky({
         </svg>
       </div>
 
-      {/* Night-Only Layer: Moon with gentle drift animation */}
+      {/* Night-Only Layer: Moon (Fixed aspect-ratio, perfectly round, clean vector graphic shape without glowing halo) */}
       {isNight && (
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            top: "36px",
+            right: "18%",
+            width: "52px",
+            height: "52px",
             pointerEvents: "none",
             zIndex: 1,
+            animation: "night-moon-drift 12s ease-in-out infinite alternate",
           }}
         >
-          <svg
-            viewBox="0 0 1000 400"
-            preserveAspectRatio="none"
-            width="100%"
-            height="100%"
-            style={{
-              animation: "night-moon-drift 12s ease-in-out infinite alternate",
-            }}
-          >
-            {/* Soft radial glow halo */}
-            <circle cx="820" cy="55" r="70" fill="url(#moonGlowGrad)" />
-            <circle cx="820" cy="55" r="42" fill="url(#moonGlowGrad)" />
-            {/* Moon body */}
-            <circle cx="820" cy="55" r="26" fill="url(#moonBodyGrad)" />
+          <svg viewBox="0 0 52 52" width="52" height="52">
+            {/* Moon body - completely round circle */}
+            <circle cx="26" cy="26" r="25" fill="url(#moonBodyGrad)" />
             {/* Moon subtle craters */}
-            <circle cx="813" cy="50" r="4.5" fill="#fde047" opacity="0.3" />
-            <circle cx="828" cy="62" r="3.5" fill="#fde047" opacity="0.25" />
-            <circle cx="826" cy="48" r="2.5" fill="#fde047" opacity="0.28" />
-            <circle cx="816" cy="64" r="2.0" fill="#fde047" opacity="0.2" />
+            <circle cx="19" cy="21" r="4" fill="#fde047" opacity="0.3" />
+            <circle cx="34" cy="33" r="3.5" fill="#fde047" opacity="0.25" />
+            <circle cx="32" cy="19" r="2.5" fill="#fde047" opacity="0.28" />
+            <circle cx="22" cy="35" r="2" fill="#fde047" opacity="0.2" />
           </svg>
         </div>
       )}
@@ -125,7 +113,7 @@ export function LandscapeSky({
             height: "120px",
             pointerEvents: "none",
             zIndex: 2,
-            animation: "landscape-cloud-drift-far 120s linear infinite",
+            animation: "landscape-cloud-drift-far 450s linear infinite",
             willChange: "transform",
           }}
         >

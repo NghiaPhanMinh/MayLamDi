@@ -4,12 +4,14 @@ type LandscapeTerrainProps = {
   mountainOffset?: TransformOffset;
   islandOffset?: TransformOffset;
   greenOffset?: TransformOffset;
+  isNight?: boolean;
 };
 
 export function LandscapeTerrain({
   mountainOffset = { x: 0, y: 130, scale: 1 },
   islandOffset = { x: 0, y: 0, scale: 1 },
   greenOffset = { x: 0, y: 0, scale: 1 },
+  isNight = false,
 }: LandscapeTerrainProps) {
   return (
     <>
@@ -30,13 +32,13 @@ export function LandscapeTerrain({
           <g transform={`translate(${mountainOffset.x}, ${mountainOffset.y}) scale(${mountainOffset.scale})`}>
             <polygon
               points="0,115 90,82 190,105 320,68 450,100 580,62 710,95 840,72 950,90 1000,78 1000,260 0,260"
-              fill="#64748b"
-              opacity="0.55"
+              fill={isNight ? "#07101c" : "#64748b"}
+              opacity={isNight ? "0.9" : "0.55"}
             />
             <polygon
               points="0,125 140,105 280,120 410,92 560,115 720,88 890,112 1000,102 1000,270 0,270"
-              fill="#475569"
-              opacity="0.45"
+              fill={isNight ? "#03070e" : "#475569"}
+              opacity={isNight ? "0.95" : "0.45"}
             />
           </g>
         </svg>

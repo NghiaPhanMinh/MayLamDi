@@ -151,9 +151,6 @@ describe("phase and task backend", () => {
       status: "approved",
       comment: "The research evidence is ready to use.",
     });
-    const awaitingWorkspace = await member.asUser.query(api.tasks.getWorkspace, { projectId });
-    expect(awaitingWorkspace.tasks[0].status).toBe("awaiting_creator");
-    await owner.asUser.mutation(api.evidence.decideCompletion, { taskId, decision: "approve" });
     const completedWorkspace = await member.asUser.query(api.tasks.getWorkspace, { projectId });
     expect(completedWorkspace.project.status).toBe("completed");
     expect(completedWorkspace.tasks[0].status).toBe("completed");

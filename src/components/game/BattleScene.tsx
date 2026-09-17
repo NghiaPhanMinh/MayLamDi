@@ -76,6 +76,149 @@ function getFunnyName(list: string[], seed: string) {
   return list[Math.abs(hash) % list.length];
 }
 
+function PeerReviewEvidencePreview({ taskId }: { taskId: Id<"tasks"> }) {
+  const details = useQuery(api.evidence.listForTask, { taskId });
+
+  if (details === undefined) {
+    return (
+      <div style={{ fontSize: "0.75rem", color: "var(--color-muted, #64748b)", fontStyle: "italic" }}>
+        Loading attached proof...
+      </div>
+    );
+  }
+
+  const evidence = details.evidence ?? [];
+
+  if (evidence.length === 0) {
+    return (
+      <div
+        style={{
+          fontSize: "0.76rem",
+          color: "var(--color-muted, #64748b)",
+          fontStyle: "italic",
+          padding: "8px 10px",
+          background: "var(--mld-surface-01, #f8fafc)",
+          borderRadius: "8px",
+          border: "1px dashed var(--color-border, #cbd5e1)",
+        }}
+      >
+        No proof attached yet by the assignee.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+      <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--color-text, #101517)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        Attached Proof & Evidence ({evidence.length}):
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        {evidence.map((item) => (
+          <div
+            key={item._id}
+            style={{
+              padding: "8px 10px",
+              background: "var(--mld-surface-01, #f8fafc)",
+              borderRadius: "8px",
+              border: "1px solid var(--color-border, #e2e8f0)",
+              fontSize: "0.8rem",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: "0.68rem",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  background: "#e2e8f0",
+                  color: "#334155",
+                  textTransform: "uppercase",
+                }}
+              >
+                {item.type}
+              </span>
+              <span style={{ fontSize: "0.7rem", color: "var(--color-muted, #64748b)" }}>
+                by {item.submitterName}
+              </span>
+            </div>
+
+            {item.note && (
+              <p style={{ margin: "4px 0", color: "var(--color-text, #101517)", whiteSpace: "pre-wrap", lineHeight: 1.4 }}>
+                {item.note}
+              </p>
+            )}
+
+            {item.url && (
+              <div style={{ marginTop: "4px" }}>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: "#2563eb",
+                    textDecoration: "underline",
+                    wordBreak: "break-all",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontWeight: 700,
+                  }}
+                >
+                  <UiIcon name="Link" /> <span>{item.url}</span>
+                </a>
+              </div>
+            )}
+
+            {item.fileUrl && (
+              <div style={{ marginTop: "6px" }}>
+                {item.type === "image" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <a href={item.fileUrl} target="_blank" rel="noreferrer">
+                      <img
+                        src={item.fileUrl}
+                        alt={item.fileName ?? "Proof image"}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "220px",
+                          borderRadius: "6px",
+                          objectFit: "contain",
+                          border: "1px solid #cbd5e1",
+                          display: "block",
+                          background: "#ffffff",
+                        }}
+                      />
+                    </a>
+                    <span style={{ fontSize: "0.7rem", color: "var(--color-muted, #64748b)" }}>
+                      {item.fileName} {item.fileSize ? `(${(item.fileSize / 1024).toFixed(0)} KB)` : ""} (Click to open full view)
+                    </span>
+                  </div>
+                ) : (
+                  <a
+                    href={item.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      color: "#2563eb",
+                      textDecoration: "underline",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <UiIcon name="FileText" /> <span>View {item.fileName ?? "Uploaded File"} {item.fileSize ? `(${(item.fileSize / 1024).toFixed(0)} KB)` : ""}</span>
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type BattleSceneProps = {
   projectId: Id<"projects">;
   currentPhase?: string;
@@ -2520,7 +2663,7 @@ export function BattleScene({
 
         const isReviewer = t.reviewerProfileId === state?.currentProfileId;
         const isCreator = workspace?.project?.creatorProfileId === state?.currentProfileId;
-        if (isReviewer && (t.status === "review" || t.status === "submitted")) return true;
+        if (isReviewer && (t.status === "review" || t.status === "submitted" || t.status === "awaiting_creator")) return true;
         if (isCreator && t.status === "awaiting_creator") return true;
         return false;
       })
@@ -3114,6 +3257,7 @@ export function BattleScene({
               mountainOffset={terrainOffsets.mountain}
               islandOffset={terrainOffsets.island}
               greenOffset={terrainOffsets.green}
+              isNight={isDarkMode}
             />
           </div>
 
@@ -4565,6 +4709,8 @@ export function BattleScene({
                           {task.description}
                         </p>
                       )}
+
+                      <PeerReviewEvidencePreview taskId={task._id} />
 
                       {!isBeingReviewed ? (
                         <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>

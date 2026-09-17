@@ -334,29 +334,84 @@ export const submitReview = mutation({
       updatedAt: now,
       reviewedAt: now,
     });
-    await ctx.db.patch(context.task._id, {
-      status: args.status === "approved" ? "awaiting_creator" : "in_progress",
-      updatedAt: now,
-      completedAt: undefined,
-    });
-    await ctx.db.insert("activityLogs", {
-      teamId: context.project.teamId,
-      projectId: context.project._id,
-      actorProfileId: context.profile._id,
-      action:
-        args.status === "approved"
-          ? "review_approved"
-          : "review_changes_requested",
-      metadata: {
+
+    if (args.status === "approved") {
+      const existingCombatEvent = await ctx.db
+        .query("combatEvents")
+        .withIndex("by_task", (query) => query.eq("taskId", context.task._id))
+        .unique();
+
+      let combatEventId = existingCombatEvent?._id;
+      if (!existingCombatEvent) {
+        const attackerMembership = await ctx.db
+          .query("teamMembers")
+          .withIndex("by_team_and_user", (query) =>
+            query.eq("teamId", context.project.teamId).eq("profileId", context.task.primaryOwnerProfileId),
+          )
+          .unique();
+
+        combatEventId = await ctx.db.insert("combatEvents", {
+          projectId: context.project._id,
+          taskId: context.task._id,
+          attackerProfileId: context.task.primaryOwnerProfileId,
+          reviewerProfileId: context.profile._id,
+          damage: taskDamage(context.task),
+          spellType: attackerMembership?.spellType ?? "spark",
+          createdAt: now,
+        });
+      }
+
+      await ctx.db.patch(context.task._id, {
+        status: "completed",
+        completedAt: now,
+        updatedAt: now,
+      });
+
+      await ctx.db.insert("activityLogs", {
+        teamId: context.project.teamId,
         projectId: context.project._id,
-        taskId: context.task._id,
-        taskTitle: context.task.title,
-        reviewId: review._id,
-        reviewStatus: args.status,
-        taskStatus: args.status === "approved" ? "awaiting_creator" : "in_progress",
-      },
-      createdAt: now,
-    });
+        actorProfileId: context.profile._id,
+        action: "review_approved",
+        metadata: {
+          projectId: context.project._id,
+          taskId: context.task._id,
+          taskTitle: context.task.title,
+          reviewId: review._id,
+          reviewStatus: args.status,
+          taskStatus: "completed",
+          combatEventId,
+          damage: taskDamage(context.task),
+        },
+        createdAt: now,
+      });
+
+      await refreshProjectProgress(ctx, context.project, context.profile._id);
+    } else {
+      await ctx.db.patch(context.task._id, {
+        status: "in_progress",
+        completedAt: undefined,
+        updatedAt: now,
+      });
+
+      await ctx.db.insert("activityLogs", {
+        teamId: context.project.teamId,
+        projectId: context.project._id,
+        actorProfileId: context.profile._id,
+        action: "review_changes_requested",
+        metadata: {
+          projectId: context.project._id,
+          taskId: context.task._id,
+          taskTitle: context.task.title,
+          reviewId: review._id,
+          reviewStatus: args.status,
+          taskStatus: "in_progress",
+        },
+        createdAt: now,
+      });
+
+      await refreshProjectProgress(ctx, context.project, context.profile._id);
+    }
+
     return review._id;
   },
 });
@@ -483,8 +538,10 @@ export const decideCompletion = mutation({
   },
   handler: async (ctx, args) => {
     const context = await getTaskContext(ctx, args.taskId);
-    if (context.project.creatorProfileId !== context.profile._id) {
-      throw new Error("Only the room creator can approve final task completion.");
+    const isCreator = context.project.creatorProfileId === context.profile._id;
+    const isReviewer = context.task.reviewerProfileId === context.profile._id;
+    if (!isCreator && !isReviewer) {
+      throw new Error("Only the room creator or assigned reviewer can approve final task completion.");
     }
     if (context.task.status !== "awaiting_creator") {
       throw new Error("This task is not awaiting creator approval.");

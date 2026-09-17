@@ -64,22 +64,6 @@ export function LandscapeFX({
       `}</style>
       <div className="ambient-combat-exchange" style={{ opacity: 0.95, position: "absolute", inset: 0, pointerEvents: "none" }}>
         <svg viewBox="0 0 1000 400" width="100%" height="100%">
-          <defs>
-            {/* Projectile Filter Glows */}
-            <filter id="glow-fire" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3.5" floodColor="#f97316" />
-            </filter>
-            <filter id="glow-ice" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3.5" floodColor="#38bdf8" />
-            </filter>
-            <filter id="glow-lightning" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#fde047" />
-            </filter>
-            <filter id="glow-arcane" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#c084fc" />
-            </filter>
-          </defs>
-
           {/* =========================================================================
               CONTINUOUS ELEMENTAL ATTACK PROJECTILES FROM PLAYERS TO DRAGON
               Synced with the independent player hover animation
@@ -131,7 +115,7 @@ export function LandscapeFX({
                     <g transform={`rotate(${angle})`}>
                       {/* --- FIRE PROJECTILE (Flaming Meteor & Cometary Tail) --- */}
                       {isAtkFire && (
-                        <g filter="url(#glow-fire)">
+                        <g>
                           <polygon points="-4,-3 -28,-1 -10,0" fill="#dc2626" opacity="0.75" />
                           <polygon points="-3,3 -32,2 -8,0" fill="#ea580c" opacity="0.85" />
                           <ellipse cx="-12" cy="0" rx="14" ry="4.5" fill="#f97316" />
@@ -146,7 +130,7 @@ export function LandscapeFX({
 
                       {/* --- ICE PROJECTILE (Piercing Glacial Icicle Lance) --- */}
                       {isAtkIce && (
-                        <g filter="url(#glow-ice)">
+                        <g>
                           <line x1="-24" y1="-2" x2="-4" y2="0" stroke="#bae6fd" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
                           <line x1="-20" y1="2" x2="-3" y2="0" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
                           <polygon points="14,0 -12,-5.5 -6,0 -12,5.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.2" />
@@ -161,7 +145,7 @@ export function LandscapeFX({
 
                       {/* --- LIGHTNING PROJECTILE (Electric Plasma Spark Sphere) --- */}
                       {isAtkLightning && (
-                        <g filter="url(#glow-lightning)">
+                        <g>
                           <path d="M -22,-3 L -14,3 L -6,-2 L 0,0" fill="none" stroke="#67e8f9" strokeWidth="1.8" strokeLinecap="round" />
                           <path d="M -26,2 L -18,-2 L -10,2 L 0,0" fill="none" stroke="#fde047" strokeWidth="1.8" strokeLinecap="round" />
                           <circle cx="0" cy="0" r="7.5" fill="#facc15" />
@@ -172,7 +156,7 @@ export function LandscapeFX({
 
                       {/* --- ARCANE / NATURE PROJECTILE (Magical Stardust Orb) --- */}
                       {isAtkArcane && (
-                        <g filter="url(#glow-arcane)">
+                        <g>
                           <circle cx="-14" cy="-2" r="2.2" fill="#c084fc" opacity="0.7" />
                           <circle cx="-22" cy="1" r="1.8" fill="#e879f9" opacity="0.6" />
                           <circle cx="0" cy="0" r="8" fill="#a855f7" />

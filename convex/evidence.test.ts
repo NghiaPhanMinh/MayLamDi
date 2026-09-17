@@ -172,9 +172,6 @@ describe("task evidence and review", () => {
     });
     workspace = await owner.asUser.query(api.tasks.getWorkspace, { projectId });
     const details = await reviewer.asUser.query(api.evidence.listForTask, { taskId });
-    expect(workspace.tasks[0].status).toBe("awaiting_creator");
-    await reviewer.asUser.mutation(api.evidence.decideCompletion, { taskId, decision: "approve" });
-    workspace = await owner.asUser.query(api.tasks.getWorkspace, { projectId });
     expect(workspace.tasks[0].status).toBe("completed");
     expect(workspace.project.status).toBe("completed");
     expect(details.reviews.map((review) => review.status)).toEqual([

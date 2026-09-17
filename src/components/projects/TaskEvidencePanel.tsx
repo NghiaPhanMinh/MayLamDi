@@ -344,7 +344,7 @@ export function TaskEvidencePanel({
       {!details.isSoloProject && requiresReview ? (
         <div className="review-panel">
           <strong>{reviewerName ? `Assigned reviewer: ${reviewerName}` : "Reviewer not selected yet"}</strong>
-          <p>The assigned reviewer recommends completion or requests changes. Final completion stays with the room creator.</p>
+          <p>The assigned reviewer approves task completion or requests changes.</p>
           {canReviewNow ? (
             <>
               <label>
@@ -352,7 +352,7 @@ export function TaskEvidencePanel({
                 <textarea maxLength={1000} rows={3} value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} placeholder="What works, or what should change?" />
               </label>
               <div className="review-actions">
-                <button className="primary-button" type="button" disabled={isSaving} onClick={() => void handleReview("approved")}>Recommend complete</button>
+                <button className="primary-button" type="button" disabled={isSaving} onClick={() => void handleReview("approved")}>Approve & Complete</button>
                 <button className="secondary-button" type="button" disabled={isSaving} onClick={() => void handleReview("changes_requested")}>Request changes</button>
               </div>
             </>
