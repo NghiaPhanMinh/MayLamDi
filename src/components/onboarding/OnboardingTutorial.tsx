@@ -6,12 +6,14 @@ export interface TutorialStep {
   title: string;
   description: string;
   placement?: "top" | "bottom" | "left" | "right";
+  onEnter?: () => void;
 }
 
 export interface OnboardingTutorialProps {
   steps: TutorialStep[];
   isOpen: boolean;
   storageKey?: string;
+  onStepChange?: (stepIndex: number, step: TutorialStep) => void;
   onComplete?: () => void;
   onSkip?: () => void;
 }
@@ -27,6 +29,7 @@ export function OnboardingTutorial({
   steps,
   isOpen,
   storageKey,
+  onStepChange,
   onComplete,
   onSkip,
 }: OnboardingTutorialProps) {
@@ -106,6 +109,25 @@ export function OnboardingTutorial({
 
     setCardPosition({ top, left });
   }, [isOpen, step]);
+
+  const prevStepIndexRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !step) return;
+    if (prevStepIndexRef.current !== currentStepIndex) {
+      prevStepIndexRef.current = currentStepIndex;
+      if (step.onEnter) {
+        step.onEnter();
+      }
+      if (onStepChange) {
+        onStepChange(currentStepIndex, step);
+      }
+    }
+    const timer = setTimeout(() => {
+      updatePosition();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [isOpen, currentStepIndex, step, onStepChange, updatePosition]);
 
   useEffect(() => {
     if (!isOpen) return;

@@ -1267,6 +1267,15 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
           steps={WORKSPACE_TUTORIAL_STEPS}
           isOpen={showWorkspaceTour}
           storageKey="maylamdi_tour_workspace_done"
+          onStepChange={(stepIndex) => {
+            if (stepIndex === 0) {
+              setActiveTab("progress");
+            } else if (stepIndex === 1) {
+              setActiveTab("plan");
+            } else if (stepIndex === 2) {
+              setActiveTab("team");
+            }
+          }}
           onComplete={() => setShowWorkspaceTour(false)}
           onSkip={() => setShowWorkspaceTour(false)}
         />

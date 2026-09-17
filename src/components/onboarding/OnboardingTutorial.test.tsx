@@ -134,4 +134,27 @@ describe("OnboardingTutorial Component", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
+
+  it("calls onStepChange and step.onEnter when step transitions", () => {
+    const onStepChange = vi.fn();
+    const onEnterStep2 = vi.fn();
+    const stepsWithEnter: TutorialStep[] = [
+      { target: "test-step-1", title: "Step 1", description: "Desc 1" },
+      { target: "test-step-2", title: "Step 2", description: "Desc 2", onEnter: onEnterStep2 },
+    ];
+
+    render(
+      <OnboardingTutorial
+        steps={stepsWithEnter}
+        isOpen={true}
+        onStepChange={onStepChange}
+      />
+    );
+
+    expect(onStepChange).toHaveBeenCalledWith(0, stepsWithEnter[0]);
+
+    fireEvent.click(screen.getByText("Next"));
+    expect(onStepChange).toHaveBeenCalledWith(1, stepsWithEnter[1]);
+    expect(onEnterStep2).toHaveBeenCalledTimes(1);
+  });
 });
