@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "convex/react";
 
@@ -143,7 +144,7 @@ export function ProjectTeamMembers({ projectId }: { projectId: Id<"projects"> })
               <div>
                 <strong>
                   {member.displayName}
-                  {isInactive ? <span className="member-inactive-badge" style={{ marginLeft: "8px", padding: "2px 8px", borderRadius: "999px", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid #ef4444", fontSize: "0.75rem", fontWeight: 800 }}>⚠️ Inactive (7+ days)</span> : null}
+                  {isInactive ? <span className="member-inactive-badge" style={{ marginLeft: "8px", padding: "2px 8px", borderRadius: "999px", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid #ef4444", fontSize: "0.75rem", fontWeight: 800 }}><UiIcon name="TriangleAlert" /> Inactive (7+ days)</span> : null}
                 </strong>
                 <small>{member.weeklyCapacity ?? "?"}h/week · {member.assignedTaskCount} assigned · {member.reviewTaskCount} reviews</small>
               </div>
@@ -165,7 +166,7 @@ export function ProjectTeamMembers({ projectId }: { projectId: Id<"projects"> })
       </section>
 
       <section className="meeting-overlap" aria-labelledby="meeting-overlap-title">
-        <p className="card-eyebrow">Deterministic overlap</p><h4 id="meeting-overlap-title">Meeting candidates</h4><p>These options come from saved busy times—AI does not invent availability.</p>
+        <p className="card-eyebrow">Shared free times</p><h4 id="meeting-overlap-title">Meeting candidates</h4><p>These options come from the busy times your teammates saved.</p>
         {data.canManageMeetings ? <label className="meeting-mode-field"><span>Meeting type</span><select value={meetingMode} onChange={(event) => setMeetingMode(event.target.value as typeof meetingMode)}><option value="online">Online</option><option value="offline">Offline</option></select></label> : null}
         {data.suggestions.length ? <div className="meeting-suggestion-grid">{data.suggestions.map((suggestion) => <article key={`${suggestion.dayOfWeek}-${suggestion.startMinute}`}><strong>{DAYS[suggestion.dayOfWeek]} · {timeLabel(suggestion.startMinute)}–{timeLabel(suggestion.endMinute)}</strong><span>{suggestion.attendeeProfileIds.length}/{data.members.length} members available</span>{data.canManageMeetings ? <button className="quiet-button" type="button" disabled={isSaving} onClick={() => void createCandidate(suggestion)}>Create Candidate</button> : null}</article>)}</div> : <div className="project-empty"><strong>No shared slot yet.</strong><p>Ask teammates to save their busy times.</p></div>}
 

@@ -54,7 +54,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Nonlinear Design Process",
     shortName: "Design & Creative",
     description:
-      "A flexible discovery-to-delivery loop for visual, product, UX, interaction, and digital media work.",
+      "Research, prototype and review visual, product, UX or digital media designs.",
     disciplines: ["UX/UI", "Graphic design", "Product design", "Digital media"],
     isBuiltIn: true,
     accent: "pink",
@@ -123,7 +123,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Campaign Development",
     shortName: "Marketing & Communications",
     description:
-      "A research-led campaign flow connecting audience insight, creative production, channels, launch, and measurement.",
+      "Research your audience, produce campaign content, choose channels and measure results.",
     disciplines: ["Marketing", "Advertising", "PR", "Content"],
     isBuiltIn: true,
     accent: "yellow",
@@ -195,7 +195,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Business Project Framework",
     shortName: "Business & Entrepreneurship",
     description:
-      "A structured path from opportunity and evidence to a viable operating proposal, risk view, and final pitch.",
+      "Research a business opportunity, plan operations, assess risks and prepare a pitch.",
     disciplines: ["Business", "Entrepreneurship", "Management", "Finance"],
     isBuiltIn: true,
     accent: "green",
@@ -266,7 +266,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Architectural Design Process",
     shortName: "Architecture & Spatial Design",
     description:
-      "A nonlinear spatial design process balancing people, place, concept, technical constraints, documentation, and critique.",
+      "Study people and place, develop a spatial design, check constraints and prepare drawings for review.",
     disciplines: ["Architecture", "Interior design", "Landscape", "Spatial design"],
     isBuiltIn: true,
     accent: "blue",
@@ -350,7 +350,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Production Pipeline",
     shortName: "Film, Animation & Media",
     description:
-      "A dependency-aware production flow from development and script through assets, edit, revision, and release.",
+      "Develop a script, produce assets, edit, revise and release a film, animation or media project.",
     disciplines: ["Film", "Animation", "Motion", "Media production"],
     isBuiltIn: true,
     accent: "orange",
@@ -418,7 +418,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Agile Development",
     shortName: "Software & IT",
     description:
-      "An iterative backlog-based delivery flow supporting sprints, dependencies, blockers, testing, deployment, and review.",
+      "Plan a backlog, build in sprints, test, deploy and review the software.",
     disciplines: ["Software", "Web", "Apps", "Information technology"],
     isBuiltIn: true,
     accent: "magenta",
@@ -494,7 +494,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
     name: "Research Project Framework",
     shortName: "Academic Research",
     description:
-      "A rigorous question-to-submission process for evidence, ethics, methods, analysis, discussion, and academic writing.",
+      "Define a research question, review sources, choose methods, analyse findings and write the report.",
     disciplines: ["Research", "Thesis", "Capstone", "Academic writing"],
     isBuiltIn: true,
     accent: "blue",
@@ -502,7 +502,7 @@ export const BUILT_IN_FRAMEWORKS: BuiltInFramework[] = [
       phase(
         "research-question",
         "Research Question",
-        "Define a focused, feasible, and meaningful question or hypothesis.",
+        "Define a question or hypothesis you can investigate within the project scope.",
         ["Research question", "Scope statement", "Initial rationale"],
         ["Question design", "Scoping", "Academic reasoning"],
       ),

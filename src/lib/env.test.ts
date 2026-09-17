@@ -5,12 +5,12 @@ import { requireConvexUrl } from "./env";
 describe("Convex environment validation", () => {
   it("accepts the existing development deployment URL", () => {
     expect(
-      requireConvexUrl("https://resilient-mastiff-759.convex.cloud"),
-    ).toBe("https://resilient-mastiff-759.convex.cloud");
+      requireConvexUrl("https://reminiscent-narwhal-80.convex.cloud"),
+    ).toBe("https://reminiscent-narwhal-80.convex.cloud");
   });
 
   it("falls back gracefully when URL is undefined", () => {
-    expect(requireConvexUrl(undefined)).toBe("https://resilient-mastiff-759.convex.cloud");
+    expect(requireConvexUrl(undefined)).toBe("https://reminiscent-narwhal-80.convex.cloud");
   });
 
   it("accepts local development deployment URLs", () => {
@@ -21,7 +21,7 @@ describe("Convex environment validation", () => {
 
   it("falls back gracefully for invalid non-Convex URLs", () => {
     expect(requireConvexUrl("https://example.com")).toBe(
-      "https://resilient-mastiff-759.convex.cloud",
+      "https://reminiscent-narwhal-80.convex.cloud",
     );
   });
 });

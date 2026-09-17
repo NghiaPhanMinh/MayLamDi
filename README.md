@@ -1,9 +1,9 @@
-﻿# MayLamDi
+# MayLamDi
 
 > An AI-assisted teamwork platform designed to make university group projects feel fairer, clearer, and more collaborative.
 
-[![Build Status](https://img.shields.io/badge/Build-Passing-22c55e.svg)](https://github.com/NghiaPhanMinh/Gamified-Team-Project-Tracker)
-[![Tests](https://img.shields.io/badge/Tests-165%2F165%20Passed-22c55e.svg)](https://github.com/NghiaPhanMinh/Gamified-Team-Project-Tracker)
+[![Build Status](https://img.shields.io/badge/Build-Passing-22c55e.svg)](https://github.com/NghiaPhanMinh/MayLamDi)
+[![Tests](https://img.shields.io/badge/Tests-228%2F228%20Passed-22c55e.svg)](https://github.com/NghiaPhanMinh/MayLamDi)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---

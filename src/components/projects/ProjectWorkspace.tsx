@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -18,6 +19,49 @@ import { TaskEvidencePanel } from "./TaskEvidencePanel";
 import { TaskTradePanel } from "./TaskTradePanel";
 import { REVIEW_WAITING_MESSAGE } from "./reviewCopy";
 import { useTheme } from "../../hooks/useTheme";
+import { OnboardingTutorial, type TutorialStep } from "../onboarding/OnboardingTutorial";
+
+const LOBBY_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    target: "action-share-code",
+    title: "Share Room Code",
+    description: "Copy and share this code with teammates so they can join your project room.",
+    placement: "bottom",
+  },
+  {
+    target: "lobby-team-members",
+    title: "Team Members",
+    description: "View joined teammates. The AI will analyze each member's skills to distribute tasks.",
+    placement: "bottom",
+  },
+  {
+    target: "action-generate-plan",
+    title: "Start AI Planning",
+    description: "Click here to let the AI analyze your project brief and generate your team plan.",
+    placement: "top",
+  },
+];
+
+const WORKSPACE_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    target: "tab-progress",
+    title: "Project Progress",
+    description: "Monitor overall progress, battle in Game Mode, review peer work, and chat with your team.",
+    placement: "bottom",
+  },
+  {
+    target: "tab-plan",
+    title: "Project Plan",
+    description: "View tasks organized by phase and adjust the plan with the AI Assistant.",
+    placement: "bottom",
+  },
+  {
+    target: "tab-team",
+    title: "Team",
+    description: "Manage teammates, view the room join code, and balance team workloads.",
+    placement: "bottom",
+  },
+];
 
 type ProjectWorkspaceProps = {
   projectId: Id<"projects">;
@@ -165,7 +209,7 @@ function RoomAssemblyLobby({
         </div>
 
         {joinCode ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "color-mix(in srgb, var(--color-yellow) 20%, var(--color-surface))", padding: "0.5rem 0.85rem", borderRadius: "12px", border: "2px solid #101517" }}>
+          <div data-tour="action-share-code" style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "color-mix(in srgb, var(--color-yellow) 20%, var(--color-surface))", padding: "0.5rem 0.85rem", borderRadius: "12px", border: "2px solid #101517" }}>
             <span style={{ fontSize: "1.1rem", fontWeight: "900", letterSpacing: "0.08em" }}>
               CODE: <strong style={{ color: "var(--color-pink, #ff8ae7)" }}>{joinCode}</strong>
             </span>
@@ -175,7 +219,7 @@ function RoomAssemblyLobby({
               style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
               onClick={() => void copyCode()}
             >
-              {copied ? "Copied! ✓" : "Copy Code"}
+              {copied ? <>Copied! <UiIcon name="Check" /></> : "Copy Code"}
             </button>
           </div>
         ) : null}
@@ -188,7 +232,7 @@ function RoomAssemblyLobby({
         </p>
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div data-tour="lobby-team-members" style={{ marginBottom: "1.25rem" }}>
         <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.95rem", marginBottom: "0.5rem" }}>
           <Users size={16} /> Assembled Team Members ({members.length} Joined):
         </strong>
@@ -218,6 +262,7 @@ function RoomAssemblyLobby({
         </span>
         <button
           className="secondary-button"
+          data-tour="action-generate-plan"
           type="button"
           onClick={onStartPlanning}
           style={{ fontSize: "0.88rem" }}
@@ -264,6 +309,36 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
   const [activeTab, setActiveTab] = useState<ProjectTab>(() =>
     workspace.tasks.length === 0 ? "plan" : initialTab
   );
+
+  const [showLobbyTour, setShowLobbyTour] = useState(() => {
+    try {
+      return localStorage.getItem("maylamdi_tour_lobby_done") !== "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const [showWorkspaceTour, setShowWorkspaceTour] = useState(() => {
+    try {
+      return localStorage.getItem("maylamdi_tour_workspace_done") !== "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleRestartTour = () => {
+      if (workspace.tasks.length === 0) {
+        setShowLobbyTour(false);
+        setTimeout(() => setShowLobbyTour(true), 50);
+      } else {
+        setShowWorkspaceTour(false);
+        setTimeout(() => setShowWorkspaceTour(true), 50);
+      }
+    };
+    window.addEventListener("mld:restart-room-tour", handleRestartTour);
+    return () => window.removeEventListener("mld:restart-room-tour", handleRestartTour);
+  }, [workspace.tasks.length]);
 
   const overdueTasks = useMemo(() => {
     return workspace.tasks.filter((t) => {
@@ -392,7 +467,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         return { task, label: "Accept task", actionType: "Task request pending your acceptance", kind: "accept" as const, priority: 1 };
       }
       if (task.reviewerProfileId === workspace.currentProfileId && ["submitted", "review"].includes(task.status)) {
-        return { task, label: "MayReviewDi", actionType: "Ready for review · Evidence submitted successfully", kind: "review" as const, priority: 2 };
+        return { task, label: "MayReviewDi", actionType: "Ready for review · Evidence submitted", kind: "review" as const, priority: 2 };
       }
       if (workspace.canManageProject && task.status === "awaiting_creator") {
         return { task, label: "Approve completion", actionType: "Task waiting for creator approval", kind: "approve" as const, priority: 3 };
@@ -411,7 +486,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         const statusLabel = STATUS_LABELS[task.status as TaskStatus] ?? "In Progress";
         return {
           task,
-          label: `🔔 Remind ${ownerName}`,
+          label: `Remind ${ownerName}`,
           actionType: `${ownerName} · ${statusLabel}`,
           kind: "remind" as const,
           priority: 7,
@@ -624,6 +699,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
         {PROJECT_TABS.map((tab) => (
           <button
             key={tab.value}
+            data-tour={`tab-${tab.value}`}
             type="button"
             disabled={isAiGenerating}
             title={isAiGenerating ? "AI is analyzing project brief & generating tasks. Please wait..." : undefined}
@@ -677,7 +753,7 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                 <Zap size={18} style={{ color: "var(--color-yellow)", flexShrink: 0 }} /> Team Assembled! AI Brief Analysis Activated ({workspace.members.length} Members)
               </strong>
               <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9 }}>
-                AI is analyzing your project brief and automatically generating task allocations for your assembled team members. Review the generated plan and click <strong>Confirm &amp; Save Plan</strong> to officially start your project!
+                AI is analyzing your project brief and automatically generating task allocations for your assembled team members. Review the generated plan and click <strong>Confirm &amp; Save Plan</strong> to save the reviewed tasks and owners.
               </p>
             </div>
           )}
@@ -1177,6 +1253,28 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
           </aside>
         </div>
       ) : null}
+
+      {/* Stage 1: Room Code Lobby Onboarding Tutorial */}
+      {workspace.tasks.length === 0 && !shouldRunAi && showLobbyTour && (
+        <OnboardingTutorial
+          steps={LOBBY_TUTORIAL_STEPS}
+          isOpen={showLobbyTour}
+          storageKey="maylamdi_tour_lobby_done"
+          onComplete={() => setShowLobbyTour(false)}
+          onSkip={() => setShowLobbyTour(false)}
+        />
+      )}
+
+      {/* Stage 4: Project Workspace Onboarding Tutorial */}
+      {workspace.tasks.length > 0 && showWorkspaceTour && (
+        <OnboardingTutorial
+          steps={WORKSPACE_TUTORIAL_STEPS}
+          isOpen={showWorkspaceTour}
+          storageKey="maylamdi_tour_workspace_done"
+          onComplete={() => setShowWorkspaceTour(false)}
+          onSkip={() => setShowWorkspaceTour(false)}
+        />
+      )}
     </section>
   );
 }

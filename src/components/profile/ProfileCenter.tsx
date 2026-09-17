@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { X } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { Trash2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
@@ -138,10 +139,13 @@ export function ProfileCenter({
 }) {
   const profile = useQuery(api.profiles.getOrNull);
   const saveProfile = useMutation(api.profiles.saveCurrent);
+  const deleteAccount = useMutation(api.profiles.deleteCurrentAccount);
+  const { signOut } = useAuthActions();
   const [skills, setSkills] = useState<string[]>(profile?.skills ?? []);
   const [softwareSkills, setSoftwareSkills] = useState<string[]>(profile?.softwareSkills ?? []);
   const [weeklyCapacity, setWeeklyCapacity] = useState(profile?.weeklyCapacity ?? 8);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const profileHydrated = useRef(false);
@@ -149,6 +153,36 @@ export function ProfileCenter({
   const [useOwnKey, setUseOwnKey] = useState(initialByok !== null);
   const [apiKey, setApiKey] = useState(initialByok?.apiKey ?? "");
   const [model, setModel] = useState(initialByok?.model ?? "deepseek/deepseek-chat");
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Permanently Delete Account?\n\nAre you sure you want to permanently delete your account and all associated data?\nThis action cannot be undone. You will be signed out immediately."
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await deleteAccount();
+      const tourKeys = [
+        "maylamdi_tour_lobby_done",
+        "maylamdi_tour_confirm_done",
+        "maylamdi_tour_dashboard_done",
+        "maylamdi_tour_workspace_done",
+      ];
+      for (const key of tourKeys) {
+        try {
+          localStorage.removeItem(key);
+        } catch {}
+      }
+      clearByokSession();
+      await signOut();
+      window.location.href = "/";
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError, "Could not delete account."));
+      setIsDeleting(false);
+    }
+  }
 
   /* Realtime profile data arrives after the first render; hydrate once without
      overwriting edits made while the save request is in flight. */
@@ -172,7 +206,7 @@ export function ProfileCenter({
     setMessage(null);
     try {
       await saveProfile({ skills, softwareSkills, weeklyCapacity });
-      setMessage("Profile saved. Project creation and joining are now unlocked.");
+      setMessage("Profile saved. You can now create or join a project.");
     } catch (caughtError) {
       setError(getErrorMessage(caughtError, "Your profile could not be saved."));
     } finally {
@@ -188,7 +222,7 @@ export function ProfileCenter({
           <h1 className="display-heading" id="profile-page-title">
             {setupRequired ? "Complete your profile" : "How you work"}
           </h1>
-          <p className="profile-subtext">Save these preferences once. MayLamDi reuses them when planning fair project work.</p>
+          <p className="profile-subtext">Your saved skills and weekly capacity inform task owner suggestions.</p>
         </div>
       </header>
 
@@ -285,10 +319,10 @@ export function ProfileCenter({
                 <label>
                   <span>AI Engine (Mô hình AI)</span>
                   <select disabled={!useOwnKey} value={model} onChange={(event) => setModel(event.target.value)} className="profile-select-input" style={{ width: "100%", padding: "0.6rem", borderRadius: "0.375rem", border: "1px solid var(--border-color, #ccc)" }}>
-                    <option value="deepseek/deepseek-chat">🔥 DeepSeek V3 (Phân tích chuyên sâu & Tối ưu nhất)</option>
-                    <option value="deepseek/deepseek-r1">🧠 DeepSeek R1 (Suy luận Chain-of-Thought)</option>
-                    <option value="anthropic/claude-3.5-sonnet">🌟 Claude 3.5 Sonnet (Cao cấp)</option>
-                    <option value="google/gemini-2.0-flash">⚡ Gemini 2.0 Flash (Tốc độ cao)</option>
+                    <option value="deepseek/deepseek-chat"> DeepSeek V3</option>
+                    <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="google/gemini-2.0-flash"> Gemini 2.0 Flash</option>
                   </select>
                 </label>
               </div>
@@ -297,6 +331,26 @@ export function ProfileCenter({
           </details>
         </div>
       ) : null}
+
+      <div className="profile-context-settings" style={{ marginTop: "1.5rem" }}>
+        <section className="profile-settings-card profile-danger-card">
+          <div className="profile-reset-header">
+            <h2 style={{ margin: "0 0 0.5rem" }}>Delete Account</h2>
+            <p className="card-description" style={{ margin: 0 }}>
+              Permanently delete your profile, team memberships, and account record from MayLamDi.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="danger-button profile-reset-button"
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+          >
+            <Trash2 size={16} aria-hidden="true" style={{ display: "inline-block", verticalAlign: "-2px", marginRight: "6px" }} />
+            {isDeleting ? "Deleting Account…" : "Delete Account"}
+          </button>
+        </section>
+      </div>
     </section>
   );
 }

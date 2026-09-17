@@ -35,7 +35,7 @@ export function TeamWorkspace({
   const [frameworkSeed, setFrameworkSeed] = useState<BuiltInFramework | null>(null);
 
   if (workspace === undefined) {
-    return <section className="team-loading" aria-busy="true"><p className="kicker">Opening room</p><h1 className="display-heading">Gathering everyone…</h1></section>;
+    return <section className="team-loading" aria-busy="true"><p className="kicker">Opening room</p><h1 className="display-heading">Loading your project room…</h1></section>;
   }
 
   if (workspace === null) {

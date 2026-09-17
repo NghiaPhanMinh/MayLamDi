@@ -8,6 +8,12 @@ import {
   type ValidatedAiPlan,
 } from "./lib/aiPlanValidation";
 import {
+  buildGeminiModelChain,
+  parseGeminiJsonResponse,
+  requestGeminiNative,
+  runGeminiNativeFallback,
+} from "./lib/geminiNative";
+import {
   AiRouteFailure,
   buildFreeModelChain,
   FreeAiRoutesExhausted,
@@ -16,13 +22,12 @@ import {
 } from "./lib/openRouterFallback";
 import { generateSmartFallbackPlan, type GeneratedAiPlan } from "./lib/smartFallbackPlanner";
 
+declare const process: { env: Record<string, string | undefined> };
+
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 function environmentValue(name: string) {
-  const runtime = globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  };
-  return runtime.process?.env?.[name];
+  return process.env[name];
 }
 
 const planSchema = {
@@ -192,15 +197,32 @@ export function planningPrompts(brief: string, context: AiPlanningContext) {
     "You are MayLamDi's Senior Project Architect.",
     "MISSION: Transform the authoritative project brief into an actionable, cohesive, and grounded project execution plan.",
     "",
-    "COGNITIVE PLANNING PIPELINE (Reason internally through these steps before generating output):",
-    "1. PROJECT UNDERSTANDING: Analyze the brief to identify the core domain, target audience, specific constraints, and required final outcomes. Ground all thinking strictly in THIS project.",
-    "2. REQUIRED WORK & MEANINGFUL WORK UNITS: Determine what meaningful labor is actually required to build the project. Do NOT mechanically convert 1 deliverable = 1 task, and do NOT mechanically create 1 task per framework phase. Group tightly coupled activities that share purpose, ownership, and workflow into cohesive tasks.",
-    "3. FRAMEWORK AS PROCESS GUIDANCE (HOW, NOT WHAT): Treat context.phases strictly as timeline containers to organize and sequence the derived work chronologically over time. A phase may contain zero, one, or multiple tasks based on project needs. NEVER name tasks after framework phases (e.g. do NOT create 'Coordinate [Phase] Workstream' or '[Phase] Phase'). NEVER copy generic software/UX tropes into non-software projects.",
-    "4. GROUNDED, PROJECT-SPECIFIC TITLES & DESCRIPTIONS: Every task title MUST start with an active verb and state what is being produced for THIS project (e.g., 'Build Low-Fidelity Interactive Prototype', 'Draft Narrative Storyboards', 'Conduct Usability Test with Peers'). Descriptions must explain the concrete labor, methods, or formats specified by or directly relevant to the brief. NEVER invent fictional tools, participant counts, or external facts not supported by the brief.",
-    "5. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
-    "6. LOGICAL SEQUENCING & DYNAMIC COUNT: Upstream foundational tasks must precede downstream integration, testing, and delivery. Determine task count dynamically based on project scope and complexity.",
+    "OUTPUT CONTRACT:",
+    "Return ONLY one valid JSON object.",
+    "The first character of your response MUST be '{'.",
+    "The last character of your response MUST be '}'.",
+    "Do NOT output:",
+    "- reasoning",
+    "- analysis",
+    "- explanations",
+    "- markdown",
+    "- code fences",
+    "- preambles",
+    "- text before the JSON",
+    "- text after the JSON",
+    "Start immediately with '{'.",
     "",
-    "Return VALID JSON matching the schema strictly using provided phase IDs and member profile IDs."
+    "PLANNING DIRECTIVES:",
+    "1. Use the project brief, team roles, and selected framework to construct the project plan.",
+    "2. Treat the framework as the process structure, not as a task list. Treat context.phases strictly as timeline containers to organize and sequence the derived work chronologically over time. NEVER name tasks after framework phases (e.g. do NOT create 'Coordinate [Phase] Workstream' or '[Phase] Phase').",
+    "3. Generate grounded, project-specific tasks based on the actual brief. Every task title MUST start with an active verb and state what is being produced for THIS project. Descriptions must explain concrete labor, methods, or formats specified by or directly relevant to the brief. Do not invent unsupported tools, requirements, deliverables, participant counts, or project facts.",
+    "4. Do not mechanically create one task per deliverable or one task per framework phase. Group tightly coupled activities that share purpose, ownership, and workflow into cohesive tasks.",
+    "5. Use an appropriate dynamic number of meaningful tasks (up to 15) and milestones (up to 6).",
+    "6. DISCIPLINARY ROLE ALLOCATION: Assign each task's primaryOwnerProfileId to the team member whose actual role/skills match the discipline of that work. Distribute work equitably across available members.",
+    "7. LOGICAL SEQUENCING: Upstream foundational tasks must precede downstream integration, testing, and delivery.",
+    "8. REVIEWER ASSIGNMENT: reviewerProfileId must be a DIFFERENT team member from primaryOwnerProfileId. If the team has only 1 member, reviewerProfileId MUST be null.",
+    "",
+    "The final response must contain ONLY the JSON object matching the required schema using provided phase IDs and member profile IDs."
   ].join("\n");
 
   const userPrompt = JSON.stringify({
@@ -271,7 +293,7 @@ async function requestPlan(input: {
   userPrompt: string;
 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
 
   try {
     const response = await fetch(OPENROUTER_URL, {
@@ -296,8 +318,8 @@ async function requestPlan(input: {
           ? { response_format: { type: "json_object" } }
           : {}),
         temperature: 0.1,
-        max_tokens: 3_500,
-        max_completion_tokens: 3_500,
+        max_tokens: 4_000,
+        max_completion_tokens: 4_000,
       }),
     });
     const body = (await response.json().catch(() => ({}))) as OpenRouterResponse;
@@ -372,17 +394,45 @@ export const generateProjectPlan = action({
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
     const genTag = args.generationId ? `[${args.generationId}] ` : "";
-    console.info(`${genTag}generateProjectPlan received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
+    console.info(`${genTag}generateProjectPlan received brief (${args.brief.length} chars)`);
     const access = await ctx.runQuery(internal.aiUsage.getProjectAccess, { projectId: args.projectId });
     const brief = cleanBrief(args.brief);
     const context: AiPlanningContext = await ctx.runQuery(internal.aiContext.getProjectPlanningContext, {
       projectId: args.projectId,
     });
 
+    const envObj = process.env;
+    const envEntries = Object.entries(envObj);
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const openRouterApiKeyValue = process.env.OPENROUTER_API_KEY;
+    const openRouterModel = process.env.OPENROUTER_MODEL;
+    const openRouterFallbackModel = process.env.OPENROUTER_FALLBACK_MODEL;
+    const openRouterFreeFallbackModels = process.env.OPENROUTER_FREE_FALLBACK_MODELS;
+    const geminiKey = (geminiApiKey
+      ?? envEntries.find(([k, v]) =>
+        /gemini|google.*api/i.test(k) || (typeof v === "string" && (v.startsWith("AQ.") || v.startsWith("AIzaSy")))
+      )?.[1])?.trim();
+    const geminiModelOverride = process.env.GEMINI_MODEL;
+
     const tierKey = environmentValue(`OPENROUTER_API_KEY_${access.tier.toUpperCase()}`);
-    const apiKey = tierKey ?? environmentValue("OPENROUTER_API_KEY") ?? environmentValue("GEMINI_API_KEY");
-    if (!apiKey) {
-      console.info(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=NO_API_KEY | API Attempted=false`);
+    const openRouterApiKey = (tierKey
+      ?? openRouterApiKeyValue
+      ?? envEntries.find(([k, v]) => /openrouter/i.test(k) || (typeof v === "string" && (v.startsWith("sk-or-") || v.startsWith("sk-"))))?.[1]
+      ?? environmentValue("AIASSISTANT")
+      ?? environmentValue("AI_ASSISTANT"))?.trim();
+    const openRouterModelOverride = openRouterModel;
+
+    console.info(
+      `${genTag}[AI INFRA] Environment availability | `
+      + `GEMINI_API_KEY=${Boolean(geminiApiKey?.trim())} | `
+      + `OPENROUTER_API_KEY=${Boolean(openRouterApiKeyValue?.trim())} | `
+      + `OPENROUTER_MODEL=${Boolean(openRouterModel?.trim())} | `
+      + `OPENROUTER_FALLBACK_MODEL=${Boolean(openRouterFallbackModel?.trim())} | `
+      + `OPENROUTER_FREE_FALLBACK_MODELS=${Boolean(openRouterFreeFallbackModels?.trim())}`,
+    );
+
+    if (!geminiKey && !openRouterApiKey) {
+      console.warn(`${genTag}[AI INFRA] No API keys configured (missing GEMINI_API_KEY and OPENROUTER_API_KEY). Using Smart Fallback Planner.`);
       const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, "NO_API_KEY");
       return {
         ...fallbackPlan,
@@ -390,54 +440,60 @@ export const generateProjectPlan = action({
         generationId: args.generationId,
         fallbackReason: "NO_API_KEY",
         apiAttempted: false,
-        apiErrorCategory: null,
+        apiErrorCategory: "MISSING_CONFIGURATION",
         generatedAt: Date.now(),
       };
     }
 
-    try {
-      const { systemPrompt, userPrompt } = planningPrompts(brief, context);
-      console.info(`${genTag}[AI OBSERVABILITY] Prompts constructed. User prompt length: ${userPrompt.length}`);
-      const configuredTierModel = access.tier === "free"
-        ? environmentValue("OPENROUTER_MODEL_FREE")
-        : environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`);
-      const freeModels = buildFreeModelChain({
-        primary: configuredTierModel ?? environmentValue("OPENROUTER_MODEL"),
-        firstFallback: environmentValue("OPENROUTER_FALLBACK_MODEL"),
-        additionalFallbacks: environmentValue("OPENROUTER_FREE_FALLBACK_MODELS"),
-      });
-      const models = access.tier !== "free" && configuredTierModel
-        ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
-        : freeModels;
+    const { systemPrompt, userPrompt } = planningPrompts(brief, context);
+    const generationLimit = access.entitlement.platformPlanGenerationsPerProject;
+    const usageId = await ctx.runMutation(internal.aiUsage.reservePlatformGeneration, {
+      projectId: args.projectId,
+      profileId: access.profileId,
+      limit: generationLimit ?? undefined,
+    });
 
-      const generationLimit = access.entitlement.platformPlanGenerationsPerProject;
-      const usageId = await ctx.runMutation(internal.aiUsage.reservePlatformGeneration, {
-        projectId: args.projectId,
-        profileId: access.profileId,
-        limit: generationLimit ?? undefined,
-      });
+    let geminiFailureReason: string | null = null;
 
+    // STEP 1: PRIMARY PROVIDER -> Native Google Gemini API
+    if (geminiKey) {
       try {
-        console.info(`${genTag}[AI OBSERVABILITY] Requesting plan from models:`, models);
-        const result = await runFreeModelFallback({
-          models,
-          attempt: ({ model, mode }) => requestPlan({
-            apiKey,
-            model,
-            mode,
-            systemPrompt,
-            userPrompt,
-          }),
+        const geminiModels = buildGeminiModelChain(geminiModelOverride);
+        console.info(`${genTag}[AI INFRA] Primary Provider: Google Gemini | Models: ${geminiModels.join(", ")} | OutputTokenBudget: 8192`);
+        const result = await runGeminiNativeFallback({
+          apiKey: geminiKey,
+          models: geminiModels,
+          systemPrompt,
+          userPrompt,
+          schema: planSchema.schema,
           validate: (content) => {
-            const plan = validateAiPlan(parseJsonResponse(content), context);
+            let parsed: unknown;
+            try {
+              parsed = parseGeminiJsonResponse(content);
+              console.info(`${genTag}[AI INFRA] Gemini parse successful`);
+            } catch (parseErr) {
+              const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+              console.error(`${genTag}[AI INFRA] Gemini JSON parsing failed:`, msg);
+              throw parseErr;
+            }
+            let plan: ValidatedAiPlan;
+            try {
+              plan = validateAiPlan(parsed, context);
+              console.info(`${genTag}[AI INFRA] Gemini structural validation successful`);
+            } catch (validationError) {
+              const msg = validationError instanceof Error ? validationError.message : String(validationError);
+              console.error(`${genTag}[AI INFRA] Gemini structural validation failed:`, msg);
+              throw validationError;
+            }
             const report = validatePlanAgainstBrief(plan, brief, context);
             if (!report.valid) {
-              console.warn(`${genTag}[AI OBSERVABILITY] LLM plan had validation warnings:`, report.errors);
+              console.warn(`${genTag}[AI INFRA] Gemini brief-quality validation warnings | Count=${report.errors.length}`);
             }
             return plan;
           },
         });
-        console.info(`${genTag}[AI OBSERVABILITY] Source=llm | ModelUsed=${result.modelUsed} | API Attempted=true`);
+
+        console.info(`${genTag}[AI INFRA] Gemini SUCCESS | ModelUsed=${result.modelUsed} | Plan validated | OpenRouter NOT called`);
         await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
           usageId,
           model: result.modelUsed,
@@ -452,28 +508,101 @@ export const generateProjectPlan = action({
           modelUsed: result.modelUsed,
           generatedAt: Date.now(),
         };
-      } catch (innerError) {
+      } catch (geminiError) {
+        geminiFailureReason = geminiError instanceof Error ? geminiError.message : String(geminiError);
+        console.warn(`${genTag}[AI INFRA] Primary Gemini FAILED: ${geminiFailureReason} | Switching to OpenRouter Backup...`);
+      }
+    } else {
+      geminiFailureReason = "GEMINI_API_KEY_NOT_CONFIGURED";
+      console.warn(`${genTag}[AI INFRA] GEMINI_API_KEY not configured. Switching directly to OpenRouter Backup.`);
+    }
+
+    // STEP 2: BACKUP PROVIDER -> OpenRouter
+    if (openRouterApiKey) {
+      try {
+        const configuredTierModel = access.tier === "free"
+          ? (openRouterModelOverride ?? environmentValue("OPENROUTER_MODEL_FREE"))
+          : (openRouterModelOverride ?? environmentValue(`OPENROUTER_MODEL_${access.tier.toUpperCase()}`));
+        const freeModels = buildFreeModelChain({
+          primary: configuredTierModel ?? openRouterModel,
+          firstFallback: openRouterFallbackModel,
+          additionalFallbacks: openRouterFreeFallbackModels,
+        });
+        const models = access.tier !== "free" && configuredTierModel
+          ? [configuredTierModel, ...freeModels.filter((model) => model !== configuredTierModel)]
+          : freeModels;
+
+        console.info(`${genTag}[AI INFRA] Backup Provider: OpenRouter | Models: ${models.join(", ")}`);
+        const result = await runFreeModelFallback({
+          models,
+          attempt: ({ model, mode }) => requestPlan({
+            apiKey: openRouterApiKey,
+            model,
+            mode,
+            systemPrompt,
+            userPrompt,
+          }),
+          validate: (content) => {
+            let parsed: unknown;
+            try {
+              parsed = parseJsonResponse(content);
+            } catch (parseErr) {
+              const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+              console.error(`${genTag}[AI INFRA] OpenRouter JSON parsing failed:`, msg);
+              throw parseErr;
+            }
+            const plan = validateAiPlan(parsed, context);
+            const report = validatePlanAgainstBrief(plan, brief, context);
+            if (!report.valid) {
+              console.warn(`${genTag}[AI INFRA] OpenRouter plan validation warnings:`, report.errors);
+            }
+            return plan;
+          },
+        });
+
+        console.info(`${genTag}[AI INFRA] OpenRouter Backup SUCCESS | ModelUsed=${result.modelUsed} | Plan validated`);
+        await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
+          usageId,
+          model: result.modelUsed,
+          success: true,
+        });
+        return {
+          ...result.value,
+          source: "llm",
+          generationId: args.generationId,
+          apiAttempted: true,
+          apiErrorCategory: null,
+          modelUsed: result.modelUsed,
+          generatedAt: Date.now(),
+        };
+      } catch (openRouterError) {
+        const orMsg = openRouterError instanceof Error ? openRouterError.message : String(openRouterError);
+        console.warn(`${genTag}[AI INFRA] OpenRouter Backup FAILED: ${orMsg} | Switching to Smart Fallback (Last Resort)...`);
         await ctx.runMutation(internal.aiUsage.finishPlatformGeneration, {
           usageId,
           model: "failed",
           success: false,
         });
-        throw innerError;
       }
-    } catch (error) {
-      const errMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`${genTag}[AI OBSERVABILITY] Source=fallback | Reason=${errMessage} | API Attempted=true`);
-      const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, errMessage);
-      return {
-        ...fallbackPlan,
-        source: "fallback",
-        generationId: args.generationId,
-        fallbackReason: errMessage,
-        apiAttempted: true,
-        apiErrorCategory: error instanceof Error ? error.name : "UNKNOWN_ERROR",
-        generatedAt: Date.now(),
-      };
+    } else {
+      console.warn(`${genTag}[AI INFRA] OPENROUTER_API_KEY not configured. Switching directly to Smart Fallback.`);
     }
+
+    // STEP 3: LAST RESORT -> Smart Fallback Planner
+    const combinedReason = geminiFailureReason
+      ? `Gemini failed: ${geminiFailureReason}`
+      : "ALL_AI_PROVIDERS_UNAVAILABLE";
+    console.warn(`${genTag}[AI INFRA] Final Safety Net: Smart Fallback Planner engaged | Reason: ${combinedReason}`);
+    const fallbackPlan = generateSmartFallbackPlan(context, brief, args.generationId, combinedReason);
+    return {
+      ...fallbackPlan,
+      source: "fallback",
+      generationId: args.generationId,
+      fallbackReason: combinedReason,
+      apiAttempted: true,
+      apiErrorCategory: "PROVIDER_FAILOVER_EXHAUSTED",
+      generatedAt: Date.now(),
+    };
   },
 });
 
@@ -487,40 +616,59 @@ export const generateProjectPlanWithKey = action({
   },
   handler: async (ctx, args): Promise<GeneratedAiPlan> => {
     const genTag = args.generationId ? `[${args.generationId}] ` : "";
-    console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars): "${args.brief.slice(0, 80)}..."`);
+    console.info(`${genTag}generateProjectPlanWithKey received brief (${args.brief.length} chars)`);
     const apiKey = args.apiKey.trim();
     const model = args.model.trim();
-    if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session OpenRouter key does not look valid.");
-    if (model.length < 3 || model.length > 160 || /\s/.test(model)) throw new ConvexError("Enter a valid OpenRouter model ID.");
+    if (apiKey.length < 20 || apiKey.length > 500) throw new ConvexError("The session API key does not look valid.");
     const brief = cleanBrief(args.brief);
     const access = await ctx.runQuery(internal.aiUsage.getProjectAccess, { projectId: args.projectId });
     const context: AiPlanningContext = await ctx.runQuery(internal.aiContext.getProjectPlanningContext, { projectId: args.projectId });
     const { systemPrompt, userPrompt } = planningPrompts(brief, context);
+
     try {
-      let response;
-      try {
-        response = await requestPlan({ apiKey, model, mode: "structured", systemPrompt, userPrompt });
-      } catch (error) {
-        if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
-        response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
+      let resultPlan: ValidatedAiPlan;
+      let modelUsed = model;
+
+      if (apiKey.startsWith("AQ.") || apiKey.startsWith("AIzaSy")) {
+        const nativeModel = model.includes("gemini") ? model : "gemini-3.5-flash-lite";
+        const response = await requestGeminiNative({
+          apiKey,
+          model: nativeModel,
+          systemPrompt,
+          userPrompt,
+          schema: planSchema.schema,
+        });
+        resultPlan = validateAiPlan(parseGeminiJsonResponse(response.content), context);
+        modelUsed = response.modelUsed;
+      } else {
+        if (model.length < 3 || model.length > 160 || /\s/.test(model)) throw new ConvexError("Enter a valid OpenRouter model ID.");
+        let response;
+        try {
+          response = await requestPlan({ apiKey, model, mode: "structured", systemPrompt, userPrompt });
+        } catch (error) {
+          if (!(error instanceof AiRouteFailure) || !["empty", "unsupported", "invalid"].includes(error.kind)) throw error;
+          response = await requestPlan({ apiKey, model, mode: "json_only", systemPrompt, userPrompt });
+        }
+        resultPlan = validateAiPlan(parseJsonResponse(response.content), context);
+        modelUsed = response.modelUsed;
       }
-      const value = validateAiPlan(parseJsonResponse(response.content), context);
+
       await ctx.runMutation(internal.aiUsage.record, {
         projectId: args.projectId,
         profileId: access.profileId,
         source: "byok",
         operation: "project_plan",
-        model: response.modelUsed,
+        model: modelUsed,
         success: true,
       });
-      console.info(`${genTag}[AI OBSERVABILITY] Session BYOK AI request succeeded using model: ${response.modelUsed}`);
+      console.info(`${genTag}[AI OBSERVABILITY] Session BYOK AI request succeeded using model: ${modelUsed}`);
       return {
-        ...value,
+        ...resultPlan,
         source: "llm",
         generationId: args.generationId,
         apiAttempted: true,
         apiErrorCategory: null,
-        modelUsed: response.modelUsed,
+        modelUsed,
         generatedAt: Date.now(),
       };
     } catch (error) {

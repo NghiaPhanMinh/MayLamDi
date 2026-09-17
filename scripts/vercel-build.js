@@ -5,7 +5,7 @@ const hasProductionDeployKey = Boolean(process.env.CONVEX_DEPLOY_KEY?.trim());
 const env = {
   ...process.env,
   VITE_CONVEX_URL:
-    process.env.VITE_CONVEX_URL || "https://resilient-mastiff-759.convex.cloud",
+    process.env.VITE_CONVEX_URL || "https://reminiscent-narwhal-80.convex.cloud",
 };
 
 if (hasProductionDeployKey) {

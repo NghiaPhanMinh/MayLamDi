@@ -46,8 +46,23 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_onxmvi5aOyVqqCuAdwzG67zP
       VERCEL_PROJECT_ID: prj_GYRbqaDGUlM67ubh5F9fNjsBF1vm
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Convex backend to production
+        if: env.CONVEX_DEPLOY_KEY != ''
+        run: npx convex deploy
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

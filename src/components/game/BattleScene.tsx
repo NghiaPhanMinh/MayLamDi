@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { jsPDF } from "jspdf";
@@ -2201,7 +2202,7 @@ export function BattleScene({
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
     doc.text(`Digital Verification Hash: ${state.project._id}-${state.currentProfileId}-${Date.now().toString(36)}`, 14, yPos);
-    doc.text("Gamified Team Project Tracker Realm Engine — Tamper Proof Proof of Work", 14, yPos + 3.5);
+    doc.text("MayLamDi project contribution report", 14, yPos + 3.5);
 
     doc.save(`${state.project.title.replace(/\s+/g, "_")}_Contribution_Dossier.pdf`);
   }
@@ -3304,7 +3305,7 @@ export function BattleScene({
                   </span>
                 </div>
                 <p style={{ margin: "3px 0 0 0", fontSize: "0.82rem", color: "#64748b" }}>
-                  Distraction-free productivity view · Team progress & tasks
+                  Team progress and tasks
                 </p>
               </div>
             </div>
@@ -3498,7 +3499,7 @@ export function BattleScene({
               {/* 1. Dragon Health Bar */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  ❤️ Dragon Health Bar
+                  <UiIcon name="Heart" /> Dragon Health Bar
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3560,7 +3561,7 @@ export function BattleScene({
               {/* 2. Dragon Boss */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  🐉 Dragon Boss Element
+                  <UiIcon name="Flame" /> Dragon Boss Element
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3618,7 +3619,7 @@ export function BattleScene({
               {/* 3. Player Party */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  🧙 Player Party Heroes
+                  <UiIcon name="WandSparkles" /> Player Party Heroes
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3676,7 +3677,7 @@ export function BattleScene({
               {/* 4. Green Part (Grass Plateau) */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  🌱 Green Part (Grass Plateau)
+                  <UiIcon name="Sprout" /> Green Part (Grass Plateau)
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3734,7 +3735,7 @@ export function BattleScene({
               {/* 5. Floating Island (Rock Base) */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  🏝️ Floating Island (Rock Base)
+                  <UiIcon name="Mountain" /> Floating Island (Rock Base)
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3792,7 +3793,7 @@ export function BattleScene({
               {/* 6. Mountains Behind */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  ⛰️ Mountains Behind
+                  <UiIcon name="Mountain" /> Mountains Behind
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3850,7 +3851,7 @@ export function BattleScene({
               {/* 7. Clouds */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  ☁️ Clouds
+                  <UiIcon name="Cloud" /> Clouds
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -3908,7 +3909,7 @@ export function BattleScene({
               {/* 8. Task Progress Bar */}
               <div style={{ background: "#ffffff", border: "2px solid #101517", borderRadius: "10px", padding: "12px", boxShadow: "2px 2px 0 #101517" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.9rem", fontWeight: 900, color: "#101517" }}>
-                  🎯 Task Progress Bar
+                  <UiIcon name="Target" /> Task Progress Bar
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
@@ -4248,7 +4249,7 @@ export function BattleScene({
                       fontWeight: 700,
                     }}
                   >
-                    ✓ {myAllTasks.filter((t) => t.status === "completed" || t.status === "verified").length} completed
+                    <UiIcon name="Check" /> {myAllTasks.filter((t) => t.status === "completed" || t.status === "verified").length} completed
                   </span>
                 )}
               </div>
@@ -4348,7 +4349,7 @@ export function BattleScene({
                                   border: "1px solid #86efac",
                                 }}
                               >
-                                ✓ Complete
+                                <UiIcon name="Check" /> Complete
                               </span>
                             ) : isPendingReview ? (
                               <span
@@ -4654,7 +4655,7 @@ export function BattleScene({
         <div className="rpg-modal-backdrop" onClick={() => setShowBossModal(false)}>
           <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "580px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 className="rpg-modern-title">🐉 Attack The Dragon</h3>
+              <h3 className="rpg-modern-title"><UiIcon name="Flame" /> Attack The Dragon</h3>
               <button
                 type="button"
                 onClick={() => setShowBossModal(false)}
@@ -4720,8 +4721,8 @@ export function BattleScene({
                       >
                         <h4 style={{ margin: 0, fontSize: "0.85rem", fontWeight: 900, color: "#101517" }}>{task.title}</h4>
                         <div style={{ fontSize: "0.72rem", color: "#64748b", display: "flex", justifyContent: "space-between" }}>
-                          <span>📅 {task.dueDate}</span>
-                          <span>👤 {creatorName}</span>
+                          <span><UiIcon name="CalendarDays" /> {task.dueDate}</span>
+                          <span><UiIcon name="User" /> {creatorName}</span>
                         </div>
                         <button
                           className="rpg-modern-btn is-boss"
@@ -4751,7 +4752,7 @@ export function BattleScene({
                             {task.description}
                           </p>
                         )}
-                        <span style={{ fontSize: "0.74rem", color: "#075985", fontWeight: 700 }}>📅 Due {task.dueDate || "No deadline"} | Assigned by {creatorName}</span>
+                        <span style={{ fontSize: "0.74rem", color: "#075985", fontWeight: 700 }}><UiIcon name="CalendarDays" /> Due {task.dueDate || "No deadline"} | Assigned by {creatorName}</span>
                       </div>
                       <button
                         className="rpg-modern-btn is-secondary"
@@ -4785,7 +4786,7 @@ export function BattleScene({
                           setEvidenceFile(null);
                         }}
                       >
-                        {tab === "note" ? "📝 Short Note" : tab === "link" ? "🔗 External Link" : tab === "image" ? "🖼️ Image File" : "📄 PDF File"}
+                        {tab === "note" ? <><UiIcon name="FileText" /> Short Note</> : tab === "link" ? <><UiIcon name="Link" /> External Link</> : tab === "image" ? <><UiIcon name="Image" /> Image File</> : <><UiIcon name="FileText" /> PDF File</>}
                       </button>
                     ))}
                   </div>
@@ -4907,7 +4908,7 @@ export function BattleScene({
                   disabled={isSubmittingTask}
                   style={{ marginTop: "4px" }}
                 >
-                  {isSubmittingTask ? "Submitting Evidence..." : "⚔️ Submit Quest & Attack Dragon!"}
+                  {isSubmittingTask ? "Submitting Evidence..." : <><UiIcon name="Swords" /> Submit Quest & Attack Dragon!</>}
                 </button>
 
                 <button
@@ -5270,7 +5271,7 @@ export function BattleScene({
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingBottom: "8px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", border: "1.5px solid #101517", borderRadius: "8px", padding: "8px 12px", flexShrink: 0 }}>
                     <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#334155" }}>
-                      Everything in the chat will be recorded and put into the PDF download. Post daily updates to see proof and contribution get recorded.
+                      Messages and daily updates are included in the project’s contribution PDF.
                     </span>
                     <button
                       className="rpg-modern-btn is-primary"
@@ -5301,7 +5302,7 @@ export function BattleScene({
                         No daily proofs submitted today yet!
                       </p>
                       <p style={{ margin: "6px 0 14px 0", fontSize: "0.82rem" }}>
-                        Everything in the chat will be recorded and put into the PDF download. Post daily updates to see proof and contribution get recorded.
+                        Messages and daily updates are included in the project’s contribution PDF.
                       </p>
                       <button
                         className="rpg-modern-btn is-primary"
@@ -5469,7 +5470,7 @@ export function BattleScene({
                     style={{ padding: "4px 10px", fontSize: "0.74rem", background: "#fef08a", color: "#854d0e" }}
                     title="Edit this quest (Owner Only)"
                   >
-                    ✏️ Edit Task
+                    <UiIcon name="Pencil" /> Edit Task
                   </button>
                 )}
                 <button
@@ -5600,10 +5601,10 @@ export function BattleScene({
                       }
                     }}
                   >
-                    <option value="">🎯 Open for Claiming (Unassigned)</option>
+                    <option value=""> Open for Claiming (Unassigned)</option>
                     {workspace?.members?.filter(Boolean).map((m: any) => (
                       <option key={m.profileId} value={m.profileId}>
-                        ⚔️ {m.displayName}
+                         {m.displayName}
                       </option>
                     ))}
                   </select>
@@ -5617,7 +5618,7 @@ export function BattleScene({
                     onClick={handleSaveEditTask}
                     style={{ flex: 1 }}
                   >
-                    {isSavingEditTask ? "Saving..." : "Save Changes ✓"}
+                    {isSavingEditTask ? "Saving..." : <>Save Changes <UiIcon name="Check" /></>}
                   </button>
                   <button
                     type="button"
@@ -5696,7 +5697,7 @@ export function BattleScene({
                               textAlign: "center",
                             }}
                           >
-                            ⏳ Status: In Review — Your proof has been submitted and is currently awaiting peer review.
+                            <UiIcon name="Hourglass" /> In review. Waiting for your teammate’s decision.
                           </div>
                         );
                       }
@@ -5715,7 +5716,7 @@ export function BattleScene({
                               textAlign: "center",
                             }}
                           >
-                            ✅ Status: Completed & Verified — The Dragon took damage!
+                            <UiIcon name="CheckCircle2" /> Completed and verified. Boss damage applied.
                           </div>
                         );
                       }
@@ -6071,7 +6072,7 @@ export function BattleScene({
                       Ice Spell
                     </button>
                     <button type="button" style={{ padding: "6px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: "4px", fontSize: "0.7rem", fontWeight: "bold", cursor: "pointer" }} onClick={() => setTestActiveSpell("all")}>
-                      ⚡🔥❄️ All Spells at Once
+                      <UiIcon name="Sparkles" /> All spells
                     </button>
                     <button type="button" style={{ gridColumn: "1 / span 2", padding: "6px", background: "#475569", color: "#fff", border: "none", borderRadius: "4px", fontSize: "0.7rem", fontWeight: "bold", cursor: "pointer" }} onClick={() => setTestActiveSpell(null)}>
                       Clear Attack FX
@@ -6705,7 +6706,7 @@ export function BattleScene({
                       return (
                         <div key={m.profileId} style={{ background: "#1e293b", border: "1px solid #475569", borderRadius: "6px", padding: "6px", display: "flex", flexDirection: "column", gap: "4px", flex: "1 1 45%" }}>
                           <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#fff" }}>
-                            #{idx + 1} {m.displayName} ({isGhost ? "Ghost 👻" : "Active 👹"})
+                            #{idx + 1} {m.displayName} ({isGhost ? <>Ghost <UiIcon name="Ghost" /></> : <>Active <UiIcon name="Swords" /></>})
                           </span>
                           <div style={{ display: "flex", gap: "4px" }}>
                             <button
@@ -6721,7 +6722,7 @@ export function BattleScene({
                                 }, 3000);
                               }}
                             >
-                              ⚡ Strike
+                              <UiIcon name="Zap" /> Strike
                             </button>
                             <button
                               type="button"
@@ -6736,7 +6737,7 @@ export function BattleScene({
                                 }, 3000);
                               }}
                             >
-                              🔥 Fire
+                              <UiIcon name="Flame" /> Fire
                             </button>
                             <button
                               type="button"
@@ -6745,7 +6746,7 @@ export function BattleScene({
                                 setTestDeadGoblins(prev => ({ ...prev, [m.profileId]: !isGhost }));
                               }}
                             >
-                              👻 {isGhost ? "Revive" : "Slay"}
+                              <UiIcon name="Ghost" /> {isGhost ? "Revive" : "Slay"}
                             </button>
                           </div>
                         </div>

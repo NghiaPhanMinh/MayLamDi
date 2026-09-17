@@ -1,4 +1,5 @@
-import { getSpellGlyph, type SpellType } from "../../lib/character";
+import type { SpellType } from "../../lib/character";
+import { SpellIcon } from "./UiIcon";
 
 type CharacterAvatarProps = {
   name: string;
@@ -19,7 +20,6 @@ export function CharacterAvatar({
   className = "",
 }: CharacterAvatarProps) {
   const initial = (name || "?").slice(0, 1).toUpperCase();
-  const glyph = getSpellGlyph(spellType);
 
   return (
     <div
@@ -32,9 +32,9 @@ export function CharacterAvatar({
       title={`${name}${spellType ? ` (${spellType})` : ""}`}
     >
       <span className="avatar-initial">{initial}</span>
-      {spellType && glyph !== "·" ? (
+      {spellType ? (
         <i className="avatar-spell-badge" style={{ backgroundColor: outline, color: fill }}>
-          {glyph}
+          <SpellIcon spellType={spellType} />
         </i>
       ) : null}
     </div>

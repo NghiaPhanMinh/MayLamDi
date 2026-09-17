@@ -139,3 +139,60 @@ export const saveCurrent = mutation({
     return profile._id;
   },
 });
+
+export const deleteCurrentAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const authUser = await requireAuthUser(ctx);
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_auth_user_id", (indexQuery) =>
+        indexQuery.eq("authUserId", authUser._id),
+      )
+      .unique();
+
+    if (profile !== null) {
+      // 1. Remove all team memberships for this profile
+      const memberships = await ctx.db
+        .query("teamMembers")
+        .withIndex("by_user", (q) => q.eq("profileId", profile._id))
+        .collect();
+
+      for (const member of memberships) {
+        await ctx.db.delete(member._id);
+      }
+
+      // 2. Delete the user profile document
+      await ctx.db.delete(profile._id);
+    }
+
+    // 3. Delete auth accounts
+    const authAccounts = await ctx.db
+      .query("authAccounts")
+      .withIndex("userIdAndProvider", (q) => q.eq("userId", authUser._id))
+      .collect();
+
+    for (const acc of authAccounts) {
+      await ctx.db.delete(acc._id);
+    }
+
+    // 4. Delete auth sessions
+    const authSessions = await ctx.db
+      .query("authSessions")
+      .withIndex("userId", (q) => q.eq("userId", authUser._id))
+      .collect();
+
+    for (const sess of authSessions) {
+      await ctx.db.delete(sess._id);
+    }
+
+    // 5. Delete the auth user record
+    await ctx.db.delete(authUser._id);
+
+    return { success: true };
+  },
+});
+
+export const resetCurrentForTesting = deleteCurrentAccount;
+
+

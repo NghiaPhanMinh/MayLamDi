@@ -59,8 +59,8 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
 
       // Stage 1: Prompt Construction
       const { systemPrompt, userPrompt } = planningPrompts(item.brief, mockPlanningContext);
-      expect(systemPrompt).toContain("COGNITIVE PLANNING PIPELINE");
-      expect(systemPrompt).toContain("PROJECT UNDERSTANDING");
+      expect(systemPrompt).toContain("OUTPUT CONTRACT");
+      expect(systemPrompt).toContain("PLANNING DIRECTIVES");
       expect(userPrompt).toContain(item.brief.slice(0, 30));
 
       // Stage 2: Fallback & Degradation Safety Verification
@@ -366,14 +366,15 @@ describe("REAL PIPELINE TRACE — 5 Unseen Briefs Test Suite", () => {
 
     // 1. Verify Prompt Construction
     const { systemPrompt, userPrompt } = planningPrompts(museumBrief, museumContext);
-    expect(systemPrompt).toContain("COGNITIVE PLANNING PIPELINE");
+    expect(systemPrompt).toContain("OUTPUT CONTRACT");
+    expect(systemPrompt).toContain("PLANNING DIRECTIVES");
     expect(systemPrompt).toContain("NEVER name tasks after framework phases");
     expect(userPrompt).toContain("Experience Designer");
     expect(userPrompt).toContain("Cultural Researcher");
 
     // 2. Verify Fallback Path (Emergency degradation) NEVER generates "Coordinate [Phase] Workstream"
     const fallbackPlan = generateSmartFallbackPlan(museumContext, museumBrief, "gen_museum_fallback", "EMERGENCY_FALLBACK");
-    expect(fallbackPlan.tasks.length).toBe(3);
+    expect(fallbackPlan.tasks.length).toBe(5);
     for (const t of fallbackPlan.tasks) {
       expect(t.title).not.toContain("Coordinate");
       expect(t.title).not.toContain("Empathise");

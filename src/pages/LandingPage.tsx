@@ -1,3 +1,4 @@
+import { UiIcon } from "../components/common/UiIcon";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type RefObject } from "react";
 import { Link } from "react-router-dom";
@@ -6,6 +7,7 @@ import { ArrowDown, CheckCircle2, Sparkles } from "lucide-react";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { SubscriptionComparisonValue } from "../components/subscription/SubscriptionComparisonValue";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
+import { hasActiveFeatureBodies, stepFeatureBodies, wakeFeatureBodyForDrag, type FeatureBodyMap } from "../lib/featureTagPhysics";
 import {
   SUBSCRIPTION_COMPARISON_ROWS,
   SUBSCRIPTION_PLANS,
@@ -39,13 +41,13 @@ const PIXEL_COLOR_SEQUENCES = [
 const BURST_COLORS = ["#fff73f", "#ff8ae7", "#4ca0fe", "#1dd851", "#feaa01"];
 
 const PURPOSE_PHRASES = [
-  "Group projects should feel shared,",
-  "not carried by one person.",
+  "Share the work on group projects.",
+  "Give each task an owner.",
   "MayLamDi helps university teams",
-  "plan work fairly,",
-  "see who owns what,",
-  "and keep contribution visible",
-  "from start to finish.",
+  "plan tasks around skills and capacity,",
+  "track deadlines and progress,",
+  "and review evidence of the work",
+  "before marking tasks complete.",
 ] as const;
 
 const PURPOSE_PIXEL_CELLS = Array.from({ length: 16 }, (_, columnIndex) => {
@@ -79,42 +81,42 @@ const FEATURE_TAGS = [
   {
     id: "ai-assistant",
     label: "AI ASSISTANT",
-    description: "Turns your brief into editable plans, tasks, and allocation suggestions.",
+    description: "Draft tasks and owner suggestions from your assignment brief, then review and edit them.",
   },
   {
     id: "team-tracking",
     label: "TEAM TRACKING",
-    description: "See ownership, deadlines, workload, and progress in one shared view.",
+    description: "Check task owners, deadlines and progress in the project room.",
   },
   {
     id: "fair-task-allocation",
     label: "FAIR TASK ALLOCATION",
-    description: "Suggests ownership using skills, workload, capacity, and team context.",
+    description: "AI suggests task owners based on skills, workload and weekly capacity.",
   },
   {
     id: "gamification",
     label: "GAMIFICATION",
-    description: "Turns real project progress into shared quests and team outcomes.",
+    description: "Reviewed tasks damage the dragon. Daily evidence helps defend the village.",
   },
   {
     id: "real-time-workspace",
     label: "REAL-TIME WORKSPACE",
-    description: "Keeps project changes and team progress visible as they happen.",
+    description: "Teammates see task updates in the project room as you save them.",
   },
   {
     id: "contribution-evidence",
     label: "CONTRIBUTION EVIDENCE",
-    description: "Attach proof of work so contribution stays visible throughout the project.",
+    description: "Upload notes, links, images or PDFs for teammates to review.",
   },
   {
     id: "workload-visibility",
     label: "WORKLOAD VISIBILITY",
-    description: "Spot uneven effort early and rebalance the plan together.",
+    description: "Compare assigned task hours with each teammate's weekly capacity.",
   },
   {
     id: "project-planning",
     label: "PROJECT PLANNING",
-    description: "Move from brief to phases, milestones, tasks, and owners.",
+    description: "Organise your brief into project phases, tasks, deadlines and owners.",
   },
   {
     id: "peer-review",
@@ -124,7 +126,7 @@ const FEATURE_TAGS = [
   {
     id: "human-control",
     label: "HUMAN CONTROL",
-    description: "AI suggests; your team reviews, edits, and decides.",
+    description: "The room creator reviews the AI draft before saving tasks or assigning owners.",
   },
 ] as const;
 
@@ -139,21 +141,21 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "02",
     title: "BUILD A\nFAIR PLAN",
-    description: "AI suggests tasks and ownership, while the team reviews, edits or rejects every suggestion.",
+    description: "Review the AI's task and owner suggestions, edit what you need, then save the plan.",
     visual: "plan",
     visualLabel: "Editable AI task plan interface",
   },
   {
     number: "03",
-    title: "WORK & STAY\nVISIBLE",
-    description: "Complete tasks, upload evidence, review work and keep workload and contribution visible.",
+    title: "SUBMIT &\nREVIEW WORK",
+    description: "Upload evidence for finished tasks. Teammates review it before the room creator marks the task complete.",
     visual: "work",
     visualLabel: "Shared task board with visible ownership",
   },
   {
     number: "04",
-    title: "MOVE FORWARD\nTOGETHER",
-    description: "Real progress powers the shared game while the team works toward the deadline together.",
+    title: "DEFEND THE\nVILLAGE",
+    description: "Reviewed tasks damage the dragon. Post daily evidence to defend the village until the deadline.",
     visual: "together",
     visualLabel: "Shared team game progress interface",
   },
@@ -181,22 +183,6 @@ type FeatureTagPosition = {
   rotation: number;
   delay: number;
 };
-
-type FeatureBody = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  angle: number;
-  angularVelocity: number;
-  width: number;
-  height: number;
-  spawnDelay: number;
-  spawned: boolean;
-  opacity: number;
-};
-
-type FeatureBodyMap = Record<string, FeatureBody>;
 
 type FeatureDrag = {
   id: string;
@@ -339,7 +325,7 @@ function PurposeWorkspaceVisual({ visualRef }: { visualRef: RefObject<HTMLDivEle
         <div className="marketing-purpose-workspace-content">
           <span className="card-eyebrow">Launch week · Shared plan</span>
           <div className="marketing-purpose-progress-heading">
-            <strong>72% visible progress</strong>
+            <strong>72% complete</strong>
             <span>3 teammates</span>
           </div>
           <div className="progress-track"><span style={{ width: "72%" }} /></div>
@@ -368,136 +354,11 @@ function createFeatureBodies(): FeatureBodyMap {
       spawnDelay: INITIAL_FEATURE_TAG_POSITIONS[tag.id].delay,
       spawned: false,
       opacity: 0,
+      sleeping: false,
+      quietTime: 0,
     };
     return bodies;
   }, {});
-}
-
-function stepFeatureBodies(
-  bodies: FeatureBodyMap,
-  width: number,
-  height: number,
-  floorY: number,
-  deltaSeconds: number,
-  draggingTagId: string | null,
-): FeatureBodyMap {
-  const next = Object.fromEntries(Object.entries(bodies).map(([id, body]) => [id, { ...body }])) as FeatureBodyMap;
-  const gravity = 1180;
-  const restitution = 0.18;
-  const friction = 0.84;
-  const airFriction = Math.pow(0.992, deltaSeconds * 60);
-
-  Object.entries(next).forEach(([id, body]) => {
-    if (!body.spawned) {
-      body.spawnDelay = Math.max(0, body.spawnDelay - deltaSeconds * 1000);
-      if (body.spawnDelay <= 0) {
-        body.spawned = true;
-        body.opacity = 1;
-      }
-    }
-    if (!body.spawned || id === draggingTagId) return;
-
-    body.vy += gravity * deltaSeconds;
-    body.vx *= airFriction;
-    body.vy *= airFriction;
-    body.angularVelocity *= airFriction;
-    body.x += body.vx * deltaSeconds;
-    body.y += body.vy * deltaSeconds;
-    body.angle += body.angularVelocity * deltaSeconds;
-
-    const maxX = Math.max(0, width - body.width);
-    if (body.x < 0) {
-      body.x = 0;
-      body.vx = Math.abs(body.vx) * restitution;
-      body.angularVelocity += 0.5;
-    } else if (body.x > maxX) {
-      body.x = maxX;
-      body.vx = -Math.abs(body.vx) * restitution;
-      body.angularVelocity -= 0.5;
-    }
-
-    const maxY = Math.max(0, floorY - body.height);
-    if (body.y > maxY) {
-      body.y = maxY;
-      if (body.vy > 0) body.vy *= -restitution;
-      body.vx *= friction;
-      body.angularVelocity *= 0.82;
-      if (Math.abs(body.vy) < 14) body.vy = 0;
-      if (Math.abs(body.vx) < 2) body.vx = 0;
-      if (Math.abs(body.angularVelocity) < 0.04) body.angularVelocity = 0;
-    }
-  });
-
-  const ids = Object.keys(next);
-  for (let iteration = 0; iteration < 4; iteration += 1) {
-    for (let index = 0; index < ids.length; index += 1) {
-      for (let otherIndex = index + 1; otherIndex < ids.length; otherIndex += 1) {
-        const first = next[ids[index]];
-        const second = next[ids[otherIndex]];
-        if (!first.spawned || !second.spawned) continue;
-
-        const overlapX = Math.min(first.x + first.width, second.x + second.width) - Math.max(first.x, second.x);
-        const overlapY = Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y);
-        if (overlapX <= 0 || overlapY <= 0) continue;
-
-        const firstDragging = ids[index] === draggingTagId;
-        const secondDragging = ids[otherIndex] === draggingTagId;
-        const horizontal = overlapX < overlapY;
-        const normal = horizontal
-          ? (first.x < second.x ? 1 : -1)
-          : (first.y < second.y ? 1 : -1);
-        const amount = (horizontal ? overlapX : overlapY) + 2;
-        if (firstDragging && !secondDragging) {
-          if (horizontal) second.x += amount * normal;
-          else second.y += amount * normal;
-        } else if (secondDragging && !firstDragging) {
-          if (horizontal) first.x -= amount * normal;
-          else first.y -= amount * normal;
-        } else {
-          if (horizontal) {
-            first.x -= (amount / 2) * normal;
-            second.x += (amount / 2) * normal;
-          } else {
-            first.y -= (amount / 2) * normal;
-            second.y += (amount / 2) * normal;
-          }
-        }
-
-        if (horizontal) {
-          const relativeVelocity = (second.vx - first.vx) * normal;
-          if (relativeVelocity < 0) {
-            const impulse = -relativeVelocity * (1 + restitution) * 0.5;
-            if (!firstDragging) first.vx -= impulse * normal;
-            if (!secondDragging) second.vx += impulse * normal;
-          }
-          first.vx *= friction;
-          second.vx *= friction;
-          first.angularVelocity += normal * 0.06;
-          second.angularVelocity -= normal * 0.06;
-        } else {
-          const relativeVelocity = (second.vy - first.vy) * normal;
-          if (relativeVelocity < 0) {
-            const impulse = -relativeVelocity * (1 + restitution) * 0.5;
-            if (!firstDragging) first.vy -= impulse * normal;
-            if (!secondDragging) second.vy += impulse * normal;
-          }
-          first.vy *= 0.94;
-          second.vy *= 0.94;
-        }
-      }
-    }
-
-    Object.values(next).forEach((body) => {
-      body.x = Math.min(Math.max(body.x, 0), Math.max(0, width - body.width));
-      body.y = Math.min(Math.max(body.y, 0), Math.max(0, floorY - body.height));
-    });
-  }
-
-  Object.values(next).forEach((body) => {
-    body.x = Math.min(Math.max(body.x, 0), Math.max(0, width - body.width));
-    body.y = Math.min(Math.max(body.y, 0), Math.max(0, floorY - body.height));
-  });
-  return next;
 }
 
 function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
@@ -619,6 +480,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
           spawnDelay: reducedMotion || isMobile ? 0 : position.delay,
           spawned: reducedMotion || isMobile,
           opacity: reducedMotion || isMobile ? 1 : 0,
+          sleeping: reducedMotion || isMobile,
         };
       });
       commitBodies(next);
@@ -632,19 +494,21 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
     let previousTime = performance.now();
     const animate = (time: number) => {
       if (document.hidden || !isInView) return;
+      if (!draggingTagId && !hasActiveFeatureBodies(bodiesRef.current)) return;
       const geometry = getCanvasGeometry();
       if (!geometry) return;
       const deltaSeconds = Math.min(0.034, Math.max(0.001, (time - previousTime) / 1000));
       previousTime = time;
-      commitBodies(stepFeatureBodies(
+      const next = stepFeatureBodies(
         bodiesRef.current,
         geometry.width,
         geometry.height,
         geometry.floorY,
         deltaSeconds,
         draggingTagId,
-      ));
-      animationFrame = window.requestAnimationFrame(animate);
+      );
+      commitBodies(next);
+      if (draggingTagId || hasActiveFeatureBodies(next)) animationFrame = window.requestAnimationFrame(animate);
     };
     animationFrame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(animationFrame);
@@ -716,6 +580,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
       lastY: event.clientY,
       lastTime: event.timeStamp || 0,
     };
+    commitBodies(wakeFeatureBodyForDrag(bodiesRef.current, tagId));
     setDraggingTagId(tagId);
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -746,6 +611,8 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
       vy: ((event.clientY - drag.lastY) / elapsed) * 1000,
       opacity: 1,
       spawned: true,
+      sleeping: false,
+      quietTime: 0,
     };
     drag.lastX = event.clientX;
     drag.lastY = event.clientY;
@@ -761,7 +628,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
     if (drag) {
       const body = bodiesRef.current[drag.id];
       const next = Object.fromEntries(Object.entries(bodiesRef.current).map(([id, current]) => [id, { ...current }])) as FeatureBodyMap;
-      next[drag.id] = { ...body, vy: body.vy + 80 };
+      next[drag.id] = { ...body, vy: body.vy + 80, sleeping: false, quietTime: 0 };
       commitBodies(next);
     }
     dragState.current = null;
@@ -781,6 +648,7 @@ function FeatureTagComposition({ tagsDropped }: { tagsDropped: boolean }) {
               aria-label={tag.label}
               className={`marketing-feature-tag${tagsDropped ? " is-dropped" : ""}${body.spawned ? " is-visible" : ""}${reducedMotion ? " is-reduced" : ""}${draggingTagId === tag.id ? " is-dragging" : ""}`}
               key={tag.id}
+              data-physics-state={body.sleeping ? "sleeping" : "awake"}
               onClick={() => showFeatureInfo(tag.id)}
               onFocus={() => showFeatureInfo(tag.id)}
               onBlur={scheduleInfoHide}
@@ -873,7 +741,7 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
             <div className="how-works-visual-board-column" key={heading}>
               <strong>{heading}</strong>
               <div><span>{first}</span><b>2</b></div>
-              <div><span>{second}</span><b>✓</b></div>
+              <div><span>{second}</span><b><UiIcon name="Check" /></b></div>
             </div>
           ))}
         </div>
@@ -882,10 +750,10 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
       {step.visual === "together" ? (
         <div className="how-works-visual-game">
           <div className="how-works-visual-game-status"><span>SHARED QUEST</span><b>LIVE</b></div>
-          <div className="how-works-visual-shield"><span>✓</span></div>
+          <div className="how-works-visual-shield"><span><UiIcon name="Check" /></span></div>
           <strong className="how-works-visual-boss">PROJECT GOAL</strong>
           <div className="how-works-visual-hp"><span style={{ width: "72%" }} /></div>
-          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% visible progress</span></div>
+          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% complete</span></div>
         </div>
       ) : null}
     </div>
@@ -982,7 +850,7 @@ function SubscriptionComparisonChart({
       <div className="marketing-subscription-comparison-row marketing-subscription-comparison-head" role="row">
         <div className="marketing-subscription-comparison-feature" role="columnheader">
           <span>Compare plans</span>
-          <small>Shared project work, with room to grow.</small>
+          <small>Project limits and AI access.</small>
         </div>
         <div className="marketing-subscription-comparison-plan marketing-subscription-comparison-plan--free" role="columnheader">
           <strong>{SUBSCRIPTION_PLANS.free.name}</strong>
@@ -1016,7 +884,7 @@ function SubscriptionComparisonChart({
       <div className="marketing-subscription-comparison-row marketing-subscription-comparison-actions" role="row">
         <div className="marketing-subscription-comparison-feature" role="rowheader" style={lineStyle(freeContentProgress, lineCount - 1)}>
           <strong>Choose your starting point</strong>
-          <small>Core teamwork stays available for every team.</small>
+          <small>Both plans include task management and evidence tracking.</small>
         </div>
         <div className="marketing-subscription-comparison-value marketing-subscription-comparison-value--free" role="cell" style={lineStyle(freeContentProgress, lineCount - 1)}>
           <span className="marketing-subscription-comparison-value-label">Free</span>
@@ -1491,17 +1359,13 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
               </span>
             </button>
           </h1>
-          <p className="marketing-copy">
-            Create or join a project room, then move from brief to plan to execution
-            together with less guesswork.
-          </p>
           <a className="marketing-scroll-cue" href="#why-maylamdi">
             See what MayLamDi does <ArrowDown aria-hidden="true" />
           </a>
           <div className="marketing-proof" aria-label="MayLamDi principles">
-            <span><CheckCircle2 aria-hidden="true" /> Clear project plans</span>
-            <span><CheckCircle2 aria-hidden="true" /> Explainable allocation</span>
-            <span><CheckCircle2 aria-hidden="true" /> Supportive progress tracking</span>
+            <span><CheckCircle2 aria-hidden="true" /> Editable task plans</span>
+            <span><CheckCircle2 aria-hidden="true" /> Skills-based owner suggestions</span>
+            <span><CheckCircle2 aria-hidden="true" /> Task and evidence tracking</span>
           </div>
         </div>
 
@@ -1590,7 +1454,7 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
       >
         <div className="marketing-features-intro">
           <p>What MayLamDi offers</p>
-          <span>Everything your team needs to plan fairly, stay visible, and keep moving.</span>
+          <span>Plan tasks, assign owners and review completed work in one project room.</span>
         </div>
         <FeatureTagComposition tagsDropped={featureTagsDropped} />
         <div className="marketing-how-it-works-transition" ref={howItWorksTransition} aria-hidden="true">
@@ -1687,8 +1551,8 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
           <div className="marketing-subscription-sticky">
             <header className="marketing-subscription-heading" style={{ "--subscription-title-progress": subscriptionTitleProgress } as CSSProperties}>
               <p className="marketing-subscription-kicker">Subscription</p>
-              <h2 id="marketing-subscription-title">Choose the support your team needs.</h2>
-              <p>Keep the core project experience free, then add more AI room when your team needs it.</p>
+              <h2 id="marketing-subscription-title">Compare Free and MayLamDi+.</h2>
+              <p>Free includes two active projects and one AI plan per project. Plus includes 30 AI actions a month.</p>
             </header>
             <SubscriptionComparisonChart
               cardProgress={subscriptionCardProgress}

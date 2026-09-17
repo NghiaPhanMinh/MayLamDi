@@ -68,7 +68,7 @@ export function TeamLobby({
     <section className="team-lobby" aria-labelledby="team-lobby-title">
       <div className="team-lobby-heading">
         <div>
-          <p className="kicker">Realtime team gate</p>
+          <p className="kicker">Teams</p>
           <h1 id="team-lobby-title">Who are we making with, {displayName}?</h1>
           <p>
             Start a fresh team or enter the six-character code shared by a
@@ -85,7 +85,7 @@ export function TeamLobby({
       <div className="team-action-grid">
         <form className="team-action-card accent-pink" onSubmit={handleCreate}>
           <p className="card-eyebrow">Create a team</p>
-          <h2>Open a shared room.</h2>
+          <h2>Create a new team.</h2>
           <label htmlFor="team-name">Team name</label>
           <input
             id="team-name"
@@ -115,7 +115,7 @@ export function TeamLobby({
 
         <form className="team-action-card accent-yellow" onSubmit={handleJoin}>
           <p className="card-eyebrow">Join a team</p>
-          <h2>Bring a code.</h2>
+          <h2>Enter the team code.</h2>
           <label htmlFor="join-code">Team code</label>
           <input
             id="join-code"

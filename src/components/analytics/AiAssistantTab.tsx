@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import {
   BarChart,
   Bar,
@@ -55,7 +56,7 @@ export function AiAssistantTab({ data }: AiAssistantTabProps) {
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 900, marginTop: "0.4rem" }}>{ai.avgResponseTimeMs} ms</div>
           <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#17A738", marginTop: "0.2rem" }}>
-            Optimal streaming
+            Average response time
           </div>
         </div>
 
@@ -77,7 +78,7 @@ export function AiAssistantTab({ data }: AiAssistantTabProps) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.5rem" }}>
         {/* Plans Acceptance Bar Chart */}
         <div style={{ backgroundColor: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
-          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "0.2rem" }}>📋 AI Plans Acceptance Ratio</h3>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "0.2rem" }}><UiIcon name="ClipboardCheck" /> AI Plans Acceptance Ratio</h3>
           <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>Plans accepted without modifications vs edited</p>
 
           <div style={{ width: "100%", height: 220 }}>
@@ -101,8 +102,8 @@ export function AiAssistantTab({ data }: AiAssistantTabProps) {
 
         {/* AI Model Breakdown */}
         <div style={{ backgroundColor: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "1.5rem", boxShadow: "4px 4px 0px var(--color-ink)" }}>
-          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "0.2rem" }}>🤖 LLM Provider &amp; Model Distribution</h3>
-          <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>Models utilized for plan generation</p>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "0.2rem" }}><UiIcon name="Bot" /> LLM Provider &amp; Model Distribution</h3>
+          <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>Models used to generate plans</p>
 
           <div style={{ width: "100%", height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">

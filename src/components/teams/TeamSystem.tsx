@@ -182,7 +182,7 @@ export function TeamSystem({
         <header className="signed-in-welcome">
           <p className="kicker">Welcome back</p>
           <h1 className="display-heading" id="signed-in-home-title">{profile.displayName}</h1>
-          <p>{rooms.length === 0 ? "Create a project room or join your team with a code." : "Pick up the clearest next action for your group project."}</p>
+          <p>{rooms.length === 0 ? "Create a project room or join your team with a code." : "Continue a task or open your project room."}</p>
         </header>
 
         <div className="home-next-grid">
@@ -222,7 +222,7 @@ export function TeamSystem({
         </div>
 
         <div className="home-secondary-actions">
-          <button className="primary-button home-create-cta" type="button" onClick={() => onOpenProjects("create")}>{rooms.length ? "Create Another Project" : "Create Project"}</button>
+          <button data-tour="action-create-project" className="primary-button home-create-cta" type="button" onClick={() => onOpenProjects("create")}>{rooms.length ? "Create Another Project" : "Create Project"}</button>
           <button className="secondary-button home-join-cta" type="button" onClick={() => onOpenProjects("join")}>Join with Code</button>
         </div>
       </section>

@@ -111,7 +111,7 @@ export function AllocationWorkbench({ workspace }: AllocationWorkbenchProps) {
       <section className="workload-section" aria-labelledby="workload-title">
         <div className="allocation-subheading">
           <h4 id="workload-title">Workload snapshot</h4>
-          <p>Estimated hours and self-reported inputs—not a teammate ranking.</p>
+          <p>Compare estimated task hours with each teammate’s reported capacity.</p>
         </div>
         <div className="workload-grid">
           {allocation.workload.map((member) => (

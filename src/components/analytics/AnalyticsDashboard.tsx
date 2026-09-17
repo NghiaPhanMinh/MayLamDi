@@ -70,7 +70,7 @@ export function AnalyticsDashboard() {
                 Maylamdi Analytics Dashboard
               </h1>
               <p style={{ fontSize: "0.88rem", color: "var(--color-text-muted)", fontWeight: 700, marginTop: "0.2rem" }}>
-                Unified GA4 + Clarity + Live Convex Telemetry Metrics
+                GA4 traffic, Clarity session data and Convex app events
               </p>
             </div>
           </div>
@@ -239,7 +239,7 @@ export function AnalyticsDashboard() {
         <div style={{ backgroundColor: "var(--color-surface)", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "4rem 2rem", textAlign: "center", boxShadow: "4px 4px 0px var(--color-ink)" }}>
           <RotateCw size={32} style={{ color: "var(--color-primary)", margin: "0 auto 1rem" }} />
           <h3 style={{ fontSize: "1.2rem", fontWeight: 900 }}>Loading Maylamdi Analytics...</h3>
-          <p style={{ fontSize: "0.88rem", color: "var(--color-text-muted)", marginTop: "0.3rem" }}>Aggregating GA4, Clarity, and Convex DB telemetry</p>
+          <p style={{ fontSize: "0.88rem", color: "var(--color-text-muted)", marginTop: "0.3rem" }}>Loading data from GA4, Clarity and Convex</p>
         </div>
       ) : !analyticsData ? (
         <div style={{ backgroundColor: "#FF8AE722", border: "3px solid var(--color-ink)", borderRadius: "16px", padding: "3rem 2rem", textAlign: "center", boxShadow: "4px 4px 0px var(--color-ink)" }}>

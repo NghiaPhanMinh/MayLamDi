@@ -1,3 +1,4 @@
+import { UiIcon } from "../common/UiIcon";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 
@@ -302,7 +303,7 @@ export function TaskEvidencePanel({
 
       {details.isSoloProject && details.isTaskOwner && !["completed", "verified"].includes(taskStatus) ? (
         <div className="solo-complete-panel">
-          <p>⚡ <strong>Solo Project:</strong> You can self-approve and complete your task once evidence is added.</p>
+          <p><UiIcon name="Zap" /> <strong>Solo Project:</strong> You can self-approve and complete your task once evidence is added.</p>
           <button
             className="primary-button submit-review-button"
             type="button"

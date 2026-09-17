@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
+import { SpellIcon } from "../common/UiIcon";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import {
   CHARACTER_PALETTE,
-  getSpellGlyph,
   SPELL_OPTIONS,
   type SpellType,
 } from "../../lib/character";
@@ -63,7 +63,7 @@ export function CharacterCustomizer({
     <article className="character-card" aria-labelledby="character-title">
       <div className="character-copy">
         <p className="card-eyebrow">Your team character</p>
-        <h2 className="display-heading" id="character-title">Make your mark.</h2>
+        <h2 className="character-card-title" id="character-title">Choose your character colours.</h2>
         <p>
           These colours belong to you in this team only. Teammates see changes
           as soon as you save.
@@ -134,7 +134,7 @@ export function CharacterCustomizer({
                       )
                     }
                   >
-                    <span aria-hidden="true">{spell.glyph}</span>
+                    <span aria-hidden="true"><SpellIcon spellType={spell.value === "none" ? undefined : spell.value} /></span>
                     {spell.name}
                   </button>
                 );
@@ -174,7 +174,7 @@ export function CharacterCustomizer({
           }}
         >
           <strong>{member.displayName.slice(0, 1).toUpperCase()}</strong>
-          <i aria-hidden="true">{getSpellGlyph(spellType)}</i>
+          <i aria-hidden="true"><SpellIcon spellType={spellType} /></i>
         </div>
         <p>{member.displayName}</p>
       </div>

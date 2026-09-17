@@ -132,7 +132,7 @@ export function validateAiPlan(value: unknown, context: PlanningContext): Valida
     const milestoneTempId = item.milestoneTempId === null
       ? null
       : text(item.milestoneTempId, "task milestone", 40);
-    const reviewerProfileId = item.reviewerProfileId === null
+    let reviewerProfileId = item.reviewerProfileId === null
       ? null
       : text(item.reviewerProfileId, "reviewer", 100);
     const collaborators = textArray(item.collaboratorProfileIds, "collaborators", 12);
@@ -150,6 +150,9 @@ export function validateAiPlan(value: unknown, context: PlanningContext): Valida
     }
     if (typeof item.requiresReview !== "boolean" || typeof item.required !== "boolean") {
       throw new Error("AI task flags are invalid.");
+    }
+    if (context.members.length <= 1 && reviewerProfileId === ownerId) {
+      reviewerProfileId = null;
     }
     if (reviewerProfileId && !memberIds.has(reviewerProfileId)) {
       throw new Error("AI selected an unknown reviewer.");

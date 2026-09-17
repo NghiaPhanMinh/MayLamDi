@@ -217,7 +217,7 @@ export function CustomFrameworkBuilder({
           <p className="card-eyebrow">
             {existing ? `Editing version ${existing.version}` : "New team template"}
           </p>
-          <h3>{seed ? `Customise ${seed.shortName}` : "Build your own flow."}</h3>
+          <h3>{seed ? `Customise ${seed.shortName}` : "Create a custom framework."}</h3>
         </div>
         <button className="quiet-button" type="button" onClick={onCancel}>
           Cancel

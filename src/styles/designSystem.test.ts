@@ -83,6 +83,9 @@ describe("MayLamDi design-system contract", () => {
     expect(css).toContain(".marketing-final-cta-title-frame");
     expect(css).toContain("padding-right: clamp(11.2px, 2.38vw, 95.5px)");
     expect(css).toContain("letter-spacing: -0.1em");
+    expect(css).toContain("left: calc(50% - 0.5vw)");
+    expect(css).toContain("top: clamp(3px, 0.45vw, 18px)");
+    expect(css).toContain("width: calc(100% - clamp(20px, 3vw, 48px))");
   });
 
   it("uses the selected local display font without the removed hero preview", () => {

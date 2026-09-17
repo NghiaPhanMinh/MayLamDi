@@ -32,19 +32,19 @@ export const PLUS_SUBSCRIPTION_FEATURES = [
 export const SUBSCRIPTION_PLANS = {
   free: {
     name: "Free",
-    heading: "Get the team moving.",
+    heading: "Two active projects.",
     price: "0₫",
     cadence: "",
-    description: "For teams getting started with shared project work.",
+    description: "Plan tasks, assign owners and review evidence.",
     features: FREE_SUBSCRIPTION_FEATURES,
   },
   plus: {
     name: "MayLamDi+",
-    heading: "More AI when plans change.",
+    heading: "30 AI actions a month.",
     price: "39K₫",
     cadence: "/ month",
     semesterPrice: "or 99K₫ / semester",
-    description: "For group projects that need more room to adapt.",
+    description: "Regenerate plans, rebalance workloads and export contribution reports.",
     features: PLUS_SUBSCRIPTION_FEATURES,
   },
 } as const;
@@ -70,7 +70,7 @@ export const SUBSCRIPTION_COMPARISON_ROWS = [
   },
   {
     label: "Project access",
-    detail: "Active projects your team can keep moving",
+    detail: "Number of active projects",
     free: "Up to 2",
     plus: "Unlimited",
   },
@@ -82,7 +82,7 @@ export const SUBSCRIPTION_COMPARISON_ROWS = [
   },
   {
     label: "Price",
-    detail: "Keep the core project experience free",
+    detail: "Monthly cost",
     free: SUBSCRIPTION_PLANS.free.price,
     plus: `${SUBSCRIPTION_PLANS.plus.price} / month`,
   },
