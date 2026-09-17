@@ -896,7 +896,9 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
                               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", fontSize: "0.85rem" }}>
                                 <span style={{ fontWeight: 700 }}>{ownerName}</span>
                                 <span style={{ opacity: 0.75 }}>· Due {formatProjectDate(task.dueDate)}</span>
-                                <span style={{ opacity: 0.75, fontWeight: 700 }}>· {STATUS_LABELS[task.status as TaskStatus]}</span>
+                                <span className={`task-status-badge status-${task.status}`}>
+                                  {STATUS_LABELS[task.status as TaskStatus]}
+                                </span>
                               </div>
                             </div>
                             <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>

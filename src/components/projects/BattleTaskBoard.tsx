@@ -90,7 +90,7 @@ function BattleTaskNote({
         </span>
         <span className="battle-task-reviewer">Reviewer: {task.reviewer}</span>
         <span className="battle-task-impact">Weight {task.weight} · {task.damage} DMG</span>
-        <span className="battle-task-status">{STATUS_LABELS[task.status]}</span>
+        <span className={`battle-task-status status-${task.status}`}>{STATUS_LABELS[task.status]}</span>
       </button>
 
       <div className="battle-task-actions">
