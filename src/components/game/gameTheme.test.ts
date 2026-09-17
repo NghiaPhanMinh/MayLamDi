@@ -4,9 +4,9 @@ import battleSource from "./BattleScene.tsx?raw";
 import styles from "../../styles/index.css?raw";
 
 describe("approved partial game theme", () => {
-  it("applies the MayLamDi palette through scoped game controls and admin classes", () => {
-    expect(battleSource).toContain('className="rpg-btn-leaderboard rpg-btn-layout-admin"');
+  it("applies the MayLamDi palette through scoped game controls", () => {
     expect(battleSource).toContain('aria-label="Sound and music settings"');
+    expect(battleSource).toContain('aria-label="Interactive project encounter scene"');
 
     expect(styles).toContain(".rpg-btn-layout-admin");
     expect(styles).toContain("background: #4ca0fe");
