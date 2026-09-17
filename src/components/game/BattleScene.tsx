@@ -5162,35 +5162,87 @@ export function BattleScene({
       )}
 
       {/* =========================================================================
-          BOSS ATTACK QUEST PINNED BOARD MODAL (Modern Neo-Brutalist)
+          BOSS ATTACK QUEST PINNED BOARD MODAL (Key Visual & Modern Hierarchy)
          ========================================================================= */}
       {showBossModal && (
         <div className="rpg-modal-backdrop" onClick={() => setShowBossModal(false)}>
-          <div className="rpg-modern-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "580px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 className="rpg-modern-title"><UiIcon name="Flame" /> Attack The Dragon</h3>
+          <div
+            className="rpg-modern-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "680px",
+              width: "95vw",
+              maxHeight: "88vh",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              background: "var(--color-surface, #ffffff)",
+              border: "1px solid var(--color-border, #e2e8f0)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.05)",
+              borderRadius: "18px",
+              padding: "24px 28px",
+              color: "var(--color-text, #101517)",
+            }}
+          >
+            {/* Header: Title with Flame badge & Clean Close Button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", paddingBottom: "14px", borderBottom: "1px solid var(--color-border, #e2e8f0)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0, fontSize: "1.22rem", fontWeight: 800, color: "var(--color-text, #101517)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <UiIcon name="Flame" /> Attack The Dragon
+                </h3>
+                <span
+                  style={{
+                    background: "color-mix(in srgb, var(--mld-xp, #fd39e4) 14%, #ffffff)",
+                    color: "#b80f9f",
+                    border: "1.5px solid var(--mld-xp, #fd39e4)",
+                    borderRadius: "9999px",
+                    padding: "2px 10px",
+                    fontSize: "0.72rem",
+                    fontWeight: 900,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  PROOF OF WORK
+                </span>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowBossModal(false)}
-                style={{ background: "#ef4444", color: "#fff", border: "2px solid #101517", borderRadius: "8px", width: "28px", height: "28px", display: "grid", placeItems: "center", cursor: "pointer", fontWeight: 900 }}
+                style={{
+                  background: "transparent",
+                  color: "#64748b",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: "0.95rem",
+                  transition: "all 0.15s ease",
+                }}
+                title="Close"
               >
                 ✕
               </button>
             </div>
 
             {bossError && (
-              <div style={{ padding: "8px 12px", background: "#fee2e2", border: "2px solid #ef4444", borderRadius: "8px", color: "#b91c1c", fontSize: "0.82rem", fontWeight: 800 }}>
+              <div style={{ padding: "10px 14px", background: "#fee2e2", border: "1px solid #ef4444", borderRadius: "10px", color: "#b91c1c", fontSize: "0.84rem", fontWeight: 700, marginBottom: "14px" }}>
                 {bossError}
               </div>
             )}
 
             {myAssignableTasks.length === 0 ? (
-              <div style={{ background: "#f8fafc", border: "2px dashed #94a3b8", borderRadius: "12px", padding: "20px", textAlign: "center", color: "#64748b" }}>
-                <p style={{ margin: 0, fontWeight: 800, color: "#101517", fontSize: "0.95rem" }}>You do not have any active quests assigned!</p>
-                <p style={{ margin: "6px 0 14px 0", fontSize: "0.82rem" }}>Claim an open quest from the in-game Quest Board or create a new task to attack the dragon.</p>
+              <div style={{ background: "var(--mld-surface-02, #f8fafc)", border: "1px dashed var(--color-border, #cbd5e1)", borderRadius: "14px", padding: "36px 20px", textAlign: "center", color: "#64748b", margin: "12px 0" }}>
+                <p style={{ margin: 0, fontWeight: 800, color: "var(--color-text, #101517)", fontSize: "1rem" }}>You do not have any active quests assigned!</p>
+                <p style={{ margin: "6px 0 16px 0", fontSize: "0.84rem" }}>Claim an open quest from the Quest Board or create a new task to attack the dragon.</p>
                 <button
-                  className="rpg-modern-btn is-primary"
+                  className="primary-button"
                   type="button"
+                  style={{ padding: "8px 18px", fontSize: "0.84rem", fontWeight: 700 }}
                   onClick={() => {
                     setShowBossModal(false);
                     setShowCreateQuestModal(true);
@@ -5200,28 +5252,34 @@ export function BattleScene({
                 </button>
               </div>
             ) : !selectedTaskId ? (
-              <>
-                <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9 }}>
-                  Select one of your assigned quests below to submit proof and deal combat damage to the dragon.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", maxHeight: "240px", overflowY: "auto", padding: "2px" }}>
+              <div style={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
+                <div>
+                  <h4 style={{ margin: "0 0 4px 0", fontSize: "0.95rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                    Select a Quest to Submit Proof
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "0.82rem", color: "#64748b" }}>
+                    Choose an active task below to provide evidence and strike the boss with combat damage.
+                  </p>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxHeight: "360px", overflowY: "auto", padding: "2px" }}>
                   {myAssignableTasks.map((task) => {
                     const creatorName = workspace?.members.find((m) => m?.profileId === task.createdByProfileId)?.displayName ?? "Creator";
                     return (
                       <div
                         key={task._id}
                         style={{
-                          background: "#ffffff",
-                          border: "2px solid #101517",
-                          borderRadius: "10px",
-                          padding: "10px",
+                          background: "var(--color-surface, #ffffff)",
+                          border: "1.5px solid var(--color-border, #e2e8f0)",
+                          borderRadius: "12px",
+                          padding: "14px",
                           cursor: "pointer",
-                          boxShadow: "3px 3px 0 #101517",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "space-between",
-                          gap: "8px",
-                          transition: "transform 0.15s ease",
+                          gap: "10px",
+                          transition: "all 0.15s ease",
                         }}
                         onClick={() => {
                           setSelectedTaskId(task._id);
@@ -5229,180 +5287,321 @@ export function BattleScene({
                             setSelectedReviewerId(task.reviewerProfileId);
                           }
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = "var(--mld-xp, #fd39e4)";
+                          e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "var(--color-border, #e2e8f0)";
+                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.04)";
+                        }}
                       >
-                        <h4 style={{ margin: 0, fontSize: "0.85rem", fontWeight: 900, color: "#101517" }}>{task.title}</h4>
-                        <div style={{ fontSize: "0.72rem", color: "#64748b", display: "flex", justifyContent: "space-between" }}>
-                          <span><UiIcon name="CalendarDays" /> {task.dueDate}</span>
-                          <span><UiIcon name="User" /> {creatorName}</span>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 800, color: "var(--color-text, #101517)", lineHeight: 1.35 }}>{task.title}</h4>
+                          {task.description && (
+                            <p style={{ margin: "4px 0 0 0", fontSize: "0.78rem", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.74rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
+                          <span><UiIcon name="CalendarDays" /> {task.dueDate || "No deadline"}</span>
+                          <span style={{ color: "#b91c1c", fontWeight: 700 }}><UiIcon name="Flame" /> -{task.damage || 50} HP</span>
                         </div>
                         <button
-                          className="rpg-modern-btn is-boss"
+                          className="primary-button"
                           type="button"
-                          style={{ padding: "4px 8px", fontSize: "0.72rem", width: "100%" }}
+                          style={{ padding: "6px 12px", fontSize: "0.78rem", width: "100%", fontWeight: 700, borderRadius: "8px" }}
                         >
-                          Select Quest
+                          Select Quest ➜
                         </button>
                       </div>
                     );
                   })}
                 </div>
-              </>
+              </div>
             ) : (
-              <form onSubmit={handleBossSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <form onSubmit={handleBossSubmit} style={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: "18px", paddingRight: "4px" }}>
+                {/* 1. Target Objective Card */}
                 {(() => {
                   const task = workspace?.tasks?.find((t) => t._id === selectedTaskId) || myAssignableTasks.find((t) => t._id === selectedTaskId);
                   if (!task) return null;
                   const creatorName = workspace?.members.find((m) => m?.profileId === task.createdByProfileId)?.displayName ?? "Creator";
                   return (
-                    <div style={{ background: "#bae6fd", border: "2px solid #101517", borderRadius: "10px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                      <div>
-                        <span style={{ fontSize: "0.68rem", fontWeight: 900, textTransform: "uppercase", color: "#0369a1" }}>Selected Task</span>
-                        <h4 style={{ margin: "2px 0 0 0", fontSize: "0.95rem", fontWeight: 900, color: "#101517" }}>{task.title}</h4>
-                        {task.description && (
-                          <p style={{ margin: "4px 0 6px 0", fontSize: "0.82rem", color: "#0c4a6e", lineHeight: 1.35 }}>
-                            {task.description}
-                          </p>
-                        )}
-                        <span style={{ fontSize: "0.74rem", color: "#075985", fontWeight: 700 }}><UiIcon name="CalendarDays" /> Due {task.dueDate || "No deadline"} | Assigned by {creatorName}</span>
+                    <div
+                      style={{
+                        background: "color-mix(in srgb, #4ca0fe 8%, var(--color-surface, #ffffff))",
+                        border: "1.5px solid color-mix(in srgb, #4ca0fe 30%, transparent)",
+                        borderRadius: "14px",
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.06em", color: "#0284c7" }}>
+                          Target Objective
+                        </span>
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          style={{ padding: "4px 10px", fontSize: "0.75rem", borderRadius: "6px", fontWeight: 700, cursor: "pointer" }}
+                          onClick={() => {
+                            setSelectedTaskId(null);
+                            setShowBossModal(false);
+                            setShowMyTasksModal(true);
+                          }}
+                        >
+                          Change Quest ↺
+                        </button>
                       </div>
-                      <button
-                        className="rpg-modern-btn is-secondary"
-                        type="button"
-                        style={{ padding: "4px 10px", fontSize: "0.74rem", flexShrink: 0 }}
-                        onClick={() => {
-                          setSelectedTaskId(null);
-                          setShowBossModal(false);
-                          setShowMyTasksModal(true);
-                        }}
-                      >
-                        Change
-                      </button>
+
+                      <h4 style={{ margin: "2px 0 6px 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--color-text, #101517)", lineHeight: 1.35 }}>
+                        {task.title}
+                      </h4>
+
+                      {task.description && (
+                        <p style={{ margin: "0 0 10px 0", fontSize: "0.84rem", color: "#475569", lineHeight: 1.45 }}>
+                          {task.description}
+                        </p>
+                      )}
+
+                      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", fontSize: "0.76rem" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
+                          <UiIcon name="CalendarDays" /> Due: <strong style={{ color: "#0f172a" }}>{task.dueDate || "No deadline"}</strong>
+                        </span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, color: "#334155" }}>
+                          <UiIcon name="User" /> Assigned by: <strong style={{ color: "#0f172a" }}>{creatorName}</strong>
+                        </span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#fee2e2", padding: "3px 9px", borderRadius: "6px", fontWeight: 800, color: "#b91c1c" }}>
+                          <UiIcon name="Flame" /> Boss Impact: -{task.damage || 50} HP
+                        </span>
+                      </div>
                     </div>
                   );
                 })()}
 
+                {/* 2. Select Evidence Type Segmented Tabs */}
                 <div>
-                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "6px" }}>
-                    Select Evidence Type
+                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-text, #101517)", marginBottom: "3px" }}>
+                    1. Select Evidence Type
                   </label>
-                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                    {(["note", "link", "image", "pdf"] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        type="button"
-                        className={`rpg-modern-btn ${evidenceType === tab ? "is-primary" : "is-secondary"}`}
-                        style={{ padding: "6px 12px", fontSize: "0.78rem" }}
-                        onClick={() => {
-                          setEvidenceType(tab);
-                          setEvidenceFile(null);
-                        }}
-                      >
-                        {tab === "note" ? <><UiIcon name="FileText" /> Short Note</> : tab === "link" ? <><UiIcon name="Link" /> External Link</> : tab === "image" ? <><UiIcon name="Image" /> Image File</> : <><UiIcon name="FileText" /> PDF File</>}
-                      </button>
-                    ))}
+                  <p style={{ margin: "0 0 10px 0", fontSize: "0.78rem", color: "#64748b" }}>
+                    Choose the format of proof you are submitting to verify this task.
+                  </p>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                    {(["note", "link", "image", "pdf"] as const).map((tab) => {
+                      const isActive = evidenceType === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => {
+                            setEvidenceType(tab);
+                            setEvidenceFile(null);
+                          }}
+                          style={{
+                            padding: "10px 8px",
+                            fontSize: "0.8rem",
+                            fontWeight: isActive ? 900 : 700,
+                            borderRadius: "10px",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "5px",
+                            transition: "all 0.15s ease",
+                            background: isActive ? "var(--mld-accent, #fcee0a)" : "var(--mld-surface-02, #f8fafc)",
+                            color: isActive ? "#101517" : "#475569",
+                            border: isActive ? "2px solid #101517" : "1.5px solid var(--color-border, #cbd5e1)",
+                            boxShadow: isActive ? "2px 2px 0 #101517" : "none",
+                            transform: isActive ? "translateY(-1px)" : "none",
+                          }}
+                        >
+                          <span style={{ fontSize: "1.1rem" }}>
+                            {tab === "note" ? "📝" : tab === "link" ? "🔗" : tab === "image" ? "🖼️" : "📄"}
+                          </span>
+                          <span>
+                            {tab === "note" ? "Short Note" : tab === "link" ? "External Link" : tab === "image" ? "Image File" : "PDF Document"}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
+                {/* 3. Provide Evidence Input Area */}
                 <div>
+                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-text, #101517)", marginBottom: "3px" }}>
+                    2. Provide Evidence Details
+                  </label>
+
                   {evidenceType === "note" && (
                     <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                        Progress Note
-                      </label>
+                      <p style={{ margin: "0 0 8px 0", fontSize: "0.78rem", color: "#64748b" }}>
+                        Write a clear summary of what was accomplished and completed.
+                      </p>
                       <textarea
                         className="rpg-modern-textarea"
-                        rows={3}
+                        rows={4}
                         value={evidenceNote}
                         onChange={(e) => setEvidenceNote(e.target.value)}
-                        placeholder="Write a short summary of the completed work..."
+                        placeholder="Detail the deliverable, methods, findings, or work results completed for this task..."
                         required
+                        style={{
+                          width: "100%",
+                          boxSizing: "border-box",
+                          background: "var(--color-surface, #ffffff)",
+                          border: "1.5px solid var(--color-border, #cbd5e1)",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                          fontSize: "0.88rem",
+                          lineHeight: 1.5,
+                          color: "var(--color-text, #101517)",
+                        }}
                       />
                     </div>
                   )}
 
                   {evidenceType === "link" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div>
-                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                          Link URL
-                        </label>
+                        <span style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, marginBottom: "4px", color: "#334155" }}>
+                          External Resource URL *
+                        </span>
                         <input
                           type="url"
                           className="rpg-modern-input"
                           value={evidenceUrl}
                           onChange={(e) => setEvidenceUrl(e.target.value)}
-                          placeholder="https://github.com/..."
+                          placeholder="https://github.com/... or https://figma.com/..."
                           required
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            background: "var(--color-surface, #ffffff)",
+                            border: "1.5px solid var(--color-border, #cbd5e1)",
+                            borderRadius: "10px",
+                            padding: "10px 14px",
+                            fontSize: "0.88rem",
+                            color: "var(--color-text, #101517)",
+                          }}
                         />
                       </div>
                       <div>
-                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                          Optional Progress Note
-                        </label>
+                        <span style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, marginBottom: "4px", color: "#334155" }}>
+                          Context & Summary (Optional)
+                        </span>
                         <textarea
                           className="rpg-modern-textarea"
                           rows={2}
                           value={evidenceNote}
                           onChange={(e) => setEvidenceNote(e.target.value)}
-                          placeholder="Add extra context about the link..."
+                          placeholder="Add extra context or instructions for viewing this link..."
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            background: "var(--color-surface, #ffffff)",
+                            border: "1.5px solid var(--color-border, #cbd5e1)",
+                            borderRadius: "10px",
+                            padding: "10px 14px",
+                            fontSize: "0.86rem",
+                            color: "var(--color-text, #101517)",
+                          }}
                         />
                       </div>
                     </div>
                   )}
 
                   {(evidenceType === "image" || evidenceType === "pdf") && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                          Upload {evidenceType === "image" ? "Image File (Max 5MB)" : "PDF File (Max 10MB)"}
-                        </label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div
+                        style={{
+                          border: "2px dashed var(--color-border, #cbd5e1)",
+                          borderRadius: "12px",
+                          padding: "18px",
+                          background: "var(--mld-surface-02, #f8fafc)",
+                          textAlign: "center",
+                        }}
+                      >
+                        <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "4px" }}>
+                          {evidenceType === "image" ? "🖼️" : "📄"}
+                        </span>
+                        <span style={{ display: "block", fontSize: "0.84rem", fontWeight: 800, color: "var(--color-text, #101517)" }}>
+                          Upload {evidenceType === "image" ? "Image File (JPEG, PNG, WebP, GIF — Max 5MB)" : "PDF Document (Max 10MB)"} *
+                        </span>
                         <input
                           type="file"
-                          className="rpg-modern-input"
                           accept={evidenceType === "image" ? "image/*" : "application/pdf"}
                           onChange={(e) => setEvidenceFile(e.target.files?.[0] ?? null)}
                           required
+                          style={{ marginTop: "10px", fontSize: "0.82rem" }}
                         />
                       </div>
+
                       {uploadProgress > 0 && (
-                        <div style={{ background: "#e2e8f0", border: "1.5px solid #101517", height: "12px", borderRadius: "4px", overflow: "hidden" }}>
+                        <div style={{ background: "#e2e8f0", border: "1.5px solid #101517", height: "10px", borderRadius: "6px", overflow: "hidden" }}>
                           <div style={{ background: "#22c55e", height: "100%", width: `${uploadProgress}%`, transition: "width 0.2s ease" }} />
                         </div>
                       )}
+
                       <div>
-                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                          Optional Note
-                        </label>
+                        <span style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, marginBottom: "4px", color: "#334155" }}>
+                          File Description & Notes (Optional)
+                        </span>
                         <textarea
                           className="rpg-modern-textarea"
                           rows={2}
                           value={evidenceNote}
                           onChange={(e) => setEvidenceNote(e.target.value)}
-                          placeholder="Describe the uploaded file..."
+                          placeholder="Describe the uploaded evidence file..."
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            background: "var(--color-surface, #ffffff)",
+                            border: "1.5px solid var(--color-border, #cbd5e1)",
+                            borderRadius: "10px",
+                            padding: "10px 14px",
+                            fontSize: "0.86rem",
+                            color: "var(--color-text, #101517)",
+                          }}
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
+                {/* 4. Reviewer Selection (Only required for 2+ member team projects) */}
                 {(() => {
                   if (isSoloProject || eligibleReviewers.length === 0) return null;
                   const task = myAssignableTasks.find((t) => t._id === selectedTaskId);
                   if (task && !task.reviewerProfileId) {
                     return (
                       <div>
-                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 800, marginBottom: "4px" }}>
-                          Select Teammate to Review Your Quest
+                        <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-text, #101517)", marginBottom: "3px" }}>
+                          3. Choose Peer Reviewer
                         </label>
+                        <p style={{ margin: "0 0 8px 0", fontSize: "0.78rem", color: "#64748b" }}>
+                          Assign a teammate to review this submission. Once approved, boss damage will be dealt immediately.
+                        </p>
                         <select
-                          className="rpg-modern-select"
                           value={selectedReviewerId}
                           onChange={(e) => setSelectedReviewerId(e.target.value)}
                           required
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            background: "var(--color-surface, #ffffff)",
+                            border: "1.5px solid var(--color-border, #cbd5e1)",
+                            borderRadius: "10px",
+                            padding: "10px 14px",
+                            fontSize: "0.88rem",
+                            fontWeight: 700,
+                            color: "var(--color-text, #101517)",
+                          }}
                         >
-                          <option value="">-- Select Reviewer --</option>
+                          <option value="">-- Choose a teammate to review --</option>
                           {eligibleReviewers.map((m) => (
                             <option key={m.profileId} value={m.profileId}>
                               {m.displayName}
@@ -5415,40 +5614,50 @@ export function BattleScene({
                   return null;
                 })()}
 
-                <button
-                  className="rpg-modern-btn is-boss"
-                  type="submit"
-                  disabled={isSubmittingTask}
-                  style={{ marginTop: "4px" }}
-                >
-                  {isSubmittingTask
-                    ? "Submitting Evidence..."
-                    : isSoloProject
-                      ? <><UiIcon name="Zap" /> Submit Proof & Complete Task!</>
-                      : <><UiIcon name="Swords" /> Submit Proof for Peer Review!</>}
-                </button>
+                {/* Bottom Action Bar */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginTop: "4px", paddingTop: "16px", borderTop: "1px solid var(--color-border, #e2e8f0)" }}>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    style={{ padding: "10px 18px", fontSize: "0.84rem", borderRadius: "10px", fontWeight: 700, cursor: "pointer" }}
+                    onClick={() => {
+                      setSelectedTaskId(null);
+                      setEvidenceNote("");
+                      setEvidenceUrl("");
+                      setEvidenceFile(null);
+                      setSelectedReviewerId("");
+                      setShowBossModal(false);
+                      setShowMyTasksModal(true);
+                    }}
+                  >
+                    ← Back to My Tasks
+                  </button>
 
-                <button
-                  className="rpg-modern-btn is-secondary"
-                  type="button"
-                  onClick={() => {
-                    setSelectedTaskId(null);
-                    setEvidenceNote("");
-                    setEvidenceUrl("");
-                    setEvidenceFile(null);
-                    setSelectedReviewerId("");
-                    setShowBossModal(false);
-                    setShowMyTasksModal(true);
-                  }}
-                >
-                  Back to My Tasks
-                </button>
+                  <button
+                    className="primary-button"
+                    type="submit"
+                    disabled={isSubmittingTask}
+                    style={{
+                      padding: "10px 22px",
+                      fontSize: "0.88rem",
+                      borderRadius: "10px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      background: isSoloProject ? "#22c55e" : "#fd39e4",
+                      color: "#ffffff",
+                      border: "1.5px solid #101517",
+                      boxShadow: "3px 3px 0 #101517",
+                    }}
+                  >
+                    {isSubmittingTask
+                      ? "Submitting Proof..."
+                      : isSoloProject
+                        ? <><UiIcon name="Zap" /> Self-Approve & Complete Task!</>
+                        : <><UiIcon name="Swords" /> Submit Proof for Peer Review!</>}
+                  </button>
+                </div>
               </form>
             )}
-
-            <button className="rpg-modern-btn is-secondary" type="button" onClick={() => setShowBossModal(false)}>
-              Close
-            </button>
           </div>
         </div>
       )}
