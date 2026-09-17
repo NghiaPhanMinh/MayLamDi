@@ -172,7 +172,7 @@ export const listForTask = query({
       reviews: decoratedReviews,
       latestReview: decoratedReviews[0] ?? null,
       currentProfileId: context.profile._id,
-      isSoloProject: projectMembers.length <= 1 || context.project.targetMemberCount === 1,
+      isSoloProject: projectMembers.length <= 1 || eligibleMembers.length === 0 || context.project.targetMemberCount === 1,
       canSubmit:
         context.canWrite &&
         context.task.assignmentState !== "unassigned" &&
@@ -431,7 +431,8 @@ export const submitForReview = mutation({
       .query("projectMembers")
       .withIndex("by_project", (query) => query.eq("projectId", context.project._id))
       .collect();
-    const isSoloProject = projectMembers.length <= 1 || context.project.targetMemberCount === 1;
+    const otherMembers = projectMembers.filter((m) => m.profileId !== context.profile._id);
+    const isSoloProject = projectMembers.length <= 1 || otherMembers.length === 0 || context.project.targetMemberCount === 1;
 
     if (!isSoloProject) {
       if (!context.task.requiresReview) {

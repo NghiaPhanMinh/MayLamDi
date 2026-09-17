@@ -2069,8 +2069,8 @@ export function BattleScene({
     }
 
     try {
-      // 1. Choose reviewer if not already assigned (bypassed for solo 1-person projects)
-      if (!isSoloProject && !currentTask.reviewerProfileId) {
+      // 1. Choose reviewer if not already assigned (only required if group has 2 or more members)
+      if (!isSoloProject && eligibleReviewers.length > 0 && !currentTask.reviewerProfileId) {
         if (!selectedReviewerId) {
           throw new Error("You must choose a teammate to review your task.");
         }
@@ -4831,43 +4831,64 @@ export function BattleScene({
                               <span
                                 style={{
                                   fontSize: "0.7rem",
-                                  fontWeight: 700,
-                                  padding: "2px 8px",
-                                  borderRadius: "6px",
+                                  fontWeight: 800,
+                                  padding: "2px 10px",
+                                  borderRadius: "9999px",
                                   background: "#dcfce7",
                                   color: "#15803d",
-                                  border: "1px solid #86efac",
+                                  border: "1.5px solid #86efac",
+                                  letterSpacing: "0.02em",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
                                 }}
                               >
-                                <UiIcon name="Check" /> Complete
+                                <UiIcon name="Check" /> COMPLETE
                               </span>
                             ) : isPendingReview ? (
                               <span
                                 style={{
                                   fontSize: "0.7rem",
-                                  fontWeight: 700,
-                                  padding: "2px 8px",
-                                  borderRadius: "6px",
+                                  fontWeight: 800,
+                                  padding: "2px 10px",
+                                  borderRadius: "9999px",
                                   background: "#fef3c7",
                                   color: "#b45309",
-                                  border: "1px solid #fde68a",
+                                  border: "1.5px solid #fde68a",
+                                  letterSpacing: "0.02em",
                                 }}
                               >
-                                In Review
+                                IN REVIEW
+                              </span>
+                            ) : task.status === "in_progress" ? (
+                              <span
+                                style={{
+                                  fontSize: "0.7rem",
+                                  fontWeight: 800,
+                                  padding: "2px 10px",
+                                  borderRadius: "9999px",
+                                  background: "color-mix(in srgb, #4ca0fe 16%, #ffffff)",
+                                  color: "#095cad",
+                                  border: "1.5px solid #4ca0fe",
+                                  letterSpacing: "0.02em",
+                                }}
+                              >
+                                IN PROGRESS
                               </span>
                             ) : (
                               <span
                                 style={{
-                                  fontSize: "0.7rem",
-                                  fontWeight: 700,
-                                  padding: "2px 8px",
-                                  borderRadius: "6px",
-                                  background: "#f1f5f9",
-                                  color: "#475569",
-                                  border: "1px solid #cbd5e1",
+                                  fontSize: "0.72rem",
+                                  fontWeight: 900,
+                                  padding: "2px 10px",
+                                  borderRadius: "9999px",
+                                  background: "color-mix(in srgb, var(--mld-xp, #fd39e4) 14%, #ffffff)",
+                                  color: "#b80f9f",
+                                  border: "1.5px solid #fd39e4",
+                                  letterSpacing: "0.03em",
                                 }}
                               >
-                                {task.status === "in_progress" ? "In Progress" : "To Do"}
+                                TO DO
                               </span>
                             )}
                           </div>
@@ -5367,7 +5388,7 @@ export function BattleScene({
                 </div>
 
                 {(() => {
-                  if (isSoloProject) return null;
+                  if (isSoloProject || eligibleReviewers.length === 0) return null;
                   const task = myAssignableTasks.find((t) => t._id === selectedTaskId);
                   if (task && !task.reviewerProfileId) {
                     return (
@@ -5400,7 +5421,11 @@ export function BattleScene({
                   disabled={isSubmittingTask}
                   style={{ marginTop: "4px" }}
                 >
-                  {isSubmittingTask ? "Submitting Evidence..." : <><UiIcon name="Swords" /> Submit Quest & Attack Dragon!</>}
+                  {isSubmittingTask
+                    ? "Submitting Evidence..."
+                    : isSoloProject
+                      ? <><UiIcon name="Zap" /> Submit Proof & Complete Task!</>
+                      : <><UiIcon name="Swords" /> Submit Proof for Peer Review!</>}
                 </button>
 
                 <button

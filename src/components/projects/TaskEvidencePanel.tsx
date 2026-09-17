@@ -215,6 +215,7 @@ export function TaskEvidencePanel({
     return <div className="task-evidence-panel" aria-busy="true">Loading evidence…</div>;
   }
 
+  const isSolo = details.isSoloProject || details.eligibleReviewers.length === 0;
   const canReviewNow = details.canReview;
 
   return (
@@ -301,9 +302,9 @@ export function TaskEvidencePanel({
         <p className="evidence-empty">No evidence has been added to this task.</p>
       )}
 
-      {details.isSoloProject && details.isTaskOwner && !["completed", "verified"].includes(taskStatus) ? (
+      {isSolo && details.isTaskOwner && !["completed", "verified"].includes(taskStatus) ? (
         <div className="solo-complete-panel">
-          <p><UiIcon name="Zap" /> <strong>Solo Project:</strong> You can self-approve and complete your task once evidence is added.</p>
+          <p><UiIcon name="Zap" /> <strong>Solo / Single Member:</strong> You can self-approve and complete your task once evidence is added.</p>
           <button
             className="primary-button submit-review-button"
             type="button"
@@ -315,7 +316,7 @@ export function TaskEvidencePanel({
         </div>
       ) : null}
 
-      {!details.isSoloProject && requiresReview && details.isTaskOwner && !reviewerName && ["todo", "in_progress", "changes_requested"].includes(taskStatus) ? (
+      {!isSolo && requiresReview && details.isTaskOwner && !reviewerName && ["todo", "in_progress", "changes_requested"].includes(taskStatus) ? (
         <div className="reviewer-picker">
           <label>
             <span>Choose your reviewer</span>
@@ -335,13 +336,13 @@ export function TaskEvidencePanel({
         </div>
       ) : null}
 
-      {!details.isSoloProject && requiresReview && details.isTaskOwner && ["todo", "in_progress", "changes_requested"].includes(taskStatus) ? (
+      {!isSolo && requiresReview && details.isTaskOwner && ["todo", "in_progress", "changes_requested"].includes(taskStatus) ? (
         <button className="primary-button submit-review-button maylamdi-button" type="button" disabled={isSaving || details.evidence.length === 0 || !reviewerName} onClick={() => void handleSubmitForReview()}>
           MayLamDi
         </button>
       ) : null}
 
-      {!details.isSoloProject && requiresReview ? (
+      {!isSolo && requiresReview ? (
         <div className="review-panel">
           <strong>{reviewerName ? `Assigned reviewer: ${reviewerName}` : "Reviewer not selected yet"}</strong>
           <p>The assigned reviewer approves task completion or requests changes.</p>

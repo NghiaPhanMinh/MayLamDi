@@ -434,7 +434,8 @@ export const launch = mutation({
       .query("projectMembers")
       .withIndex("by_project", (query) => query.eq("projectId", project._id))
       .collect();
-    const isSoloProject = projectMembers.length <= 1 || project.targetMemberCount === 1;
+    const otherMembers = projectMembers.filter((m) => m.profileId !== profile._id);
+    const isSoloProject = projectMembers.length <= 1 || otherMembers.length === 0 || project.targetMemberCount === 1;
 
     if (!isSoloProject && tasks.some((task) => task.required && (!task.requiresReview || !task.reviewerProfileId))) {
       throw new Error("Every required task needs an assigned reviewer before launch.");
