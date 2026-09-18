@@ -305,6 +305,11 @@ describe("MayLamDi landing page", () => {
     expect(steps.every((step) => step.style.getPropertyValue("--how-title-progress") === "")).toBe(true);
     expect(steps.every((step) => step.style.getPropertyValue("--how-image-progress") === "")).toBe(true);
     expect(steps.every((step) => step.style.getPropertyValue("--how-description-progress") === "")).toBe(true);
+    expect(howItWorks).toHaveTextContent(/DEFEAT THE\s*BOSS/);
+    expect(howItWorks).toHaveTextContent("Reviewer-approved tasks damage the boss.");
+    expect(howItWorks).toHaveTextContent("Post daily evidence to show your progress and keep the team updated until the deadline.");
+    expect(howItWorks).toHaveTextContent("BOSS HP");
+    expect(howItWorks).not.toHaveTextContent("DEFEND THE VILLAGE");
   });
 
   it("offers the existing visitor sign-in action from the Free plan", () => {

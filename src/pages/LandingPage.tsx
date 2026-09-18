@@ -96,7 +96,7 @@ const FEATURE_TAGS = [
   {
     id: "gamification",
     label: "GAMIFICATION",
-    description: "Reviewed tasks damage the dragon. Daily evidence helps defend the village.",
+    description: "Reviewer-approved tasks damage the boss. Daily evidence keeps ongoing work visible to the team.",
   },
   {
     id: "real-time-workspace",
@@ -154,10 +154,10 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     number: "04",
-    title: "DEFEND THE\nVILLAGE",
-    description: "Reviewed tasks damage the dragon. Post daily evidence to defend the village until the deadline.",
+    title: "DEFEAT THE\nBOSS",
+    description: "Reviewer-approved tasks damage the boss. Post daily evidence to show your progress and keep the team updated until the deadline.",
     visual: "together",
-    visualLabel: "Shared team game progress interface",
+    visualLabel: "Team boss fight progress interface",
   },
 ] as const;
 
@@ -704,7 +704,7 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
     >
       <div className="how-works-visual-window-bar">
         <div aria-hidden="true"><span /><span /><span /></div>
-        <strong>{step.visual === "plan" ? "Fair plan" : step.visual === "work" ? "Project room" : step.visual === "together" ? "Team quest" : "New project"}</strong>
+        <strong>{step.visual === "plan" ? "Fair plan" : step.visual === "work" ? "Project room" : step.visual === "together" ? "Boss fight" : "New project"}</strong>
         <b>{step.number}</b>
       </div>
 
@@ -749,11 +749,11 @@ function HowItWorksVisual({ step }: { step: typeof HOW_IT_WORKS_STEPS[number] })
 
       {step.visual === "together" ? (
         <div className="how-works-visual-game">
-          <div className="how-works-visual-game-status"><span>SHARED QUEST</span><b>LIVE</b></div>
+          <div className="how-works-visual-game-status"><span>TEAM BATTLE</span><b>LIVE</b></div>
           <div className="how-works-visual-shield"><span><UiIcon name="Check" /></span></div>
-          <strong className="how-works-visual-boss">PROJECT GOAL</strong>
-          <div className="how-works-visual-hp"><span style={{ width: "72%" }} /></div>
-          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% complete</span></div>
+          <strong className="how-works-visual-boss">BOSS HP</strong>
+          <div className="how-works-visual-hp"><span style={{ width: "28%" }} /></div>
+          <div className="how-works-visual-players"><b>Q</b><b>N</b><b>T</b><span>72% progress</span></div>
         </div>
       ) : null}
     </div>
