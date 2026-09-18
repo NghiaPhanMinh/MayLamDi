@@ -3,19 +3,19 @@ export function SVGDefs() {
     <svg style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
       <defs>
         {/* Reusable Cloud Cluster 1 */}
-        <g id="cloud-cluster-1">
-          <ellipse cx="40" cy="35" rx="30" ry="22" fill="var(--scene-cloud)" />
-          <ellipse cx="75" cy="28" rx="36" ry="26" fill="var(--scene-cloud)" />
-          <ellipse cx="110" cy="36" rx="28" ry="20" fill="var(--scene-cloud)" />
-          <rect x="25" y="32" width="100" height="22" rx="10" fill="var(--scene-cloud)" />
+        <g id="cloud-cluster-1" fill="currentColor">
+          <ellipse cx="40" cy="35" rx="30" ry="22" />
+          <ellipse cx="75" cy="28" rx="36" ry="26" />
+          <ellipse cx="110" cy="36" rx="28" ry="20" />
+          <rect x="25" y="32" width="100" height="22" rx="10" />
         </g>
 
         {/* Reusable Cloud Cluster 2 */}
-        <g id="cloud-cluster-2">
-          <ellipse cx="30" cy="25" rx="22" ry="16" fill="var(--scene-cloud-near)" />
-          <ellipse cx="58" cy="20" rx="28" ry="20" fill="var(--scene-cloud-near)" />
-          <ellipse cx="86" cy="26" rx="20" ry="15" fill="var(--scene-cloud-near)" />
-          <rect x="18" y="24" width="80" height="16" rx="8" fill="var(--scene-cloud-near)" />
+        <g id="cloud-cluster-2" fill="currentColor">
+          <ellipse cx="30" cy="25" rx="22" ry="16" />
+          <ellipse cx="58" cy="20" rx="28" ry="20" />
+          <ellipse cx="86" cy="26" rx="20" ry="15" />
+          <rect x="18" y="24" width="80" height="16" rx="8" />
         </g>
 
         {/* Medieval Watchtower */}

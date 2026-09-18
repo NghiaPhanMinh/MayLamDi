@@ -1326,25 +1326,25 @@ export function BattleScene({
   const [testExtraPlayerCount, setTestExtraPlayerCount] = useState<number>(0);
 
   // Tuned Default Transforms matching user's custom canvas layout across all screens
-  const CURRENT_LAYOUT_VERSION = "v5_mobile_grounded_meadow";
+  const CURRENT_LAYOUT_VERSION = "v7_grounded_locked_elements";
 
   const DEFAULT_LAYER_TRANSFORMS: Record<string, { x: number; y: number; scale: number; visible: boolean }> = {
     sky: { x: 0, y: 0, scale: 1.05, visible: true },
     terrain: { x: 0, y: -4, scale: 1, visible: true },
     village: { x: 0, y: 0, scale: 1, visible: true },
     goblins: { x: 50, y: 0, scale: 1, visible: true },
-    players: { x: 0, y: 44, scale: 1, visible: true },
-    dragon: { x: -22, y: -2, scale: 1.05, visible: true },
+    players: { x: 0, y: 0, scale: 1, visible: true },
+    dragon: { x: -22, y: -8, scale: 1.05, visible: true },
     fx: { x: 0, y: 0, scale: 1, visible: true },
   };
 
   const DEFAULT_PVZ_BAR_OFFSET = { x: 10, y: 0, width: 482, scale: 1.05, visible: true };
 
   const DEFAULT_TERRAIN_OFFSETS = {
-    mountain: { x: 2, y: 203, scale: 1 },
+    mountain: { x: 0, y: 30, scale: 1 },
     island: { x: 0, y: 89, scale: 1 },
     green: { x: 0, y: 86, scale: 1 },
-    cloud: { x: 64, y: 150, scale: 0.95 },
+    cloud: { x: 0, y: 0, scale: 1 },
   };
 
   // Canvas Layer Transforms (All 10 layers customizable in Layout Admin)
@@ -1393,13 +1393,16 @@ export function BattleScene({
     cloud: { x: number; y: number; scale: number };
   }>(() => {
     try {
-      const saved = localStorage.getItem("terrain_elements_config");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.mountain && parsed.mountain.y !== 130 && parsed.island?.y !== 0) {
-          return parsed;
+      const version = localStorage.getItem("mld_layer_transforms_ver");
+      if (version === CURRENT_LAYOUT_VERSION) {
+        const saved = localStorage.getItem("terrain_elements_config");
+        if (saved) {
+          return JSON.parse(saved);
         }
       }
+    } catch {}
+    try {
+      localStorage.setItem("terrain_elements_config", JSON.stringify(DEFAULT_TERRAIN_OFFSETS));
     } catch {}
     return DEFAULT_TERRAIN_OFFSETS;
   });

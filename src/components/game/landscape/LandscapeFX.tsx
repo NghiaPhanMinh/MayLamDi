@@ -52,24 +52,13 @@ export function LandscapeFX({
 
   return (
     <div className="landscape-layer layer-9-fx" aria-hidden="true">
-      <style>{`
-        @keyframes player-hover {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
-        }
-        .player-independent-hover {
-          animation: player-hover 3.6s ease-in-out infinite;
-          transform-origin: center center;
-        }
-      `}</style>
       <div className="ambient-combat-exchange" style={{ opacity: 0.95, position: "absolute", inset: 0, pointerEvents: "none" }}>
         <svg viewBox="0 0 1000 400" width="100%" height="100%">
           {/* =========================================================================
               CONTINUOUS ELEMENTAL ATTACK PROJECTILES FROM PLAYERS TO DRAGON
-              Synced with the independent player hover animation
               Originates precisely from the peak of each attacking player's staff
              ========================================================================= */}
-          <g className="player-independent-hover">
+          <g className="combat-projectiles-group floating-island-group">
             {activeAttackers.map((attacker, idx) => {
               const spellType = (attacker.spellType || "lightning").toLowerCase();
               const isAtkFire = spellType === "fire";

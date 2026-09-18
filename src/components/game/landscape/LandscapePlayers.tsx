@@ -71,7 +71,7 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
 export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
   const count = Math.max(1, totalCount);
   const centerX = 270;
-  const centerY = 215;
+  const centerY = 216;
 
   let numCols: number;
   let numRows: number;
@@ -168,19 +168,9 @@ export function LandscapePlayers({ members }: LandscapePlayersProps) {
 
   return (
     <div className="landscape-layer layer-7-players" aria-label="Party members roster">
-      <style>{`
-        @keyframes player-hover {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
-        }
-        .player-independent-hover {
-          animation: player-hover 3.6s ease-in-out infinite;
-          transform-origin: center center;
-        }
-      `}</style>
       <svg viewBox="0 0 1000 400" width="100%" height="100%">
-        {/* Independent player hover animation (not locked to the island) */}
-        <g className="player-independent-hover">
+        {/* Party members group locked to the meadow */}
+        <g className="players-group floating-island-group">
           {members.map((member, index) => {
             const { x: offsetX, y: offsetY, scale: spriteScale } = getPlayerLayoutInfo(index, count);
             const active = member.isActiveToday;

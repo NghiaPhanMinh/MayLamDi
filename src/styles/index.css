@@ -4773,6 +4773,16 @@ footer {
   100% { transform: translateY(-5px); }
 }
 
+@keyframes island-hover {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+
+.floating-island-group {
+  animation: island-hover 5.5s ease-in-out infinite;
+  transform-origin: center center;
+}
+
 /* Village Smoke Animation */
 .village-smoke-wisp {
   animation: village-smoke-rise 3.2s ease-in-out infinite;
@@ -5302,9 +5312,6 @@ footer {
 
 /* Tablet and iPad Scaling for Game Scene */
 @media (max-width: 1024px) and (min-width: 641px) {
-  .cloud-far {
-    display: none;
-  }
   .landscape-scene-container {
     aspect-ratio: 16 / 9;
     min-height: 380px;
@@ -5358,20 +5365,21 @@ footer {
 
 /* Mobile Phone Responsive Game Scene (Cropped Zoom Viewport, Side-by-Side Controls, Vertical Character Stacking) */
 @media (max-width: 640px) {
-  .cloud-far {
-    display: none;
-  }
   .landscape-scene-container {
-    aspect-ratio: 16 / 11 !important;
-    min-height: 260px !important;
-    max-height: 380px !important;
+    aspect-ratio: 16 / 10 !important;
+    min-height: 250px !important;
+    max-height: 360px !important;
     border-radius: 18px !important;
     overflow: hidden !important;
   }
+  [data-theme="dark"] .landscape-scene-container,
+  .dark .landscape-scene-container {
+    background: #040914 !important;
+  }
   .landscape-scene-container .landscape-layer > svg,
   .landscape-scene-container .ambient-combat-exchange > svg {
-    transform: scale(1.22);
-    transform-origin: center 65%;
+    transform: scale(1.48);
+    transform-origin: center 56%;
   }
   .rpg-top-bar-controls {
     top: 8px !important;

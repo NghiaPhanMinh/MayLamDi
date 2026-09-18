@@ -31,12 +31,12 @@ export function LandscapeTerrain({
         <svg viewBox="0 0 1000 400" width="100%" height="100%">
           <g transform={`translate(${mountainOffset.x}, ${mountainOffset.y}) scale(${mountainOffset.scale})`}>
             <polygon
-              points="0,115 90,82 190,105 320,68 450,100 580,62 710,95 840,72 950,90 1000,78 1000,260 0,260"
+              points="0,115 90,82 190,105 320,68 450,100 580,62 710,95 840,72 950,90 1000,78 1000,450 0,450"
               fill={isNight ? "#07101c" : "#64748b"}
               opacity={isNight ? "0.9" : "0.55"}
             />
             <polygon
-              points="0,125 140,105 280,120 410,92 560,115 720,88 890,112 1000,102 1000,270 0,270"
+              points="0,125 140,105 280,120 410,92 560,115 720,88 890,112 1000,102 1000,450 0,450"
               fill={isNight ? "#03070e" : "#475569"}
               opacity={isNight ? "0.95" : "0.45"}
             />

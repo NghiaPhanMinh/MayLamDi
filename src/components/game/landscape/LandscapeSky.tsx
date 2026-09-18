@@ -8,17 +8,17 @@ type LandscapeSkyProps = {
 type CloudConfig = { id: number; x: number; y: number; scale: number };
 
 const FAR_CLOUDS: CloudConfig[] = [
-  { id: 1, x: 20, y: 15, scale: 1.1 },
-  { id: 2, x: 220, y: 35, scale: 0.85 },
-  { id: 3, x: 440, y: 10, scale: 1.0 },
-  { id: 4, x: 680, y: 40, scale: 0.9 },
-  { id: 5, x: 920, y: 25, scale: 1.15 },
+  { id: 1, x: 20, y: 15, scale: 0.45 },
+  { id: 2, x: 220, y: 32, scale: 0.38 },
+  { id: 3, x: 440, y: 10, scale: 0.42 },
+  { id: 4, x: 680, y: 36, scale: 0.40 },
+  { id: 5, x: 920, y: 22, scale: 0.46 },
 ];
 
 const NEAR_CLOUDS: CloudConfig[] = [
-  { id: 1, x: 80, y: 20, scale: 1.2 },
-  { id: 2, x: 400, y: 45, scale: 0.95 },
-  { id: 3, x: 750, y: 15, scale: 1.3 },
+  { id: 1, x: 80, y: 22, scale: 0.55 },
+  { id: 2, x: 400, y: 42, scale: 0.50 },
+  { id: 3, x: 750, y: 18, scale: 0.58 },
 ];
 
 const NIGHT_STARS = [
@@ -180,15 +180,18 @@ export function LandscapeSky({
         </div>
       )}
 
-      {/* Adjustable Cloud Layer Container */}
+      {/* Adjustable Cloud Layer Container (Positioned above mountains, behind main elements) */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          top: "4%",
+          left: 0,
+          right: 0,
+          height: "140px",
           pointerEvents: "none",
           zIndex: 3,
           transform: `translate(${cloudOffset.x}px, ${cloudOffset.y}px) scale(${cloudOffset.scale})`,
-          transformOrigin: "500px 70px",
+          transformOrigin: "500px 40px",
         }}
       >
         {/* Layer 1: Far Clouds */}
@@ -203,7 +206,8 @@ export function LandscapeSky({
                   x={cloud.x}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
-                  opacity={isNight ? "0.22" : "0.65"}
+                  fill={isNight ? "#cbd5e1" : "#ffffff"}
+                  opacity={isNight ? "0.55" : "0.75"}
                 />
               ))}
               {/* Segment 2 (Offset by exactly +1000px for seamless loop) */}
@@ -214,7 +218,8 @@ export function LandscapeSky({
                   x={cloud.x + 1000}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
-                  opacity={isNight ? "0.22" : "0.65"}
+                  fill={isNight ? "#cbd5e1" : "#ffffff"}
+                  opacity={isNight ? "0.55" : "0.75"}
                 />
               ))}
             </svg>
@@ -233,7 +238,8 @@ export function LandscapeSky({
                   x={cloud.x}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
-                  opacity={isNight ? "0.3" : "0.9"}
+                  fill={isNight ? "#e2e8f0" : "#ffffff"}
+                  opacity={isNight ? "0.70" : "0.92"}
                 />
               ))}
               {/* Segment 2 (Offset by exactly +1000px for seamless loop) */}
@@ -244,7 +250,8 @@ export function LandscapeSky({
                   x={cloud.x + 1000}
                   y={cloud.y}
                   transform={`scale(${cloud.scale})`}
-                  opacity={isNight ? "0.3" : "0.9"}
+                  fill={isNight ? "#e2e8f0" : "#ffffff"}
+                  opacity={isNight ? "0.70" : "0.92"}
                 />
               ))}
             </svg>

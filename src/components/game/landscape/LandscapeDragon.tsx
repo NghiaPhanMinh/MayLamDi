@@ -346,7 +346,7 @@ export function LandscapeDragon({
         {/* Dragon Group anchored on Far-Right End */}
         <g
           transform={`translate(${dragonX}, 130)`}
-          className="dragon-group"
+          className="dragon-group floating-island-group"
         >
           {/* Dragon Ground Shadow (Grounded directly under dragon body/feet, never changes on defeat) */}
           <g transform="translate(85, 180)">
@@ -376,13 +376,13 @@ export function LandscapeDragon({
               transition: "transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s ease",
             }}
           >
-            {/* Hovering animation (only when alive) */}
+            {/* Subtle breathing / hovering animation (only when alive) */}
             <g>
               {!isDead && animationsEnabled && (
                 <animateTransform
                   attributeName="transform"
                   type="translate"
-                  values="0,0; 0,-14; 0,0"
+                  values="0,0; 0,-6; 0,0"
                   dur="3.2s"
                   repeatCount="indefinite"
                 />
