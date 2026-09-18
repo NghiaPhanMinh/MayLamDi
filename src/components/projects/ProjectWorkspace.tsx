@@ -9,6 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { getErrorMessage } from "../../lib/errors";
 import { trackEvent } from "../../lib/analytics";
 import { MAYLAMDI_PHASE_COLORS, paletteColorAt } from "../../lib/brandPalette";
+import { gameAudio } from "../../lib/gameAudio";
 import { BattleScene } from "../game/BattleScene";
 import { AIPlanningAssistant, type AiTaskSuggestion } from "./AIPlanningAssistant";
 import { AllocationWorkbench } from "./AllocationWorkbench";
@@ -339,6 +340,12 @@ function ProjectWorkspaceReady({ workspace, initialTab }: {
   const [activeTab, setActiveTab] = useState<ProjectTab>(() =>
     workspace.tasks.length === 0 ? "plan" : initialTab
   );
+
+  useEffect(() => {
+    if (activeTab !== "progress") return;
+    gameAudio.activateGameModeAudio();
+    return () => gameAudio.deactivateGameModeAudio();
+  }, [activeTab]);
 
   const [showLobbyTour, setShowLobbyTour] = useState(() => {
     try {

@@ -11,12 +11,14 @@ class GameAudioEngine {
   private bgmGain: GainNode | null = null;
 
   private isMuted: boolean = false;
-  private masterVolume: number = 0.80; // 80% default master volume
-  private spellVolume: number = 0.80; // 80% default spell sound effects volume
-  private bgmVolume: number = 0.0; // 0% default background music volume (user turns up)
+  private masterVolume: number = 0.98; // 98% default master volume
+  private spellVolume: number = 0.97; // 97% default spell sound effects volume
+  private bgmVolume: number = 1; // 100% default background music volume
+  private isGameModeActive: boolean = false;
   private isBgmPlaying: boolean = false;
   private bgmIntervalId: any = null;
   private ambientRoarIntervalId: any = null;
+  private activeBgmSources = new Set<AudioScheduledSourceNode>();
 
   // Active looping spell sound nodes
   private activeSpellLoop: {
@@ -56,7 +58,10 @@ class GameAudioEngine {
         this.spellGain = this.ctx.createGain();
         this.bgmGain = this.ctx.createGain();
 
-        this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.masterVolume, this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(
+          this.isMuted || !this.isGameModeActive ? 0 : this.masterVolume,
+          this.ctx.currentTime,
+        );
         this.sfxGain.gain.setValueAtTime(0.70, this.ctx.currentTime);
         this.spellGain.gain.setValueAtTime(this.spellVolume, this.ctx.currentTime);
         this.bgmGain.gain.setValueAtTime(this.bgmVolume * 0.40, this.ctx.currentTime);
@@ -80,7 +85,15 @@ class GameAudioEngine {
     }
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.masterGain.gain.setValueAtTime(muted ? 0 : this.masterVolume, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(
+        muted || !this.isGameModeActive ? 0 : this.masterVolume,
+        this.ctx.currentTime,
+      );
+    }
+    if (muted) {
+      this.stopMedievalHeroicBgm();
+    } else if (this.isGameModeActive && this.bgmVolume > 0) {
+      this.startMedievalHeroicBgm();
     }
   }
 
@@ -93,7 +106,7 @@ class GameAudioEngine {
     if (typeof window !== "undefined") {
       localStorage.setItem("rpg_sound_volume", String(this.masterVolume));
     }
-    if (this.masterGain && this.ctx && !this.isMuted) {
+    if (this.masterGain && this.ctx && !this.isMuted && this.isGameModeActive) {
       this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGain.gain.setValueAtTime(this.masterVolume, this.ctx.currentTime);
     }
@@ -127,7 +140,7 @@ class GameAudioEngine {
       this.bgmGain.gain.cancelScheduledValues(this.ctx.currentTime);
       this.bgmGain.gain.setValueAtTime(this.bgmVolume * 0.40, this.ctx.currentTime);
     }
-    if (this.bgmVolume > 0 && !this.isBgmPlaying && !this.isMuted) {
+    if (this.bgmVolume > 0 && !this.isBgmPlaying && !this.isMuted && this.isGameModeActive) {
       this.startMedievalHeroicBgm();
     } else if (this.bgmVolume === 0 && this.isBgmPlaying) {
       this.stopMedievalHeroicBgm();
@@ -136,6 +149,30 @@ class GameAudioEngine {
 
   public getBgmVolume(): number {
     return this.bgmVolume;
+  }
+
+  public activateGameModeAudio() {
+    this.isGameModeActive = true;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.masterVolume, this.ctx.currentTime);
+    }
+
+    // Every return to Progress begins a fresh pass through the looping theme.
+    this.stopMedievalHeroicBgm();
+    if (!this.isMuted && this.bgmVolume > 0) {
+      this.startMedievalHeroicBgm();
+    }
+  }
+
+  public deactivateGameModeAudio() {
+    this.isGameModeActive = false;
+    this.stopMedievalHeroicBgm();
+    this.stopSpellLoop();
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    }
   }
 
   // ============================================================================
@@ -812,7 +849,7 @@ class GameAudioEngine {
   // 5. ADVENTUROUS HEROIC MEDIEVAL BGM (Inspiring Trumpet Horns, Lute & War Drums)
   // ============================================================================
   public startMedievalHeroicBgm() {
-    if (this.isBgmPlaying) return;
+    if (this.isBgmPlaying || !this.isGameModeActive || this.isMuted || this.bgmVolume <= 0) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -854,6 +891,8 @@ class GameAudioEngine {
         luteOsc.connect(luteGain);
         luteGain.connect(this.bgmGain!);
 
+        this.activeBgmSources.add(luteOsc);
+        luteOsc.onended = () => this.activeBgmSources.delete(luteOsc);
         luteOsc.start(now + noteIdx * 0.02);
         luteOsc.stop(now + noteIdx * 0.02 + 0.4);
       });
@@ -877,6 +916,8 @@ class GameAudioEngine {
       hornFilter.connect(hornGain);
       hornGain.connect(this.bgmGain);
 
+      this.activeBgmSources.add(hornOsc);
+      hornOsc.onended = () => this.activeBgmSources.delete(hornOsc);
       hornOsc.start(now);
       hornOsc.stop(now + 0.30);
 
@@ -894,6 +935,8 @@ class GameAudioEngine {
 
         snare.connect(snareGain);
         snareGain.connect(this.bgmGain);
+        this.activeBgmSources.add(snare);
+        snare.onended = () => this.activeBgmSources.delete(snare);
         snare.start(now);
       }
 
@@ -923,6 +966,15 @@ class GameAudioEngine {
       clearInterval(this.ambientRoarIntervalId);
       this.ambientRoarIntervalId = null;
     }
+    this.activeBgmSources.forEach((source) => {
+      try {
+        source.stop();
+        source.disconnect();
+      } catch {
+        // A source may already have ended while the game tab was closing.
+      }
+    });
+    this.activeBgmSources.clear();
   }
 
   public isBgmActive(): boolean {

@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { ProjectWorkspace } from "./ProjectWorkspace";
 
+const gameAudioMocks = vi.hoisted(() => ({
+  activateGameModeAudio: vi.fn(),
+  deactivateGameModeAudio: vi.fn(),
+}));
+
 const workspace = {
   project: {
     _id: "project-1" as Id<"projects">,
@@ -75,6 +80,7 @@ vi.mock("convex/react", () => ({
 vi.mock("../game/BattleScene", () => ({
   BattleScene: () => <div aria-label="Shared Battle Scene">Realtime Battle</div>,
 }));
+vi.mock("../../lib/gameAudio", () => ({ gameAudio: gameAudioMocks }));
 vi.mock("./TaskEvidencePanel", () => ({
   TaskEvidencePanel: () => <div>Existing evidence workflow</div>,
 }));
@@ -92,6 +98,7 @@ describe("ProjectWorkspace information hierarchy", () => {
   afterEach(() => {
     cleanup();
     delete document.documentElement.dataset.theme;
+    vi.clearAllMocks();
   });
 
   it("renders Progress as default tab with Brief Summary, BattleScene, and Action Deck (My Tasks and Peer Review)", () => {
@@ -115,6 +122,19 @@ describe("ProjectWorkspace information hierarchy", () => {
     fireEvent.click(screen.getByRole("button", { name: "Team" }));
     expect(screen.getByRole("button", { name: "Team" })).toHaveClass("is-active");
     expect(screen.getByText("Members")).toBeInTheDocument();
+  });
+
+  it("plays game audio only on Progress and restarts it after returning", () => {
+    render(<ProjectWorkspace projectId={"project-1" as Id<"projects">} onClose={vi.fn()} initialTab="progress" />);
+
+    expect(gameAudioMocks.activateGameModeAudio).toHaveBeenCalledTimes(1);
+    expect(gameAudioMocks.deactivateGameModeAudio).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Project Plan" }));
+    expect(gameAudioMocks.deactivateGameModeAudio).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Progress" }));
+    expect(gameAudioMocks.activateGameModeAudio).toHaveBeenCalledTimes(2);
   });
 
   it.each(["light", "dark"])("uses matching yellow brand tokens for action cards in %s mode", (theme) => {

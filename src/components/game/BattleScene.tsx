@@ -1582,7 +1582,9 @@ export function BattleScene({
   const [audioVolume, setAudioVolume] = useState(() => Math.round(gameAudio.getVolume() * 100));
   const [spellVolume, setSpellVolume] = useState(() => Math.round(gameAudio.getSpellVolume() * 100));
   const [bgmVolume, setBgmVolume] = useState(() => Math.round(gameAudio.getBgmVolume() * 100));
-  const [isLofiBgmPlaying, setIsLofiBgmPlaying] = useState(() => gameAudio.isBgmActive());
+  const [isLofiBgmPlaying, setIsLofiBgmPlaying] = useState(
+    () => !gameAudio.getMuted() && gameAudio.getBgmVolume() > 0,
+  );
   const [hasPushGranted, setHasPushGranted] = useState(() => areNotificationsEnabled());
   const [showGoblinAttackAlert, setShowGoblinAttackAlert] = useState(false);
   const [taskDeadlineAlertTask, setTaskDeadlineAlertTask] = useState<QuestTask | null>(null);
@@ -7496,7 +7498,7 @@ export function BattleScene({
             </div>
 
             <div style={{ display: "grid", gap: "16px" }}>
-              {/* 1. Master Sound Effects Slider (Default 80%, On) */}
+              {/* 1. Master Sound Effects Slider (Default 98%, On) */}
               <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -7525,7 +7527,7 @@ export function BattleScene({
                 />
               </div>
 
-              {/* 2. Spell Sound Effects Slider (Default 80%, On) */}
+              {/* 2. Spell Sound Effects Slider (Default 97%, On) */}
               <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -7550,12 +7552,12 @@ export function BattleScene({
                 />
               </div>
 
-              {/* 3. Background Music Slider (Default 0%, Muted - user slides up to turn on) */}
+              {/* 3. Background Music Slider (Default 100%, loops while Progress is open) */}
               <div className="rpg-panel-card" style={{ display: "grid", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 900 }}>Background Music</h4>
-                    <p style={{ margin: "2px 0 0 0", fontSize: "0.74rem", color: "#64748b" }}>Medieval lute, brass fanfare & marching tempo (Slide up to play)</p>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.74rem", color: "#64748b" }}>Medieval lute, brass fanfare & marching tempo (loops while Progress is open)</p>
                   </div>
                   <span style={{ fontSize: "0.85rem", fontWeight: 800, color: bgmVolume > 0 ? "#16a34a" : "#64748b" }}>
                     {bgmVolume > 0 ? `${bgmVolume}%` : "Off (0%)"}
