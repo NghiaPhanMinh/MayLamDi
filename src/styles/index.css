@@ -5311,8 +5311,8 @@ footer {
     max-height: 520px;
   }
   .boss-hp-container {
-    transform: scale(0.82) !important;
-    transform-origin: center top !important;
+    transform: translate(-50%, -50%) scale(0.9) !important;
+    transform-origin: center center !important;
   }
   .village-hp-container {
     transform: scale(0.82) !important;
@@ -5413,11 +5413,8 @@ footer {
     z-index: 30 !important;
   }
   .boss-hp-container {
-    transform: scale(0.68) !important;
-    transform-origin: right top !important;
-    top: 38px !important;
-    right: 8px !important;
-    left: auto !important;
+    transform: translate(-50%, -50%) scale(0.85) !important;
+    transform-origin: center center !important;
     z-index: 30 !important;
   }
   .landscape-questboard-layer {
@@ -5448,14 +5445,22 @@ footer {
     white-space: nowrap !important;
   }
   .rpg-mode-toggle-btn {
-    top: 8px !important;
-    left: 8px !important;
-    padding: 5px 8px !important;
-    font-size: 0.7rem !important;
+    top: auto !important;
+    bottom: 12px !important;
+    left: 12px !important;
+    padding: 6px 10px !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
     border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    box-shadow: 2px 2px 0 #101517 !important;
+    z-index: 30 !important;
   }
   .rpg-mode-toggle-btn span {
-    display: none !important;
+    display: inline !important;
+    font-size: 0.72rem !important;
   }
   .rpg-btn-attack-circle {
     width: 44px !important;

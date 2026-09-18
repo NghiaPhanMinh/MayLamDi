@@ -1326,14 +1326,16 @@ export function BattleScene({
   const [testExtraPlayerCount, setTestExtraPlayerCount] = useState<number>(0);
 
   // Tuned Default Transforms matching user's custom canvas layout across all screens
+  const CURRENT_LAYOUT_VERSION = "v5_mobile_grounded_meadow";
+
   const DEFAULT_LAYER_TRANSFORMS: Record<string, { x: number; y: number; scale: number; visible: boolean }> = {
     sky: { x: 0, y: 0, scale: 1.05, visible: true },
     terrain: { x: 0, y: -4, scale: 1, visible: true },
     village: { x: 0, y: 0, scale: 1, visible: true },
     goblins: { x: 50, y: 0, scale: 1, visible: true },
-    players: { x: 73, y: 44, scale: 0.95, visible: true },
-    dragon: { x: -22, y: -33, scale: 1.05, visible: true },
-    fx: { x: 0, y: 0, scale: 1.15, visible: true },
+    players: { x: 0, y: 44, scale: 1, visible: true },
+    dragon: { x: -22, y: -2, scale: 1.05, visible: true },
+    fx: { x: 0, y: 0, scale: 1, visible: true },
   };
 
   const DEFAULT_PVZ_BAR_OFFSET = { x: 10, y: 0, width: 482, scale: 1.05, visible: true };
@@ -1348,13 +1350,17 @@ export function BattleScene({
   // Canvas Layer Transforms (All 10 layers customizable in Layout Admin)
   const [layerTransforms, setLayerTransforms] = useState<Record<string, { x: number; y: number; scale: number; visible: boolean }>>(() => {
     try {
-      const saved = localStorage.getItem("layer_transforms_config");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.players && (parsed.players.x !== 0 || parsed.players.y !== 0)) {
-          return parsed;
+      const version = localStorage.getItem("mld_layer_transforms_ver");
+      if (version === CURRENT_LAYOUT_VERSION) {
+        const saved = localStorage.getItem("layer_transforms_config");
+        if (saved) {
+          return JSON.parse(saved);
         }
       }
+    } catch {}
+    try {
+      localStorage.setItem("mld_layer_transforms_ver", CURRENT_LAYOUT_VERSION);
+      localStorage.setItem("layer_transforms_config", JSON.stringify(DEFAULT_LAYER_TRANSFORMS));
     } catch {}
     return DEFAULT_LAYER_TRANSFORMS;
   });
@@ -3071,7 +3077,7 @@ export function BattleScene({
       {/* Main 10-Layer Geometric SVG Landscape Scene */}
       {displayMode === "game" ? (
         <div className={`landscape-scene-container ${showTutorial ? "has-tutorial-active" : ""}`} style={{ position: "relative", overflow: "hidden" }} aria-label="Interactive project encounter scene">
-        {/* Mode Toggle Button: Canvas Top-Left */}
+        {/* Mode Toggle Button: Canvas Bottom-Left */}
         <button
           data-tour="progress-mode-toggle"
           type="button"
@@ -3079,7 +3085,7 @@ export function BattleScene({
           onClick={toggleDisplayMode}
           style={{
             position: "absolute",
-            top: "16px",
+            bottom: "16px",
             left: "16px",
             zIndex: 30,
             background: "var(--mld-primary, #fff73f)",
@@ -3092,12 +3098,14 @@ export function BattleScene({
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
+            gap: "6px",
             color: "#101517",
             userSelect: "none",
           }}
           title="Switch to Focus Mode"
           aria-label="Switch to Focus Mode"
         >
+          <UiIcon name="BarChart3" size={16} />
           <span>Focus Mode</span>
         </button>
 
@@ -3184,18 +3192,18 @@ export function BattleScene({
           </div>
         </div>
 
-        {/* Floating Mob-Style Boss HP Bar (Positioned in middle of dragon) */}
+        {/* Floating Mob-Style Boss HP Bar (Positioned directly over dragon) */}
         <div
           className="boss-hp-container"
           style={{
             position: "absolute",
-            left: `calc(${Math.min(92, Math.max(8, (dragonX / 10) + 7))}% + ${dragonHpBarPos.x}px)`,
-            top: `calc(195px + ${dragonHpBarPos.y}px)`,
-            display: "flex",
+            left: `calc(${Math.min(88, Math.max(12, ((dragonX + 75) / 10)))}% + ${dragonHpBarPos.x}px)`,
+            top: `calc(44% + ${dragonHpBarPos.y}px)`,
+            display: effectiveIsDefeated ? "none" : "flex",
             flexDirection: "column",
             alignItems: "center",
             zIndex: 35,
-            transform: `scale(${dragonHpBarScale * 0.95})`,
+            transform: `translate(-50%, -50%) scale(${dragonHpBarScale * 0.95})`,
             transformOrigin: "center center",
             pointerEvents: "none",
           }}
@@ -3290,6 +3298,7 @@ export function BattleScene({
               zIndex: 7,
               opacity: effectiveIsDefeated ? 0.6 : 1,
               transition: "opacity 0.5s ease",
+              transformOrigin: "70% 77%",
               transform: `translate(${layerTransforms.dragon?.x || 0}px, ${layerTransforms.dragon?.y || 0}px) scale(${(layerTransforms.dragon?.scale || 1) * 1.2})`,
               display: layerTransforms.dragon?.visible !== false ? "block" : "none",
             }}
@@ -3312,7 +3321,7 @@ export function BattleScene({
           </div>
 
           {/* Layer 8: Party Members (In front of Dragon, Scaled Up and Positioned in Open Meadow) */}
-          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 8, transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
+          <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 8, transformOrigin: "27% 77%", transform: `translate(${layerTransforms.players?.x || 0}px, ${layerTransforms.players?.y || 0}px) scale(${layerTransforms.players?.scale || 1})`, display: layerTransforms.players?.visible !== false ? "block" : "none" }}>
             <LandscapePlayers members={players} />
           </div>
         </div>
@@ -3324,8 +3333,8 @@ export function BattleScene({
             isVictory={effectiveIsDefeated}
             activeAttackers={activeAttackers}
             dragonTarget={{
-              x: Math.round(500 + (dragonX + 45 - 500) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
-              y: Math.round(200 + (225 - 200) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.y || 0)),
+              x: Math.round(700 + (dragonX + 68 - 700) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.x || 0)),
+              y: Math.round(308 + (232 - 308) * (layerTransforms.dragon?.scale || 1) * 1.2 + (layerTransforms.dragon?.y || 0)),
             }}
           />
         </div>

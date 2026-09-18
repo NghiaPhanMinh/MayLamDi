@@ -70,7 +70,7 @@ export function getMageTheme(spellType?: string, profileId: string = "", index: 
 
 export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
   const count = Math.max(1, totalCount);
-  const centerX = 315;
+  const centerX = 270;
   const centerY = 215;
 
   let numCols: number;
@@ -80,35 +80,35 @@ export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
   let rowGap: number;
 
   if (count === 1) {
-    return { x: centerX, y: centerY, scale: 1.25 };
+    return { x: centerX, y: centerY, scale: 1.45 };
   } else if (count <= 3) {
     numCols = count;
     numRows = 1;
-    spriteScale = count === 2 ? 1.25 : 1.20;
-    colGap = 52;
+    spriteScale = count === 2 ? 1.42 : 1.36;
+    colGap = 58;
     rowGap = 0;
   } else if (count <= 6) {
     numCols = Math.ceil(count / 2);
     numRows = 2;
-    spriteScale = 1.15;
-    colGap = 48;
-    rowGap = 28;
+    spriteScale = 1.28;
+    colGap = 52;
+    rowGap = 32;
   } else if (count <= 10) {
     numCols = Math.ceil(count / 2);
     numRows = 2;
-    spriteScale = 1.0;
-    colGap = Math.min(46, Math.floor(260 / (numCols - 1)));
-    rowGap = 30;
+    spriteScale = 1.15;
+    colGap = Math.min(48, Math.floor(260 / (numCols - 1)));
+    rowGap = 32;
   } else if (count <= 16) {
     numCols = Math.ceil(count / 3);
     numRows = 3;
-    spriteScale = 0.88;
-    colGap = Math.min(42, Math.floor(280 / (numCols - 1)));
-    rowGap = 24;
+    spriteScale = 1.02;
+    colGap = Math.min(44, Math.floor(280 / (numCols - 1)));
+    rowGap = 26;
   } else {
     numCols = Math.min(7, Math.ceil(Math.sqrt(count * 2)));
     numRows = Math.ceil(count / numCols);
-    spriteScale = Math.max(0.68, 0.88 - (count - 16) * 0.015);
+    spriteScale = Math.max(0.78, 0.98 - (count - 16) * 0.015);
     colGap = Math.floor(290 / (numCols - 1));
     rowGap = Math.floor(62 / (numRows - 1));
   }
@@ -130,7 +130,7 @@ export function getPlayerLayoutInfo(index: number = 0, totalCount: number = 1) {
 
   // Strict clamp within island plateau bounds so heroes never spill over
   const minX = 175;
-  const maxX = 465;
+  const maxX = 410;
   const minY = 188;
   const maxY = 250;
 

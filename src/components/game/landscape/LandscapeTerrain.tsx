@@ -28,7 +28,7 @@ export function LandscapeTerrain({
 
       {/* Layer 3: Distant Sky Horizon & Misty Mountain Ridges (Moved to bottom by default) */}
       <div className="landscape-layer layer-3-hills" aria-hidden="true">
-        <svg viewBox="0 0 1000 400" preserveAspectRatio="none" width="100%" height="100%">
+        <svg viewBox="0 0 1000 400" width="100%" height="100%">
           <g transform={`translate(${mountainOffset.x}, ${mountainOffset.y}) scale(${mountainOffset.scale})`}>
             <polygon
               points="0,115 90,82 190,105 320,68 450,100 580,62 710,95 840,72 950,90 1000,78 1000,260 0,260"
@@ -46,7 +46,7 @@ export function LandscapeTerrain({
 
       {/* Layer 4: Floating Celestial Battle Island with Rocky Underside & Grassy Top (Black outlines removed) */}
       <div className="landscape-layer layer-4-ground" aria-hidden="true">
-        <svg viewBox="0 0 1000 400" preserveAspectRatio="none" width="100%" height="100%">
+        <svg viewBox="0 0 1000 400" width="100%" height="100%">
           <defs>
             {/* Subtle Grass Tuft Templates */}
             <g id="grass-tuft-dark">
