@@ -4586,6 +4586,46 @@ body:has(.marketing-about-transition-scene) {
     font-size: clamp(30px, 9vw, 42px);
     -webkit-text-stroke-width: 1.5px;
   }
+
+  .marketing-features {
+    padding-bottom: 0;
+  }
+
+  .marketing-features-curtain {
+    border-radius: 0;
+    transform: none;
+    will-change: auto;
+  }
+
+  .marketing-features-intro,
+  .marketing-features-interaction {
+    transform: none;
+    will-change: auto;
+  }
+
+  .marketing-how-it-works-transition,
+  .marketing-how-it-works-dot-transition {
+    display: none;
+  }
+
+  .marketing-how-it-works-rail::before {
+    transition-duration: 180ms;
+  }
+
+  .marketing-how-it-works-step,
+  .marketing-how-it-works-step.is-before,
+  .marketing-how-it-works-step.is-active {
+    transform: none;
+    transition: opacity 180ms ease;
+    will-change: auto;
+  }
+
+  .marketing-how-it-works-copy h2 span,
+  .marketing-how-it-works-copy > p,
+  .how-works-visual {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (max-width: 620px) {
@@ -4650,7 +4690,7 @@ body:has(.marketing-about-transition-scene) {
 
   .marketing-features {
     min-height: 0;
-    padding-bottom: 100svh;
+    padding-bottom: 0;
   }
 
   .marketing-features-intro {
@@ -4688,12 +4728,14 @@ body:has(.marketing-about-transition-scene) {
     left: auto !important;
     max-width: 100%;
     white-space: normal;
-    transform: translateY(-72px) rotate(var(--tag-rotation));
+    transform: none;
     opacity: 0;
+    transition: opacity 180ms ease;
+    will-change: auto;
   }
 
   .marketing-features-tag-canvas.is-simple .marketing-feature-tag.is-visible {
-    animation: marketing-feature-tag-mobile-drop 620ms cubic-bezier(0.2, 0.8, 0.25, 1) var(--tag-delay) both;
+    animation: none;
     opacity: 1;
   }
 
@@ -6294,4 +6336,3 @@ body:has(.marketing-about-transition-scene) {
   transform: translate(-1px, -1px) !important;
   box-shadow: 3px 3px 0 var(--mld-border, #101517) !important;
 }
-

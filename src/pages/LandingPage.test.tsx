@@ -250,6 +250,25 @@ describe("MayLamDi landing page", () => {
     expect(step).not.toHaveBeenCalled();
   });
 
+  it("uses lightweight scene changes on mobile", () => {
+    vi.stubGlobal("innerWidth", 375);
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: query.includes("max-width: 760px"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })));
+
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const firstStep = container.querySelector<HTMLElement>(".marketing-how-it-works-step");
+    const stripeTransition = container.querySelector<HTMLElement>(".marketing-how-it-works-transition");
+    const dotTransition = container.querySelector<HTMLElement>(".marketing-how-it-works-dot-transition");
+
+    expect(firstStep?.style.getPropertyValue("--how-step-progress")).toBe("1");
+    expect(stripeTransition).toHaveAttribute("data-active", "false");
+    expect(dotTransition).toHaveAttribute("data-active", "false");
+    expect(dotTransition?.style.getPropertyValue("--how-dots-transition-progress")).toBe("0");
+  });
+
   it("marks feel shared with a responsive hand-drawn annotation", () => {
     const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
 

@@ -1187,9 +1187,13 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     const reducedMotion = typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
+    const compactMotionViewport = typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 760px), (hover: none) and (pointer: coarse)")
+      : null;
     const dots = Array.from(transition.querySelectorAll<HTMLElement>(".marketing-how-it-works-dot"));
 
     const updateScene = () => {
+      const compactMotion = window.innerWidth <= 760 || Boolean(compactMotionViewport?.matches);
       const viewportHeight = Math.max(window.innerHeight, 1);
       const howStageRect = stage.getBoundingClientRect();
       const sectionRect = section.getBoundingClientRect();
@@ -1204,11 +1208,20 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
       const progress = reducedMotion?.matches
         ? 1
         : clampProgress((distanceTravelled - sceneStartDistance) / contentDistance);
+      const displayProgress = compactMotion && !reducedMotion?.matches && progress < 1
+        ? (Math.min(HOW_IT_WORKS_STEPS.length - 1, Math.floor(progress * HOW_IT_WORKS_STEPS.length)) + 0.25) / HOW_IT_WORKS_STEPS.length
+        : progress;
       const transitionProgress = reducedMotion?.matches
         ? 1
         : progressBetween(distanceTravelled, sceneDistance, sceneDistance + transitionDistance);
 
-      setHowItWorksProgress(progress);
+      setHowItWorksProgress(displayProgress);
+      if (compactMotion) {
+        transition.style.setProperty("--how-dots-transition-progress", "0");
+        transition.dataset.active = "false";
+        transition.dataset.complete = "false";
+        return;
+      }
       transition.style.setProperty("--how-dots-transition-progress", transitionProgress.toFixed(3));
       dots.forEach((dot, index) => {
         const localStart = (index / Math.max(dots.length - 1, 1)) * 0.62;
@@ -1227,12 +1240,14 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     window.addEventListener("scroll", updateScene, { passive: true });
     window.addEventListener("resize", updateScene);
     reducedMotion?.addEventListener("change", updateScene);
+    compactMotionViewport?.addEventListener("change", updateScene);
     updateScene();
 
     return () => {
       window.removeEventListener("scroll", updateScene);
       window.removeEventListener("resize", updateScene);
       reducedMotion?.removeEventListener("change", updateScene);
+      compactMotionViewport?.removeEventListener("change", updateScene);
     };
   }, []);
 
@@ -1244,8 +1259,19 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     const reducedMotion = typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
+    const compactMotionViewport = typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 760px), (hover: none) and (pointer: coarse)")
+      : null;
 
     const updateScene = () => {
+      const compactMotion = window.innerWidth <= 760 || Boolean(compactMotionViewport?.matches);
+      if (compactMotion) {
+        transition.style.setProperty("--how-transition-progress", "1");
+        section.style.setProperty("--features-scene-lock-offset", "0px");
+        transition.dataset.active = "false";
+        transition.dataset.complete = "false";
+        return;
+      }
       const viewportHeight = Math.max(window.innerHeight, 1);
       const sectionRect = section.getBoundingClientRect();
       const paddingBottom = Number.parseFloat(getComputedStyle(section).paddingBottom) || 0;
@@ -1272,12 +1298,14 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
     window.addEventListener("scroll", updateScene, { passive: true });
     window.addEventListener("resize", updateScene);
     reducedMotion?.addEventListener("change", updateScene);
+    compactMotionViewport?.addEventListener("change", updateScene);
     updateScene();
 
     return () => {
       window.removeEventListener("scroll", updateScene);
       window.removeEventListener("resize", updateScene);
       reducedMotion?.removeEventListener("change", updateScene);
+      compactMotionViewport?.removeEventListener("change", updateScene);
     };
   }, []);
 
