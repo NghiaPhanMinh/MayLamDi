@@ -7991,8 +7991,10 @@ button.maylamdi-button:active {
 
 .battle-result-main-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 0.875rem;
+  width: min(100%, 78rem);
+  margin-inline: auto;
 }
 
 .battle-result-action,
@@ -8084,10 +8086,6 @@ button.maylamdi-button:active {
   .battle-result-main-actions {
     grid-template-columns: 1fr 1fr;
   }
-
-  .battle-result-action.is-primary {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 620px) {
@@ -8110,10 +8108,6 @@ button.maylamdi-button:active {
   .battle-result-stats,
   .battle-result-main-actions {
     grid-template-columns: 1fr;
-  }
-
-  .battle-result-action.is-primary {
-    grid-column: auto;
   }
 
   .battle-result-danger-zone {
@@ -8978,7 +8972,6 @@ button.maylamdi-button:active {
   border-color: #ff4d4f;
   color: #ff7875;
 }
-
 
 
 
