@@ -1549,18 +1549,14 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
                 const localProgress = index === activeIndex
                   ? Math.min(1, Math.max(0, (howItWorksProgress * HOW_IT_WORKS_STEPS.length) - activeIndex))
                   : index < activeIndex ? 1 : 0;
-                const titleProgress = Math.min(1, localProgress / 0.25);
-                const imageProgress = Math.min(1, Math.max(0, (localProgress - 0.2) / 0.3));
-                const descriptionProgress = Math.min(1, Math.max(0, (localProgress - 0.5) / 0.2));
+                const stepProgress = Math.min(1, localProgress / 0.25);
                 return (
                   <article
                     aria-hidden={index !== activeIndex}
                     className={`marketing-how-it-works-step${index === activeIndex ? " is-active" : index < activeIndex ? " is-before" : " is-after"}`}
                     key={step.number}
                     style={{
-                      "--how-title-progress": titleProgress,
-                      "--how-image-progress": imageProgress,
-                      "--how-description-progress": descriptionProgress,
+                      "--how-step-progress": stepProgress,
                     } as CSSProperties}
                   >
                     <div className="marketing-how-it-works-copy">

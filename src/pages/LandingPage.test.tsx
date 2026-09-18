@@ -299,6 +299,12 @@ describe("MayLamDi landing page", () => {
     expect(subscription?.querySelector(".marketing-subscription-comparison")).toBeInTheDocument();
     expect(subscription?.querySelectorAll(".marketing-subscription-comparison-symbol--included")).toHaveLength(3);
     expect(subscription?.querySelectorAll(".marketing-subscription-comparison-symbol--not-included")).toHaveLength(1);
+    const steps = Array.from(howItWorks?.querySelectorAll<HTMLElement>(".marketing-how-it-works-step") ?? []);
+    expect(steps).toHaveLength(4);
+    expect(steps.every((step) => step.style.getPropertyValue("--how-step-progress") !== "")).toBe(true);
+    expect(steps.every((step) => step.style.getPropertyValue("--how-title-progress") === "")).toBe(true);
+    expect(steps.every((step) => step.style.getPropertyValue("--how-image-progress") === "")).toBe(true);
+    expect(steps.every((step) => step.style.getPropertyValue("--how-description-progress") === "")).toBe(true);
   });
 
   it("offers the existing visitor sign-in action from the Free plan", () => {

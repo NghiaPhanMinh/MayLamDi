@@ -3478,8 +3478,8 @@ body:has(.marketing-about-transition-scene) {
 
 .marketing-how-it-works-copy h2 span {
   display: block;
-  opacity: var(--how-title-progress, 0);
-  transform: translateX(calc((1 - var(--how-title-progress, 0)) * 120px));
+  opacity: var(--how-step-progress, 0);
+  transform: translateX(calc((1 - var(--how-step-progress, 0)) * 120px));
 }
 
 .marketing-how-it-works-copy h2 span + span {
@@ -3492,8 +3492,8 @@ body:has(.marketing-about-transition-scene) {
   color: #101517;
   font-size: clamp(18px, 1.65vw, 24px);
   line-height: 1.4;
-  opacity: var(--how-description-progress, 0);
-  transform: translateY(calc((1 - var(--how-description-progress, 0)) * 28px));
+  opacity: var(--how-step-progress, 0);
+  transform: translateY(calc((1 - var(--how-step-progress, 0)) * 28px));
 }
 
 .how-works-visual {
@@ -3508,8 +3508,8 @@ body:has(.marketing-about-transition-scene) {
   background: var(--how-visual-tone);
   color: #fffdec;
   box-shadow: 12px 12px 0 #fffdec;
-  opacity: var(--how-image-progress, 0);
-  transform: translateX(calc((1 - var(--how-image-progress, 0)) * 120px)) rotate(calc((1 - var(--how-image-progress, 0)) * 3deg)) scale(calc(0.94 + (var(--how-image-progress, 0) * 0.06)));
+  opacity: var(--how-step-progress, 0);
+  transform: translateX(calc((1 - var(--how-step-progress, 0)) * 120px)) rotate(calc((1 - var(--how-step-progress, 0)) * 3deg)) scale(calc(0.94 + (var(--how-step-progress, 0) * 0.06)));
 }
 
 .how-works-visual--setup { --how-visual-tone: #4ca0fe; }
@@ -6294,5 +6294,4 @@ body:has(.marketing-about-transition-scene) {
   transform: translate(-1px, -1px) !important;
   box-shadow: 3px 3px 0 var(--mld-border, #101517) !important;
 }
-
 
