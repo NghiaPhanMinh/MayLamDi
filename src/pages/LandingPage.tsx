@@ -1368,6 +1368,33 @@ export function LandingPage({ currentPlan, isAuthenticated = false }: LandingPag
               </span>
             </button>
           </h1>
+          <div className="marketing-hero-actions" aria-label="MayLamDi quick actions">
+            {isAuthenticated ? (
+              <Link className="marketing-hero-action marketing-hero-action--project" to="/home">
+                Go to Projects
+              </Link>
+            ) : (
+              <>
+                <Link className="marketing-hero-action marketing-hero-action--project" to="/projects/create">
+                  Explore
+                </Link>
+                <button
+                  className="marketing-hero-action marketing-hero-action--signup"
+                  type="button"
+                  onClick={() => void handleStartFree("SIGN UP")}
+                >
+                  Sign up
+                </button>
+                <button
+                  className="marketing-hero-action marketing-hero-action--login"
+                  type="button"
+                  onClick={() => void handleStartFree("LOG IN")}
+                >
+                  Log in
+                </button>
+              </>
+            )}
+          </div>
           <a className="marketing-scroll-cue" href="#why-maylamdi">
             See what MayLamDi does <ArrowDown aria-hidden="true" />
           </a>

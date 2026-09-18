@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
@@ -24,24 +24,28 @@ describe("MayLamDi landing page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps authentication actions out of the hero and introduces a quiet scroll cue", () => {
-    render(<MemoryRouter><LandingPage /></MemoryRouter>);
+  it("offers immediate project and authentication actions in the hero", () => {
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const hero = within(container.querySelector<HTMLElement>(".marketing-hero")!);
 
     expect(screen.queryByRole("button", { name: /continue with google/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/create or join a project room/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /go to projects/i })).not.toBeInTheDocument();
+    expect(hero.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/projects/create");
+    expect(hero.getByRole("button", { name: "Sign up" })).toBeInTheDocument();
+    expect(hero.getByRole("button", { name: "Log in" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /see what maylamdi does/i })).toHaveAttribute(
       "href",
       "#why-maylamdi",
     );
   });
 
-  it("keeps the hero free of authentication CTAs for authenticated visitors too", () => {
+  it("sends authenticated visitors to their projects from the hero", () => {
     const { container } = render(<MemoryRouter><LandingPage isAuthenticated /></MemoryRouter>);
-    const hero = container.querySelector(".marketing-hero");
+    const hero = within(container.querySelector<HTMLElement>(".marketing-hero")!);
 
-    expect(hero?.querySelector("a[href=\"/projects\"]")).not.toBeInTheDocument();
-    expect(hero).not.toHaveTextContent("Continue with Google");
+    expect(hero.getByRole("link", { name: "Go to Projects" })).toHaveAttribute("href", "/home");
+    expect(hero.queryByRole("button", { name: "Sign up" })).not.toBeInTheDocument();
+    expect(hero.queryByRole("button", { name: "Log in" })).not.toBeInTheDocument();
   });
 
   it("adds the scoped product-purpose section before the new Features section", () => {
@@ -323,7 +327,7 @@ describe("MayLamDi landing page", () => {
     expect(finalCta).toHaveTextContent("Log in");
     expect(finalCta).toHaveTextContent("Explore");
     expect(finalCta).toHaveTextContent("MayLamDi");
-    expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/projects/create");
+    expect(within(finalCta as HTMLElement).getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/projects/create");
   });
 
   it("keeps the mobile final CTA entered when iOS reports a reverse scroll delta", () => {
@@ -384,7 +388,7 @@ describe("MayLamDi landing page", () => {
 
     expect(finalCta).toHaveTextContent("Switch account");
     expect(finalCta).toHaveTextContent("Sign out");
-    expect(screen.getByRole("link", { name: "Go to Projects" })).toHaveAttribute("href", "/home");
+    expect(within(finalCta as HTMLElement).getByRole("link", { name: "Go to Projects" })).toHaveAttribute("href", "/home");
     expect(finalCta).not.toHaveTextContent("Sign up");
   });
 

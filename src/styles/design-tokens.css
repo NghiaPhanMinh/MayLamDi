@@ -2600,6 +2600,56 @@ input::placeholder, textarea::placeholder { color: var(--mld-muted); opacity: 0.
   outline-offset: 5px;
 }
 
+.marketing-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mld-space-3);
+  margin-top: var(--mld-space-6);
+}
+
+.marketing-hero-action {
+  display: inline-flex;
+  min-width: 118px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border: 2px solid var(--mld-text);
+  border-radius: var(--mld-radius-pill);
+  font-size: var(--mld-body-small-size);
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.marketing-hero-action--project {
+  background: var(--mld-primary);
+  color: #101517;
+}
+
+.marketing-hero-action--signup {
+  background: var(--mld-text);
+  color: var(--mld-bg);
+}
+
+.marketing-hero-action--login {
+  background: transparent;
+  color: var(--mld-text);
+}
+
+.marketing-hero-action:hover,
+.marketing-hero-action:focus-visible {
+  box-shadow: 4px 4px 0 var(--mld-info);
+  transform: translate(-2px, -2px);
+}
+
+.marketing-hero-action:focus-visible {
+  outline: 3px solid var(--mld-focus);
+  outline-offset: 3px;
+}
+
 .marketing-about-transition-scene {
   position: relative;
   isolation: isolate;
@@ -4547,6 +4597,21 @@ body:has(.marketing-about-transition-scene) {
     font-size: clamp(48px, 16vw, 68px);
   }
 
+  .marketing-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .marketing-hero-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .marketing-hero-action--project {
+    grid-column: 1 / -1;
+  }
+
   .marketing-hero-logo-stage {
     width: min(88vw, 340px);
   }
@@ -6229,6 +6294,5 @@ body:has(.marketing-about-transition-scene) {
   transform: translate(-1px, -1px) !important;
   box-shadow: 3px 3px 0 var(--mld-border, #101517) !important;
 }
-
 
 
