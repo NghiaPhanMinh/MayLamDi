@@ -21,26 +21,26 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [x] Google sign-in is the only MVP authentication method
 - [x] Convex is the only application backend/database
 - [x] Vercel hosts the frontend
-- [ ] OpenRouter AI is optional
-- [ ] Manual planning works without AI
-- [ ] Seven built-in frameworks exist
-- [ ] One Custom Framework feature exists
-- [ ] One shared allocation engine serves all frameworks
-- [ ] AI does not allocate by “common sense” alone
-- [ ] Long-running projects are supported
-- [ ] Tasks over 14 days receive a breakdown suggestion
-- [ ] Two weeks is guidance, not a hard limit
-- [ ] Projects and text history are not capped at two
+- [x] OpenRouter AI is optional
+- [x] Manual planning works without AI
+- [x] Seven built-in frameworks exist
+- [x] One Custom Framework feature exists
+- [x] One shared allocation engine serves all frameworks
+- [x] AI does not allocate by “common sense” alone
+- [x] Long-running projects are supported
+- [x] Tasks over 14 days receive a breakdown suggestion
+- [x] Two weeks is guidance, not a hard limit
+- [x] Projects and text history are not capped at two
 - [x] Separate goblin logging is not included
 - [x] Goblin quota logic is not included
 - [x] Compulsory final PDF share per member is not included
-- [ ] Review is optional per task
-- [ ] Task evidence supports note, link, image, and PDF
+- [x] Review is optional per task
+- [x] Task evidence supports note, link, image, and PDF
 - [~] Practical statuses replace defeated/survived as core database states
 - [x] Boss/quest language remains optional presentation only
 - [x] No public teammate leaderboard
 - [x] No punitive XP
-- [ ] No automatic recurring AI monitoring
+- [x] No automatic recurring AI monitoring
 - [ ] No unlicensed font or sound downloads
 
 ---
@@ -287,13 +287,13 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [x] `teams`
 - [x] `teamMembers`
 - [x] `customFrameworks`
-- [ ] `projects`
-- [ ] `projectMembers`
-- [ ] `phases`
-- [ ] `milestones`
-- [ ] `tasks`
-- [ ] `taskEvidence`
-- [ ] `taskReviews`
+- [x] `projects`
+- [x] `projectMembers`
+- [x] `phases`
+- [x] `milestones`
+- [x] `tasks`
+- [x] `taskEvidence`
+- [x] `taskReviews`
 - [x] `activityLogs`
 - [ ] `projectSnapshots`
 
@@ -302,7 +302,7 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [x] Explicit validators
 - [x] No important `v.any()`
 - [x] Convex IDs used
-- [ ] Storage IDs used for files
+- [x] Storage IDs used for files
 - [x] All public args validated
 - [~] All indexes generated
 - [x] Schema deploys
@@ -315,18 +315,18 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [x] team members by user
 - [x] team member by team+user
 - [x] custom frameworks by team
-- [ ] projects by team+status
-- [ ] projects by team+updated time
-- [ ] project members by project
-- [ ] project member by project+user
-- [ ] phases by project+order
-- [ ] milestones by project+due date
-- [ ] tasks by project
-- [ ] tasks by project+owner
-- [ ] tasks by project+status
-- [ ] evidence by task
-- [ ] reviews by task
-- [ ] activity by project+timestamp
+- [x] projects by team+status
+- [x] projects by team+updated time
+- [x] project members by project
+- [x] project member by project+user
+- [x] phases by project+order
+- [x] milestones by project+due date
+- [x] tasks by project
+- [x] tasks by project+owner
+- [x] tasks by project+status
+- [x] evidence by task
+- [x] reviews by task
+- [x] activity by project+timestamp
 - [ ] snapshots by project
 
 ---
@@ -548,32 +548,32 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Project Duration
 
-- [ ] Projects may last months
-- [ ] Start date
-- [ ] Deadline
+- [x] Projects may last months
+- [x] Start date
+- [x] Deadline
 - [ ] Phase dates
-- [ ] Milestone dates
-- [ ] Task dates
-- [ ] No hard two-week project limit
-- [ ] Active data persists in Convex
+- [x] Milestone dates
+- [x] Task dates
+- [x] No hard two-week project limit
+- [x] Active data persists in Convex
 - [ ] Cross-device return works
 
 ## Hierarchy
 
-- [ ] Project
-- [ ] Phase
-- [ ] Milestone
-- [ ] Task
+- [x] Project
+- [x] Phase
+- [x] Milestone
+- [x] Task
 - [ ] Optional subtask/checkpoint
 
 ## Two-Week Guidance
 
-- [ ] Task may exceed 14 days
-- [ ] Suggest breakdown
-- [ ] User can ignore suggestion
+- [x] Task may exceed 14 days
+- [x] Suggest breakdown
+- [x] User can ignore suggestion
 - [ ] AI breakdown optional
-- [ ] No validation rejection
-- [ ] Message is supportive
+- [x] No validation rejection
+- [x] Message is supportive
 
 ## Scaling
 
@@ -591,58 +591,58 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Consolidated Setup
 
-- [ ] Project details
-- [ ] Framework selection
-- [ ] Member planning inputs
-- [ ] Phase preview
-- [ ] Milestone preview
-- [ ] Task plan
-- [ ] Allocation suggestions
-- [ ] Final confirmation
-- [ ] No rigid multi-page wizard
+- [x] Project details
+- [x] Framework selection
+- [x] Member planning inputs
+- [x] Phase preview
+- [~] Milestone preview
+- [~] Task plan
+- [x] Allocation suggestions
+- [x] Final confirmation
+- [x] No rigid multi-page wizard
 - [ ] Collapsible sections allowed
 
 ## Framework Selection
 
-- [ ] Seven presets
-- [ ] Custom
-- [ ] Preview
-- [ ] Manual choice
+- [x] Seven presets
+- [x] Custom
+- [x] Preview
+- [x] Manual choice
 - [ ] AI recommendation
-- [ ] Duplicate/edit before use
+- [x] Duplicate/edit before use
 
 ## Member Inputs
 
-- [ ] Skills
-- [ ] Availability
-- [ ] Current workload
-- [ ] Preferences
-- [ ] Optional weekly capacity
-- [ ] Inputs labelled self-reported
+- [x] Skills
+- [x] Availability
+- [x] Current workload
+- [x] Preferences
+- [x] Optional weekly capacity
+- [x] Inputs labelled self-reported
 
 ## Validation
 
-- [ ] Title
-- [ ] Dates
-- [ ] Team membership
-- [ ] At least one project member
-- [ ] Valid framework
-- [ ] Valid phases
-- [ ] Valid milestones
-- [ ] Valid owners
-- [ ] Valid dependencies
-- [ ] Backend repeats critical checks
+- [x] Title
+- [x] Dates
+- [x] Team membership
+- [x] At least one project member
+- [x] Valid framework
+- [x] Valid phases
+- [x] Valid milestones
+- [x] Valid owners
+- [x] Valid dependencies
+- [x] Backend repeats critical checks
 
 ## Creation Test
 
-- [ ] Account A creates project
-- [ ] Account B sees it live
-- [ ] Framework copied correctly
-- [ ] Phases created
-- [ ] Milestones created
-- [ ] Tasks created
-- [ ] Planning inputs saved
-- [ ] Refresh persists
+- [x] Account A creates project
+- [~] Account B sees it live
+- [x] Framework copied correctly
+- [x] Phases created
+- [x] Milestones created
+- [x] Tasks created
+- [x] Planning inputs saved
+- [x] Refresh persists
 
 ---
 
@@ -650,70 +650,70 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Deterministic Inputs
 
-- [ ] Required skills
-- [ ] Availability
-- [ ] Current workload
-- [ ] Preferences
-- [ ] Dependency timing
-- [ ] Estimated effort
-- [ ] Weekly capacity
+- [x] Required skills
+- [x] Availability
+- [x] Current workload
+- [x] Preferences
+- [x] Dependency timing
+- [x] Estimated effort
+- [x] Weekly capacity
 
 ## Suggested Scoring
 
-- [ ] Skill match 0–40
-- [ ] Availability 0–25
-- [ ] Workload balance 0–20
-- [ ] Preference 0–10
-- [ ] Dependency timing 0–5
-- [ ] Hard constraints before score
-- [ ] Configurable weights
-- [ ] Consistent output
+- [x] Skill match 0–40
+- [x] Availability 0–25
+- [x] Workload balance 0–20
+- [x] Preference 0–10
+- [x] Dependency timing 0–5
+- [x] Hard constraints before score
+- [x] Configurable weights
+- [x] Consistent output
 
 ## Explainability
 
-- [ ] Explanation per suggested owner
-- [ ] No objective fairness claim
-- [ ] Task count not fairness score
-- [ ] Assumptions visible
-- [ ] User can inspect inputs
+- [x] Explanation per suggested owner
+- [x] No objective fairness claim
+- [x] Task count not fairness score
+- [x] Assumptions visible
+- [x] User can inspect inputs
 
 ## Human Control
 
-- [ ] Swap owner
-- [ ] Add collaborator
+- [x] Swap owner
+- [x] Add collaborator
 - [ ] Split task
 - [ ] Merge task
-- [ ] Edit effort
-- [ ] Edit difficulty
-- [ ] Edit dates
-- [ ] Edit dependencies
+- [x] Edit effort
+- [x] Edit difficulty
+- [x] Edit dates
+- [x] Edit dependencies
 - [ ] Reject AI plan
-- [ ] Manual plan
+- [x] Manual plan
 
 ## Tests
 
-- [ ] Skill fit preferred
-- [ ] Unavailable member avoided
-- [ ] Overloaded member penalised
-- [ ] Preference considered
+- [x] Skill fit preferred
+- [x] Unavailable member avoided
+- [x] Overloaded member penalised
+- [x] Preference considered
 - [ ] No-owner tasks flagged
-- [ ] Explanation matches score
-- [ ] Same inputs give stable result
+- [x] Explanation matches score
+- [x] Same inputs give stable result
 
 ---
 
 # 14. Nonlinear Workflow
 
-- [ ] Overlapping phases
-- [ ] Task dependencies
-- [ ] Loop back to earlier phase
-- [ ] Revision cycles
-- [ ] Blocked status
-- [ ] Reopen completed task
-- [ ] Reopen logged
+- [x] Overlapping phases
+- [x] Task dependencies
+- [x] Loop back to earlier phase
+- [x] Revision cycles
+- [x] Blocked status
+- [x] Reopen completed task
+- [x] Reopen logged
 - [ ] Dependency indicators
-- [ ] No mandatory complex graph editor
-- [ ] Clear list/board experience
+- [x] No mandatory complex graph editor
+- [x] Clear list/board experience
 
 ---
 
@@ -721,63 +721,63 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Task Fields
 
-- [ ] Title
-- [ ] Description
-- [ ] Phase
-- [ ] Milestone
-- [ ] Primary owner
-- [ ] Collaborators
-- [ ] Required skills
-- [ ] Estimated effort
-- [ ] Difficulty 1–5
-- [ ] Weight
-- [ ] Start date
-- [ ] Due date
-- [ ] Dependencies
-- [ ] Review requirement
-- [ ] Reviewer
-- [ ] Source
-- [ ] Status
+- [x] Title
+- [x] Description
+- [x] Phase
+- [x] Milestone
+- [x] Primary owner
+- [x] Collaborators
+- [x] Required skills
+- [x] Estimated effort
+- [x] Difficulty 1–5
+- [x] Weight
+- [x] Start date
+- [x] Due date
+- [x] Dependencies
+- [x] Review requirement
+- [x] Reviewer
+- [x] Source
+- [x] Status
 
 ## Actions
 
-- [ ] Create
-- [ ] Edit
-- [ ] Delete
-- [ ] Assign
-- [ ] Reassign
-- [ ] Add collaborator
-- [ ] Start
-- [ ] Block
-- [ ] Send to review
-- [ ] Complete
-- [ ] Reopen
-- [ ] Search
-- [ ] Filter by owner
-- [ ] Filter by phase
-- [ ] Filter by status
+- [x] Create
+- [x] Edit
+- [x] Delete
+- [x] Assign
+- [x] Reassign
+- [x] Add collaborator
+- [x] Start
+- [x] Block
+- [x] Send to review
+- [x] Complete
+- [x] Reopen
+- [x] Search
+- [x] Filter by owner
+- [x] Filter by phase
+- [x] Filter by status
 
 ## Rules
 
-- [ ] Team permission
-- [ ] Project permission
-- [ ] Valid owner
-- [ ] Valid collaborator
-- [ ] Valid reviewer
-- [ ] No self-review
-- [ ] Valid dependency
-- [ ] Circular dependency handled
-- [ ] Task count not effort
-- [ ] Changes live
-- [ ] Changes logged
+- [x] Team permission
+- [x] Project permission
+- [x] Valid owner
+- [x] Valid collaborator
+- [x] Valid reviewer
+- [x] No self-review
+- [x] Valid dependency
+- [x] Circular dependency handled
+- [x] Task count not effort
+- [x] Changes live
+- [x] Changes logged
 
 ## Long Task
 
-- [ ] >14-day detection
-- [ ] Breakdown suggestion
-- [ ] Ignore option
+- [x] >14-day detection
+- [x] Breakdown suggestion
+- [x] Ignore option
 - [ ] AI subtasks option
-- [ ] No hard error
+- [x] No hard error
 
 ---
 
@@ -785,40 +785,40 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Evidence Types
 
-- [ ] Note
-- [ ] External link
-- [ ] Image
-- [ ] PDF
-- [ ] Figma link
-- [ ] Drive link
-- [ ] GitHub link
-- [ ] Miro/other link
+- [x] Note
+- [x] External link
+- [x] Image
+- [x] PDF
+- [x] Figma link
+- [x] Drive link
+- [x] GitHub link
+- [x] Miro/other link
 
 ## Upload Rules
 
-- [ ] PDF max 10 MB
-- [ ] Image max 5 MB
-- [ ] No video
-- [ ] Storage ID saved
-- [ ] Temporary URL not saved
-- [ ] Upload progress
-- [ ] Upload error
-- [ ] File type validation
-- [ ] Authorised URL generation
+- [x] PDF max 10 MB
+- [x] Image max 5 MB
+- [x] No video
+- [x] Storage ID saved
+- [x] Temporary URL not saved
+- [x] Upload progress
+- [x] Upload error
+- [x] File type validation
+- [x] Authorised URL generation
 
 ## Review
 
-- [ ] Optional per task
-- [ ] Reviewer assigned only when required
-- [ ] No self-review
-- [ ] Reviewer project member
-- [ ] Pending
-- [ ] Approved
-- [ ] Changes requested
-- [ ] Comment
-- [ ] Review time
-- [ ] Return to editable state
-- [ ] Activity logged
+- [x] Optional per task
+- [x] Reviewer assigned only when required
+- [x] No self-review
+- [x] Reviewer project member
+- [x] Pending
+- [x] Approved
+- [x] Changes requested
+- [x] Comment
+- [x] Review time
+- [x] Return to editable state
+- [x] Activity logged
 
 ## Contribution Report
 
@@ -837,21 +837,21 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Practical Progress
 
-- [~] Weighted required tasks
-- [~] Milestone completion
-- [~] Project status
+- [x] Weighted required tasks
+- [x] Milestone completion
+- [x] Project status
 - [x] Progress source documented
 - [x] No manual client-only persistent progress
 
 ## Optional Boss Visual
 
-- [~] Project represented as boss
+- [x] Project represented as boss
 - [x] Weighted progress reduces visual health
 - [x] Milestone animation
 - [x] Completion celebration
 - [x] Overdue “boss still standing”
 - [x] Game does not block actions
-- [~] Core data uses practical statuses
+- [x] Core data uses practical statuses
 
 ## Removed
 
@@ -866,33 +866,33 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Workload View
 
-- [ ] Tasks by member
-- [ ] Estimated effort
-- [ ] Due-date overlap
-- [ ] Availability
-- [ ] Capacity
-- [ ] Phase workload
-- [ ] No public ranking
+- [x] Tasks by member
+- [x] Estimated effort
+- [x] Due-date overlap
+- [x] Availability
+- [x] Capacity
+- [x] Phase workload
+- [x] No public ranking
 
 ## Risk Flags
 
-- [ ] Overdue task
-- [ ] Blocked dependency
+- [x] Overdue task
+- [x] Blocked dependency
 - [ ] No owner
-- [ ] Pending review
-- [ ] Overloaded member
-- [ ] Multiple heavy due tasks
-- [ ] Milestone at risk
+- [x] Pending review
+- [x] Overloaded member
+- [x] Multiple heavy due tasks
+- [x] Milestone at risk
 
 ## Actions
 
-- [ ] Reassign
-- [ ] Add collaborator
+- [x] Reassign
+- [x] Add collaborator
 - [ ] Split task
-- [ ] Edit date
+- [x] Edit date
 - [ ] Ask AI to rebalance
-- [ ] Human confirmation
-- [ ] No automatic AI monitoring
+- [x] Human confirmation
+- [x] No automatic AI monitoring
 
 ---
 
@@ -900,37 +900,37 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Logged Events
 
-- [ ] Team created
-- [ ] Member joined
-- [ ] Character changed
-- [ ] Framework created
-- [ ] Framework edited
-- [ ] Project created
-- [ ] Phase changed
-- [ ] Milestone changed
-- [ ] Task created
+- [x] Team created
+- [x] Member joined
+- [x] Character changed
+- [x] Framework created
+- [x] Framework edited
+- [x] Project created
+- [x] Phase changed
+- [x] Milestone changed
+- [x] Task created
 - [ ] Task assigned
-- [ ] Task reassigned
-- [ ] Status changed
-- [ ] Evidence submitted
-- [ ] Review approved
-- [ ] Changes requested
-- [ ] Task reopened
-- [ ] Project at risk
-- [ ] Project completed
-- [ ] Project archived
+- [x] Task reassigned
+- [x] Status changed
+- [x] Evidence submitted
+- [x] Review approved
+- [x] Changes requested
+- [x] Task reopened
+- [x] Project at risk
+- [x] Project completed
+- [x] Project archived
 - [ ] Project deleted
 
 ## Behaviour
 
-- [ ] UTC storage
-- [ ] Local display
-- [ ] Actor from auth
-- [ ] Typed metadata
-- [ ] Paginated
-- [ ] Realtime
-- [ ] In-app notification
-- [ ] No false push notification claim
+- [x] UTC storage
+- [x] Local display
+- [x] Actor from auth
+- [x] Typed metadata
+- [x] Paginated
+- [x] Realtime
+- [x] In-app notification
+- [x] No false push notification claim
 
 ---
 
@@ -974,60 +974,63 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Provider
 
-- [ ] Convex server action
-- [ ] No direct React request
-- [ ] Key private
-- [ ] Model configurable
-- [ ] Default Gemma model
-- [ ] Fallback free router
-- [ ] No key in `VITE_`
-- [ ] No key committed
+- [x] Convex server action
+- [x] No direct React request
+- [x] Key private
+- [x] Model configurable
+- [x] Default Gemma model
+- [x] Fallback free router
+- [x] Four-model free-only fallback chain
+- [x] Exponential backoff and `Retry-After`
+- [x] JSON-only degradation with server validation
+- [x] No key in `VITE_`
+- [x] No key committed
 
 ## Input
 
-- [ ] Brief text
-- [ ] Candidate framework
-- [ ] Deadline
-- [ ] Members
-- [ ] Skills
-- [ ] Availability
-- [ ] Workload
-- [ ] Preferences
-- [ ] Length limit
-- [ ] Explicit trigger
+- [x] Brief text
+- [x] Candidate framework
+- [x] Deadline
+- [x] Members
+- [x] Skills
+- [x] Availability
+- [x] Workload
+- [x] Preferences
+- [x] Length limit
+- [x] Explicit trigger
 
 ## Output
 
-- [ ] Recommended framework
-- [ ] Reason
+- [x] Recommended framework
+- [x] Reason
 - [ ] Phases
-- [ ] Milestones
-- [ ] Tasks
-- [ ] Dependencies
-- [ ] Skills
-- [ ] Effort
-- [ ] Difficulty
-- [ ] Owners
-- [ ] Collaborators
-- [ ] Explanations
-- [ ] Review requirements
-- [ ] Long-task breakdown
-- [ ] Risks
-- [ ] Assumptions
-- [ ] Strict validation
-- [ ] Prefill only
-- [ ] Editable
-- [ ] Confirmation required
+- [x] Milestones
+- [x] Tasks
+- [x] Dependencies
+- [x] Skills
+- [x] Effort
+- [x] Difficulty
+- [x] Owners
+- [x] Collaborators
+- [x] Explanations
+- [x] Review requirements
+- [x] Long-task breakdown
+- [x] Risks
+- [x] Assumptions
+- [x] Strict validation
+- [x] Prefill only
+- [x] Editable
+- [x] Confirmation required
 
 ## Failure
 
-- [ ] Timeout
-- [ ] Rate limit
-- [ ] Model unavailable
-- [ ] Invalid JSON
-- [ ] Empty response
-- [ ] Retry
-- [ ] Manual fallback
+- [x] Timeout
+- [x] Rate limit
+- [x] Model unavailable
+- [x] Invalid JSON
+- [x] Empty response
+- [x] Retry
+- [x] Manual fallback
 
 ---
 
@@ -1048,7 +1051,7 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [ ] Create/join team
 - [ ] Team home
 - [ ] Project list
-- [ ] Archived projects
+- [x] Archived projects
 - [ ] Character settings
 - [ ] Framework library
 - [ ] Custom framework builder
@@ -1073,13 +1076,13 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Archive
 
-- [ ] Complete project
-- [ ] Archive project
+- [x] Complete project
+- [x] Archive project
 - [ ] Paginated archive
-- [ ] Reopen/view archive
-- [ ] No two-project cap
-- [ ] Active project never auto-deleted
-- [ ] Text history retained
+- [x] Reopen/view archive
+- [x] No two-project cap
+- [x] Active project never auto-deleted
+- [x] Text history retained
 
 ## Export
 
@@ -1300,10 +1303,10 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Google OAuth
 
-- [ ] Production origin
-- [ ] Production callback
-- [ ] Test user or publishing status appropriate
-- [ ] Production login tested
+- [x] Production origin
+- [x] Production callback
+- [x] Test user or publishing status appropriate
+- [x] Production login tested
 
 ## Vercel
 
@@ -1317,7 +1320,7 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Production Test
 
-- [ ] Login
+- [x] Login
 - [ ] Team
 - [ ] Realtime
 - [ ] Character
@@ -1330,7 +1333,7 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 - [ ] Workload
 - [ ] Archive
 - [ ] PDF
-- [ ] Theme
+- [x] Theme
 - [ ] Sound
 - [ ] AI/manual fallback
 
@@ -1364,27 +1367,27 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 | 1 | Convex connection | Completed |  | 2026-07-30 |
 | 2 | Branding and theme | Not started |  |  |
 | 3 | Google authentication | Completed |  | 2026-07-31 |
-| 4 | Data architecture | In progress | Later product tables remain | 2026-07-31 |
+| 4 | Data architecture | In progress | Snapshot table remains | 2026-08-04 |
 | 5 | Team realtime | Completed |  | 2026-07-31 |
 | 6 | Character customisation | Completed |  | 2026-07-31 |
 | 7 | Built-in frameworks | Completed |  | 2026-07-31 |
 | 8 | Custom framework | Completed | Project-use and safe whole-template deletion follow project creation | 2026-07-31 |
-| 9 | Long project structure | Not started |  |  |
-| 10 | Project creation | Not started |  |  |
-| 11 | Allocation engine | Not started |  |  |
-| 12 | Nonlinear workflow | Not started |  |  |
-| 13 | Task management | Not started |  |  |
-| 14 | Evidence and review | Not started |  |  |
-| 15 | Progress/game layer | In progress | Persistent integration awaits project/task data | 2026-07-31 |
-| 16 | Workload and risk | Not started |  |  |
-| 17 | Activity | Not started |  |  |
+| 9 | Long project structure | In progress | Phase dates and subtasks remain | 2026-08-03 |
+| 10 | Project creation | Completed |  | 2026-08-04 |
+| 11 | Allocation engine | Completed |  | 2026-08-04 |
+| 12 | Nonlinear workflow | In progress | Dependency indicators remain | 2026-08-05 |
+| 13 | Task management | Completed |  | 2026-08-04 |
+| 14 | Evidence and review | In progress | Production image/PDF upload smoke test remains | 2026-08-04 |
+| 15 | Progress/game layer | Completed |  | 2026-08-03 |
+| 16 | Workload and risk | In progress | No-owner flag, split-task action, and optional AI rebalance remain | 2026-08-04 |
+| 17 | Activity | In progress | Project deletion event remains | 2026-08-05 |
 | 18 | Sound | Not started |  |  |
-| 19 | AI | Optional |  |  |
-| 20 | Archive/export | Not started |  |  |
+| 19 | AI | In progress | Private OpenRouter key and live production test remain | 2026-08-06 |
+| 20 | Archive/export | In progress | Archive pagination, export, and deletion remain | 2026-08-05 |
 | 21 | Accessibility | Not started |  |  |
 | 22 | Security | Not started |  |  |
 | 23 | Testing | Not started |  |  |
-| 24 | Production | Blocked | Google OAuth registration and repository-owner Git connection | 2026-07-31 |
+| 24 | Production | In progress | Repository-owner Git connection and remaining product phases | 2026-08-03 |
 
 ---
 
@@ -1392,36 +1395,62 @@ Use this file as the implementation, prompting, and testing tracker for the clea
 
 ## Current phase
 
-- [~] Phase: 24 — Production deployment
+- [~] Phase: 19 — Optional AI-assisted planning
 
 ## Goal
 
-- [~] Goal: Publish the currently implemented MayLamDi scope with separate production Convex data and verified Google authentication.
+- [~] Goal: Add a private, validated AI planning draft that never bypasses human review.
 
 ## Blockers
 
-- [ ] Add `https://maylamdi.vercel.app` to the existing Google OAuth web client's authorised JavaScript origins.
-- [ ] Add `https://reminiscent-narwhal-80.convex.site/api/auth/callback/google` to its authorised redirect URIs.
 - [ ] The personal GitHub repository owner must connect the repository to Vercel; collaborator access cannot create that Git integration.
-- [~] Full project/task/upload/review/export/sound/AI smoke testing remains unavailable because those product phases are not implemented and this task forbids adding features.
+- [~] Production image/PDF upload smoke testing remains.
+- [~] OpenRouter is configured on development and production; the latest live smoke test exhausted temporarily busy/unavailable free routes and correctly preserved manual planning.
 
 ## Codex result
 
-- Public deployment: `https://maylamdi.vercel.app`.
-- Production Convex: `reminiscent-narwhal-80`, separate from development `resilient-mastiff-759`.
-- Files changed: Vercel production configuration, Vercel secret exclusions, Node runtime declaration, Convex-aware production build command, deployment documentation, and checklist status.
+- Public deployment updated: `https://maylamdi.vercel.app`.
+- Production Convex updated: `reminiscent-narwhal-80`.
+- Added persistent projects, project-member planning records, and framework-derived phases.
+- Added a consolidated project setup interface with project details, seven presets, custom frameworks, phase preview, member selection, skills, availability, workload, preferences, capacity, and final confirmation.
+- Added a live team project list and project creation activity event.
+- Added project workspaces with milestones, task creation, owners, collaborators, skills, effort, difficulty, weight, dates, dependencies, optional review assignment, search, filters, and live status controls.
+- Connected saved weighted tasks, milestones, and practical project status to the live boss encounter.
+- Added full task editing and reassignment, dependency-cycle detection, dependency-aware deletion protection, and an explicit in-app deletion confirmation.
+- Added task evidence notes, external links, images, and PDFs with upload progress, file limits, protected download URLs, and authenticated activity logging.
+- Added pending review requests, assigned-reviewer enforcement, approvals, changes requested with comments, task reopening, and progress recalculation.
+- Added one deterministic allocation engine for every framework using skills, availability, current workload, preferences, dependency readiness, estimated effort, and weekly capacity.
+- Added inspectable 100-point score breakdowns, per-candidate explanations, and explicit human-confirmed reassignment.
+- Added workload summaries by member and phase plus rule-based overdue, dependency, pending-review, overload, due-date-overlap, and milestone risk flags.
+- Added a paginated realtime team activity timeline with readable event descriptions and local date/time display.
+- Added persistent per-person unread state, unread-only filtering, live notification counts, and a mark-all-read action.
+- Added editable phase status cards supporting overlapping and nonlinear workflows without forcing a graph editor.
+- Added automatic project planning, active, at-risk, overdue, and completed lifecycle history whenever task progress changes.
+- Added reversible project archiving with explicit confirmation, read-only protection, visible archived projects, and restore controls.
+- Added an authenticated Convex AI action using a configurable four-model free-only chain, bounded retries, exponential backoff, `Retry-After`, structured-to-JSON-only degradation, timeout/capacity handling, and no browser-side key or model exposure.
+- Added strict AI plan validation for project dates, phase/member IDs, owners, reviewers, collaborators, output limits, numeric ranges, and circular dependencies.
+- Added an editable AI planning draft for milestones and tasks with risks, assumptions, owner explanations, long-task breakdowns, discard/retry controls, and explicit handoff into the existing manual confirmation forms.
 - Packages: no package added or removed.
-- Schema/index changes: the current schema and functions were deployed unchanged to production.
-- Environment: production-only `CONVEX_DEPLOY_KEY` stored privately in Vercel; production Convex has `SITE_URL`, `JWT_PRIVATE_KEY`, `JWKS`, `AUTH_GOOGLE_ID`, and `AUTH_GOOGLE_SECRET`.
-- Tests passed: install/audit, Convex generation, typecheck, lint, 23 tests, production build, Vercel build, production Convex deployment and health query, public origin, logo, direct-route fallback, live frontend-to-production-Convex connection, and unauthenticated backend rejection.
-- Tests failed: production Google sign-in returns `redirect_uri_mismatch` until the production callback is added in Google Cloud.
-- Remaining issue: production launch cannot be declared complete until Google sign-in and two-account realtime persistence pass; unimplemented product phases remain outside this deployment-only task.
+- Schema/index changes: added `taskEvidence`, `taskReviews`, and `activityReadStates`; added task/reviewer/read-state indexes, storage IDs, file metadata, and typed evidence/review/phase/project lifecycle metadata.
+- Security: archive and phase changes require project access; archived projects reject task, evidence, and review writes; activity history and read-state changes require team membership; evidence reads require team access; evidence writes require project permission; upload type and actual stored size are rechecked on the backend; only the assigned reviewer can approve or request changes; review-required tasks cannot bypass approval.
+- Tests passed: Convex generation/development deployment, typecheck, lint, 51 tests, local production build, Vercel production build, production Convex deployment, public HTTP check, fallback-chain simulation, retry/backoff checks, and public-bundle privacy scan.
+- Tests failed: none.
+- Live free-provider result: no model completed the latest smoke test; invalid/empty output was discarded, nothing was saved, and the required manual-planning message was returned.
+- Remaining issue: two-account live UI verification and the later project-planning sections are still required.
 
 ## Next action
 
-- [x] Create and configure the Vercel project
-- [x] Deploy the production Convex schema and functions
-- [x] Publish the current frontend
-- [ ] Complete the two Google Cloud OAuth entries
-- [ ] Have the repository owner connect GitHub to Vercel
-- [ ] Rerun production login and two-account realtime smoke tests
+- [x] Add saved project, member-plan, and phase data
+- [x] Add consolidated project details and framework selection
+- [x] Add member planning inputs and phase preview
+- [x] Add milestones and the initial task plan
+- [x] Connect saved tasks to weighted progress and boss health
+- [x] Add task edit, delete, and reassignment
+- [x] Add evidence submission and review outcomes
+- [x] Add deterministic allocation suggestions and workload/risk support
+- [x] Add activity history and persistent in-app notifications
+- [x] Add phase lifecycle controls and reversible project archiving
+- [x] Add validated AI planning drafts and manual-form handoff
+- [ ] Configure the private OpenRouter key and run a live AI generation test
+- [ ] Run production image and PDF upload smoke tests
+- [ ] Run the two-account project realtime test
